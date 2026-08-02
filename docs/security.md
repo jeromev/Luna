@@ -105,14 +105,15 @@ The Composer dependencies are audited **on every push and PR, and on a weekly sc
 matters: this project's intended resting state is dormant, so a push-triggered check alone would
 fall silent exactly while advisory risk accumulates.
 
-**Audit as of 2026-08-01: clean.** No published advisory affects any of the nine locked packages
-at their pinned versions. Worth recording because the margin was thin — `league/commonmark` is
-pinned at **2.8.2**, and CVE-2026-33347 (embed-extension `allowed_domains` bypass) affects
-`>=2.3.0,<=2.8.1`. The pin sits one patch release the safe side of it.
+**Audit as of 2026-08-02: clean, and current with upstream.** No published advisory affects any of
+the nine locked packages. Worth recording how thin the margin had been: before 0.8.61 the tree was
+pinned at `league/commonmark` **2.8.2**, one patch release the safe side of CVE-2026-33347
+(embed-extension `allowed_domains` bypass, affecting `>=2.3.0,<=2.8.1`) — clean, but by accident of
+when the lock was taken rather than by anyone checking.
 
-Three packages are one patch version behind upstream (`league/commonmark` 2.8.2→2.8.3,
-`nette/utils` v4.1.4→v4.1.5, `symfony/deprecation-contracts` v3.7.0→v3.7.1). No advisory is
-attached to any of them; these are hygiene, not exposure.
+Since 0.8.61 the three packages that trailed upstream are current: `league/commonmark` 2.8.3,
+`nette/utils` v4.1.5, `symfony/deprecation-contracts` v3.7.1. None carried an advisory; the update
+was hygiene, taken so the margin is deliberate rather than incidental.
 
 **Two gaps this gate does not close — do not read a green audit as full coverage:**
 
