@@ -98,6 +98,39 @@ absence from this list as evidence of safety.
 | **MyISAM storage engine** | Compatibility | The schema uses `ENGINE=MyISAM`. MySQL 8.0 needs `sql_mode=""` for the legacy column defaults — the Docker stack sets this. |
 | **Vendored lib** | Maintenance | The one in-tree vendored library is **semsol/arc2 3.1.0** (RDF/SPARQL), kept vendored on purpose: it carries local PHP-8 patches the upstream lacks (stock 3.1.0 fatals on `?output=n3`), so it is not a drop-in Composer package — see [`luna.lib/arc/VENDOR.txt`](../luna/luna.lib/arc/VENDOR.txt). The Composer dependencies are HTMLPurifier (input sanitiser) and league/commonmark (Markdown→HTML), both committed under `vendor/`. |
 
+## Dependency posture
+
+The Composer dependencies are audited **on every push and PR, and on a weekly schedule**
+(`.github/workflows/deps-audit.yml` → `composer audit --locked`). The schedule is the part that
+matters: this project's intended resting state is dormant, so a push-triggered check alone would
+fall silent exactly while advisory risk accumulates.
+
+**Audit as of 2026-08-01: clean.** No published advisory affects any of the nine locked packages
+at their pinned versions. Worth recording because the margin was thin — `league/commonmark` is
+pinned at **2.8.2**, and CVE-2026-33347 (embed-extension `allowed_domains` bypass) affects
+`>=2.3.0,<=2.8.1`. The pin sits one patch release the safe side of it.
+
+Three packages are one patch version behind upstream (`league/commonmark` 2.8.2→2.8.3,
+`nette/utils` v4.1.4→v4.1.5, `symfony/deprecation-contracts` v3.7.0→v3.7.1). No advisory is
+attached to any of them; these are hygiene, not exposure.
+
+**Two gaps this gate does not close — do not read a green audit as full coverage:**
+
+- **The vendored RDF library is invisible to it.** `luna/luna.lib/arc` (semsol/arc2 3.1.0 with
+  local PHP-8 patches) is not a Composer package, so **no advisory feed covers it and no tool
+  here will ever report on it**. It is also *not* confined to the triplestore profile, as its
+  placement under "Triplestore / SPARQL surface" might suggest: `lunaModel::dump()` calls its
+  RDF/XML, Turtle, N-Triples and RDF-JSON **serialisers** on the ordinary content-negotiation
+  output path, which is live on the public MySQL-only profile with `SPARQL_ENABLED=0`. The
+  exposure shape is serialisation of author-written content into RDF syntax — an escaping defect
+  there would mean triple injection into the Linked Data representation (integrity/spoofing on
+  the data surface), not code execution. Its Turtle **parser** is fed only `semantic/links.ttl`,
+  a curated file on disk, never remote input.
+- **GitHub disables scheduled workflows after ~60 days of repository inactivity** (it emails
+  first, and a click re-enables them). For a deliberately dormant repo that is a real failure
+  mode: the weekly audit is dormancy insurance that is itself subject to dormancy. If the repo
+  goes quiet for two months, confirm the schedule is still armed.
+
 ## Triplestore / SPARQL surface
 
 The RDF-native read/write loop (see [linked-data.md](linked-data.md)) adds a network surface

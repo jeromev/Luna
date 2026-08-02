@@ -1,0 +1,50 @@
+name: Dependency audit
+
+# Kept separate from ci.yml on purpose: this is the one check that must run when
+# *nothing has changed*. The code can sit untouched for months — that is the
+# intended resting state of this project — but the advisory database does not sit
+# still, so a push-triggered check alone would go quiet exactly when the risk is
+# accumulating. Hence the weekly schedule.
+#
+# Scope note: this audits the Composer dependencies (composer.lock) only. The
+# in-tree vendored RDF library (luna/luna.lib/arc, semsol/arc2 3.1.0 with local
+# PHP-8 patches) is NOT a Composer package and is covered by NO advisory feed —
+# nothing here or anywhere else will report on it. See docs/security.md.
+
+on:
+  push:
+    branches: [main, legacy]
+  pull_request:
+  schedule:
+    # Mondays, 06:17 UTC. Offset off the hour to avoid the scheduler's peak, when
+    # GitHub delays or drops queued cron runs.
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  composer-audit:
+    name: composer audit (locked)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Audit composer.lock against the published advisory database
+        run: |
+          # --locked audits the lock file directly: no install, no network fetch of
+          # packages, and it audits exactly what is committed under vendor/.
+          # --abandoned=report keeps "this package is unmaintained" informational —
+          # it is a maintenance signal, not a vulnerability, and failing on it would
+          # make the gate cry wolf. Security advisories still fail the job.
+          # safe.directory: the checkout is owned by the runner user, not the
+          # container's, so git refuses the repo and composer prints a "dubious
+          # ownership" block ahead of its real output. Harmless, but it is noise
+          # sitting exactly where the advisory table appears — silence it so a
+          # future reader is not scrolling past a scary-looking warning to find
+          # the verdict.
+          docker run --rm -v "$PWD":/app -w /app --entrypoint sh composer:2 -c '
+            set -e
+            git config --global --add safe.directory /app
+            composer audit --locked --no-interaction --abandoned=report'
