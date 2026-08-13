@@ -39,8 +39,12 @@ docker exec "$DB_CONTAINER" mysql -uroot -proot lunadb \
   || note "skipped throttle reset (no DB access; fine on a fresh stack)"
 
 echo "== smoke: public pages render =="
-for p in / /node /login; do
+# /node/9 (not bare /node): mod_node takes the nid from the path, so bare /node die()s on the
+# missing subdir and returns 200 with an empty body — a status-only check passes vacuously there.
+# Assert a non-empty body too, so "renders" means rendered.
+for p in / /node/9 /login; do
   c=$(code "$p"); [ "$c" = 200 ] && pass "GET $p -> 200" || fail "GET $p -> $c (expected 200)"
+  [ -n "$(body "$p")" ] && pass "GET $p -> non-empty body" || fail "GET $p -> 200 but empty body"
 done
 body / | grep -q "lunarSystem" && pass "home shows the site footer" || fail "home missing expected content"
 

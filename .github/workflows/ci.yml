@@ -58,3 +58,21 @@ jobs:
           echo "::error::app did not render seeded content"; docker compose logs --tail=80; exit 1
       - name: Run the smoke + security-regression suite
         run: BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" bash test/regression.sh
+      - name: Render-diff against the committed baseline
+        # The output-neutrality gate: every page type is re-rendered and compared byte-for-byte
+        # with test/render-baseline/, which is in the repo. This is what makes "the render is
+        # unchanged" an assertion about the change rather than about one machine. A diff here is
+        # information, not noise — inspect it, and if the new output is correct, re-capture with
+        # `make render-capture` and commit the baseline alongside the change that moved it.
+        run: BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" bash test/render_diff.sh check
+      - name: Save what CI actually rendered (only when the render-diff failed)
+        if: failure()
+        run: |
+          BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" \
+            BASELINE_DIR=render-actual bash test/render_diff.sh capture || true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: render-actual
+          path: render-actual/
+          if-no-files-found: ignore

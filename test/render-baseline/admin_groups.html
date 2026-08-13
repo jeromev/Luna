@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:luna="https://jeromev.github.io/LunarSystem/ontology#" xmlns:schema="https://schema.org/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:dc="http://purl.org/dc/elements/1.1/" lang="en-US" xml:lang="en-US">
+  <head profile="http://ns.inria.fr/grddl/rdfa/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Groups administration · My lunar Website</title>
+    <meta http-equiv="Content-Language" content="en-US" />
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+    <meta name="DC.Title" content="Groups administration · My lunar Website" lang="en-US" xml:lang="en-US" />
+    <meta name="DC.Type" content="text" />
+    <meta name="DC.Format" content="text/html" />
+    <meta name="DC.Identifier" content="http://localhost:8080" />
+    <meta name="DC.Language" scheme="RFC3066" content="en-US" />
+    <meta name="DC.Date" scheme="W3CDTF" content="" />
+    <link rel="stylesheet" type="text/css" media="all" href="/css/styles.css" />
+    <link rel="alternate" type="application/rdf+xml" href="/admin/admin_groups?output=xml" />
+    <script type="text/javascript" src="/js/luna.js"></script>
+  <script type="application/ld+json">
+{
+    "@context": "https://schema.org/",
+    "@type": "WebPage",
+    "@id": "http://localhost:8080/id/admin_groups",
+    "name": "Groups administration",
+    "url": "http://localhost:8080/admin/admin_groups",
+    "inLanguage": "en-US",
+    "isPartOf": {
+        "@id": "http://localhost:8080/id/admin"
+    }
+}
+</script>
+</head>
+  <body class="main">
+    <div id="Page" class="admin_groups">
+      <header id="Top">
+        <h1>
+          <a href="/">
+            <span id="SiteTitle">My lunar Website</span>
+          </a>
+        </h1>
+        <h1>
+          <a href="/admin/admin_groups">Groups administration</a>
+        </h1>
+      </header>
+      <hr />
+      <main id="Content">
+        <div id="Content-main">
+          <div class="box">
+            <form method="post" id="Addgroup" action="/admin/admin_groups">
+              <fieldset>
+                <h2 class="box-handle collapsed">Add a group</h2>
+                <div class="box-content off">
+                  <div class="fields">
+                    <div class="onecol">
+                      <label for="add_group_is_inactive" class=""><input name="add_group_is_inactive" id="add_group_is_inactive" type="checkbox" class="autowidth" value="1" /> Deactivate</label>
+                      <br />
+                    </div>
+                    <div class="col">
+                      <label for="add_group_lid" class="">
+                        <p class="label">Literal identifier</p>
+                        <input name="add_group_lid" id="add_group_lid" type="text" value="" />
+                      </label>
+                      <br />
+                      <br />
+                    </div>
+                    <div class="col">
+                      <label for="add_group_levels" class="">
+                        <p class="label">Accessible levels</p>
+                        <select size="4" id="add_group_levels" name="add_group_levels[]" multiple="multiple">
+                          <option label="Administration level" value="7">Administration level</option>
+                          <option label="Edition level" value="8">Edition level</option>
+                          <option label="Public level" value="6" selected="selected">Public level</option>
+                        </select>
+                      </label>
+                      <br />
+                    </div>
+                  </div>
+                  <div class="submit">
+                    <input type="hidden" name="mode" value="add" />
+                    <input type="submit" class="submit" name="submit" value="Add" />
+                  </div>
+                </div>
+              </fieldset>
+              <input type="hidden" name="csrf_token" value="CSRF" />
+            </form>
+          </div>
+          <div id="GroupsList" class="box">
+            <h2 class="box-handle expanded">Groups</h2>
+            <div class="box-content boxtable">
+              <table class="zebra">
+                <caption class="off">Groups</caption>
+                <thead>
+                  <tr>
+                    <th>name</th>
+                    <th>Accessible levels</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="active" data-href="/admin/admin_groups?group_nid=4">
+                    <td class="nowrap">
+                      <a href="/admin/admin_groups?group_nid=4">Administrators</a>
+                    </td>
+                    <td>Administration level, Edition level, Public level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_groups?group_nid=3">
+                    <td class="nowrap">
+                      <a href="/admin/admin_groups?group_nid=3">Anonymous</a>
+                    </td>
+                    <td>Public level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_groups?group_nid=5">
+                    <td class="nowrap">
+                      <a href="/admin/admin_groups?group_nid=5">Editors</a>
+                    </td>
+                    <td>Edition level, Public level</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="Bottom" class="box">
+          <div class="box-content">
+            <p>You are here: <a href="/admin/admin_groups">/admin/admin_groups</a><br />You are logged in as <strong>Admin Luna</strong> [<form method="post" class="logout-form" action="/logout"><input type="hidden" name="csrf_token" value="CSRF" /><button type="submit" class="linkbutton">Logout</button></form>] <br />Site powered by <a href="https://github.com/jeromev/LunarSystem">lunarSystem</a> VER</p>
+          </div>
+        </div>
+      </main>
+      <hr />
+      <nav id="Nav">
+        <h1 class="off">Navigation</h1>
+        <div id="SiteMap">
+          <h2 class="box-handle collapsed">Site map</h2>
+          <div class="box-content">
+            <ul class="tv">
+              <li>
+                <a href="/">Home</a>
+                <ul class="tv">
+                  <li>
+                    <a href="/admin">Administration</a>
+                    <ul class="tv">
+                      <li>
+                        <a href="/admin/admin_groups">Groups administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/journal">Journal</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_levels">Levels administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_mods">Modules administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_pages">Pages administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_users">Users administration</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="/edition">Edition</a>
+                    <ul class="tv">
+                      <li>
+                        <a href="/edition/edit_texts">Texts edition</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="/logout">Logout</a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div id="Options">
+          <h2 class="off">Languages</h2>
+          <ul class="langs">
+            <li>
+              <a class="on" href="/admin/admin_groups/?lang=en-US" title="English">English</a>
+            </li>
+            <li>
+              <a href="/admin/admin_groups/?lang=fr-FR" title="Français">Français</a>
+            </li>
+          </ul>
+          <h2 class="off">Output formats</h2>
+          <ul class="outputs">
+            <li>
+              <a class="on" href="/admin/admin_groups/?output=html" title="html">html</a>
+            </li>
+            <li>
+              <a href="/admin/admin_groups/?output=xml" title="xml">xml</a>
+            </li>
+            <li>
+              <a href="/admin/admin_groups/?output=turtle" title="turtle">turtle</a>
+            </li>
+            <li>
+              <a href="/admin/admin_groups/?output=json" title="json">json</a>
+            </li>
+            <li>
+              <a href="/admin/admin_groups/?output=n3" title="n3">n3</a>
+            </li>
+            <li>
+              <a href="/admin/admin_groups/?output=jsonld" title="jsonld">jsonld</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+  </body>
+</html>

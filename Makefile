@@ -27,10 +27,10 @@ test: ## Smoke + security-regression suite (run `docker compose up -d` first)
 test-authz: ## Delegated-admin privilege-escalation test (per-target authz; mutates DB, self-cleans)
 	BASE=$${BASE:-http://localhost:8080} bash test/delegated_admin.sh
 
-render-capture: ## Snapshot the normalised HTML/RDF render of every page type (baseline for the model retirement)
+render-capture: ## Re-snapshot every page type into the COMMITTED baseline (run when a diff is inspected and accepted)
 	BASE=$${BASE:-http://localhost:8080} bash test/render_diff.sh capture
 
-render-check: ## Re-render and assert byte-identical to the captured baseline (proves a change is output-neutral)
+render-check: ## Re-render and assert byte-identical to the committed baseline (proves a change is output-neutral; also runs in CI)
 	BASE=$${BASE:-http://localhost:8080} bash test/render_diff.sh check
 
 test-lockout: ## Admin-lockout guardrail test (self-demotion / last-admin / protected nodes; mutates DB, self-cleans)

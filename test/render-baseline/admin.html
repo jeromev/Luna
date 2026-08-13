@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:luna="https://jeromev.github.io/LunarSystem/ontology#" xmlns:schema="https://schema.org/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:dc="http://purl.org/dc/elements/1.1/" lang="en-US" xml:lang="en-US">
+  <head profile="http://ns.inria.fr/grddl/rdfa/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Administration · My lunar Website</title>
+    <meta http-equiv="Content-Language" content="en-US" />
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+    <meta name="DC.Title" content="Administration · My lunar Website" lang="en-US" xml:lang="en-US" />
+    <meta name="DC.Type" content="text" />
+    <meta name="DC.Format" content="text/html" />
+    <meta name="DC.Identifier" content="http://localhost:8080" />
+    <meta name="DC.Language" scheme="RFC3066" content="en-US" />
+    <meta name="DC.Date" scheme="W3CDTF" content="" />
+    <link rel="stylesheet" type="text/css" media="all" href="/css/styles.css" />
+    <link rel="alternate" type="application/rdf+xml" href="/admin?output=xml" />
+    <script type="text/javascript" src="/js/luna.js"></script>
+  <script type="application/ld+json">
+{
+    "@context": "https://schema.org/",
+    "@type": "WebPage",
+    "@id": "http://localhost:8080/id/admin",
+    "name": "Administration",
+    "url": "http://localhost:8080/admin",
+    "inLanguage": "en-US",
+    "isPartOf": {
+        "@id": "http://localhost:8080/id/root"
+    }
+}
+</script>
+</head>
+  <body class="main">
+    <div id="Page" class="admin">
+      <header id="Top">
+        <h1>
+          <a href="/">
+            <span id="SiteTitle">My lunar Website</span>
+          </a>
+        </h1>
+        <h1>
+          <a href="/admin">Administration</a>
+        </h1>
+      </header>
+      <hr />
+      <main id="Content">
+        <div id="Content-main">
+          <form method="post" action="/admin">
+            <div class="box">
+              <fieldset id="Config">
+                <h2 class="box-handle collapsed">Configuration</h2>
+                <div class="box-content off">
+                  <div class="fields">
+                    <div class="onecol">
+                      <label for="disable" class=""><input name="disable" id="disable" type="checkbox" class="autowidth" value="1" /> Disable the website</label>
+                    </div>
+                    <div class="col">
+                      <label for="sitename" class="">
+                        <p class="label">Website name</p>
+                        <input name="sitename" id="sitename" type="text" value="My lunar Website" />
+                      </label>
+                      <br />
+                      <label for="author" class="">
+                        <p class="label">author</p>
+                        <input name="author" id="author" type="text" value="Admin" />
+                      </label>
+                      <br />
+                      <label for="general_email" class="">
+                        <p class="label">General email</p>
+                        <input name="general_email" id="general_email" type="text" value="admin@mywebsite.org" />
+                      </label>
+                      <br />
+                      <label for="site_desc" class="">
+                        <p class="label">Website description</p>
+                        <textarea name="site_desc" id="site_desc" rows="80" cols="40">This is the description of my lunar website.</textarea>
+                      </label>
+                    </div>
+                    <div class="col">
+                      <label for="version" class="">
+                        <p class="label">Version</p>
+                        <input name="version" id="version" type="text" value="1" />
+                      </label>
+                      <br />
+                      <label for="startdate" class="">
+                        <p class="label">Start date</p>
+                        <input name="startdate" id="startdate" type="text" value="" />
+                      </label>
+                      <br />
+                      <label for="session_length" class="">
+                        <p class="label">session length</p>
+                        <input name="session_length" id="session_length" type="text" value="604800" />
+                      </label>
+                      <br />
+                      <label for="keywords" class="">
+                        <p class="label">[méta] Keywords</p>
+                        <textarea name="keywords" id="keywords" rows="80" cols="40"></textarea>
+                      </label>
+                    </div>
+                    <div class="col">
+                      <label for="timezone" class="">
+                        <p class="label">Time zone</p>
+                        <input name="timezone" id="timezone" type="text" value="1" />
+                      </label>
+                      <br />
+                      <label for="root_module" class="">
+                        <p class="label">Root module</p>
+                        <input name="root_module" id="root_module" type="text" value="" />
+                      </label>
+                      <br />
+                      <label for="langs" class="">
+                        <p class="label">Languages</p>
+                        <input name="langs" id="langs" type="text" value="en, fr" />
+                      </label>
+                      <br />
+                      <label for="disable_txt" class="">
+                        <p class="label">Deactivation text</p>
+                        <textarea name="disable_txt" id="disable_txt" rows="80" cols="40">&lt;p&gt;This website is temporarily closed. Please come back later.&lt;/p&gt;</textarea>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="submit">
+                    <input type="submit" class="submit" name="submit" value="Save" />
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+            <input type="hidden" name="csrf_token" value="CSRF" />
+          </form>
+          <div id="GroupsList" class="box">
+            <h2 class="box-handle collapsed">Groups</h2>
+            <div class="box-content boxtable off">
+              <table class="zebra">
+                <caption class="off">Groups</caption>
+                <thead>
+                  <tr>
+                    <th>name</th>
+                    <th>Accessible levels</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="active" data-href="/admin/admin_groups?group_nid=4">
+                    <td class="nowrap">
+                      <a href="/admin/admin_groups?group_nid=4">Administrators</a>
+                    </td>
+                    <td>Administration level, Edition level, Public level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_groups?group_nid=3">
+                    <td class="nowrap">
+                      <a href="/admin/admin_groups?group_nid=3">Anonymous</a>
+                    </td>
+                    <td>Public level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_groups?group_nid=5">
+                    <td class="nowrap">
+                      <a href="/admin/admin_groups?group_nid=5">Editors</a>
+                    </td>
+                    <td>Edition level, Public level</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div id="LevelsList" class="box">
+            <h2 class="box-handle collapsed">Levels</h2>
+            <div class="box-content boxtable off">
+              <table class="zebra">
+                <caption class="off">Levels</caption>
+                <thead>
+                  <tr>
+                    <th>name</th>
+                    <th>Groups admitted to this level</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="active" data-href="/admin/admin_levels?level_nid=7">
+                    <td class="nowrap">
+                      <a href="/admin/admin_levels?level_nid=7">Administration level</a>
+                    </td>
+                    <td>Administrators</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_levels?level_nid=8">
+                    <td class="nowrap">
+                      <a href="/admin/admin_levels?level_nid=8">Edition level</a>
+                    </td>
+                    <td>Administrators, Editors</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_levels?level_nid=6">
+                    <td class="nowrap">
+                      <a href="/admin/admin_levels?level_nid=6">Public level</a>
+                    </td>
+                    <td>Anonymous, Administrators, Editors</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div id="OnlineUsers" class="box">
+            <h2 class="box-handle expanded">Online users</h2>
+            <div class="box-content boxtable">
+              <table class="zebra">
+                <caption class="off">Online users</caption>
+                <thead>
+                  <tr>
+                    <th>Firstname</th>
+                    <th>Lastname</th>
+                    <th>email</th>
+                    <th>IP</th>
+                    <th>URL</th>
+                    <th>Last visit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Admin</td>
+                    <td>Luna</td>
+                    <td>
+                      <a href="/admin/admin_users?user_nid=1">admin@lunarsystem.local</a>
+                    </td>
+                    <td>IP</td>
+                    <td class="nowrap">
+                      <a href="/admin" title="admin">/admin</a>
+                    </td>
+                    <td class="nowrap">SEEN</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="Bottom" class="box">
+          <div class="box-content">
+            <p>You are here: <a href="/admin">/admin</a><br />You are logged in as <strong>Admin Luna</strong> [<form method="post" class="logout-form" action="/logout"><input type="hidden" name="csrf_token" value="CSRF" /><button type="submit" class="linkbutton">Logout</button></form>] <br />Site powered by <a href="https://github.com/jeromev/LunarSystem">lunarSystem</a> VER</p>
+          </div>
+        </div>
+      </main>
+      <hr />
+      <nav id="Nav">
+        <h1 class="off">Navigation</h1>
+        <div id="SiteMap">
+          <h2 class="box-handle collapsed">Site map</h2>
+          <div class="box-content">
+            <ul class="tv">
+              <li>
+                <a href="/">Home</a>
+                <ul class="tv">
+                  <li>
+                    <a href="/admin">Administration</a>
+                    <ul class="tv">
+                      <li>
+                        <a href="/admin/admin_groups">Groups administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/journal">Journal</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_levels">Levels administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_mods">Modules administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_pages">Pages administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_users">Users administration</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="/edition">Edition</a>
+                    <ul class="tv">
+                      <li>
+                        <a href="/edition/edit_texts">Texts edition</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="/logout">Logout</a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div id="Options">
+          <h2 class="off">Languages</h2>
+          <ul class="langs">
+            <li>
+              <a class="on" href="/admin/?lang=en-US" title="English">English</a>
+            </li>
+            <li>
+              <a href="/admin/?lang=fr-FR" title="Français">Français</a>
+            </li>
+          </ul>
+          <h2 class="off">Output formats</h2>
+          <ul class="outputs">
+            <li>
+              <a class="on" href="/admin/?output=html" title="html">html</a>
+            </li>
+            <li>
+              <a href="/admin/?output=xml" title="xml">xml</a>
+            </li>
+            <li>
+              <a href="/admin/?output=turtle" title="turtle">turtle</a>
+            </li>
+            <li>
+              <a href="/admin/?output=json" title="json">json</a>
+            </li>
+            <li>
+              <a href="/admin/?output=n3" title="n3">n3</a>
+            </li>
+            <li>
+              <a href="/admin/?output=jsonld" title="jsonld">jsonld</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+  </body>
+</html>

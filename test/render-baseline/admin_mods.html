@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:luna="https://jeromev.github.io/LunarSystem/ontology#" xmlns:schema="https://schema.org/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:dc="http://purl.org/dc/elements/1.1/" lang="en-US" xml:lang="en-US">
+  <head profile="http://ns.inria.fr/grddl/rdfa/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modules administration · My lunar Website</title>
+    <meta http-equiv="Content-Language" content="en-US" />
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+    <meta name="DC.Title" content="Modules administration · My lunar Website" lang="en-US" xml:lang="en-US" />
+    <meta name="DC.Type" content="text" />
+    <meta name="DC.Format" content="text/html" />
+    <meta name="DC.Identifier" content="http://localhost:8080" />
+    <meta name="DC.Language" scheme="RFC3066" content="en-US" />
+    <meta name="DC.Date" scheme="W3CDTF" content="" />
+    <link rel="stylesheet" type="text/css" media="all" href="/css/styles.css" />
+    <link rel="alternate" type="application/rdf+xml" href="/admin/admin_mods?output=xml" />
+    <script type="text/javascript" src="/js/luna.js"></script>
+  <script type="application/ld+json">
+{
+    "@context": "https://schema.org/",
+    "@type": "WebPage",
+    "@id": "http://localhost:8080/id/admin_mods",
+    "name": "Modules administration",
+    "url": "http://localhost:8080/admin/admin_mods",
+    "inLanguage": "en-US",
+    "isPartOf": {
+        "@id": "http://localhost:8080/id/admin"
+    }
+}
+</script>
+</head>
+  <body class="main">
+    <div id="Page" class="admin_mods">
+      <header id="Top">
+        <h1>
+          <a href="/">
+            <span id="SiteTitle">My lunar Website</span>
+          </a>
+        </h1>
+        <h1>
+          <a href="/admin/admin_mods">Modules administration</a>
+        </h1>
+      </header>
+      <hr />
+      <main id="Content">
+        <div id="Content-main">
+          <div class="box">
+            <form method="post" id="Addmod" action="/admin/admin_mods">
+              <fieldset>
+                <h2 class="box-handle collapsed">Add a module</h2>
+                <div class="box-content off">
+                  <div class="fields">
+                    <div class="onecol">
+                      <label for="add_mod_is_inactive" class=""><input name="add_mod_is_inactive" id="add_mod_is_inactive" type="checkbox" class="autowidth" value="1" /> Deactivate</label>
+                      <br />
+                    </div>
+                    <div class="col">
+                      <label for="add_mod_lid" class="">
+                        <p class="label">Literal identifier</p>
+                        <input name="add_mod_lid" id="add_mod_lid" type="text" value="" />
+                      </label>
+                      <br />
+                      <label for="add_mod_level" class="">
+                        <p class="label">Access level</p>
+                        <select size="1" id="add_mod_level" name="add_mod_level">
+                          <option label="Administration level" value="7">Administration level</option>
+                          <option label="Edition level" value="8">Edition level</option>
+                          <option label="Public level" value="6" selected="selected">Public level</option>
+                        </select>
+                      </label>
+                      <br />
+                    </div>
+                    <div class="col">
+                      <label for="add_mod_pages" class="large">
+                        <p class="label">Pages using the module</p>
+                        <select size="14" id="add_mod_pages" name="add_mod_pages[]" multiple="multiple">
+                          <option label="Administration" value="10">Administration</option>
+                          <option label="Edition" value="16">Edition</option>
+                          <option label="Groups administration" value="11">Groups administration</option>
+                          <option label="Home" value="9">Home</option>
+                          <option label="Journal" value="18">Journal</option>
+                          <option label="Levels administration" value="12">Levels administration</option>
+                          <option label="Login" value="19">Login</option>
+                          <option label="Logout" value="20">Logout</option>
+                          <option label="Modules administration" value="13">Modules administration</option>
+                          <option label="Node" value="32">Node</option>
+                          <option label="Pages administration" value="14">Pages administration</option>
+                          <option label="Texts edition" value="17">Texts edition</option>
+                          <option label="Users administration" value="15">Users administration</option>
+                        </select>
+                      </label>
+                      <br />
+                    </div>
+                  </div>
+                  <div class="submit">
+                    <input type="hidden" name="mode" value="add" />
+                    <input type="submit" class="submit" name="submit" value="Add" />
+                  </div>
+                </div>
+              </fieldset>
+              <input type="hidden" name="csrf_token" value="CSRF" />
+            </form>
+          </div>
+          <div id="ModsList" class="box">
+            <h2 class="box-handle expanded">Modules</h2>
+            <div class="box-content boxtable">
+              <table class="zebra">
+                <caption class="off">Modules</caption>
+                <thead>
+                  <tr>
+                    <th>name</th>
+                    <th>Access level</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="active" data-href="/admin/admin_mods?mod_nid=21">
+                    <td>
+                      <a href="/admin/admin_mods?mod_nid=21">Administration module</a>
+                    </td>
+                    <td>Administration level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_mods?mod_nid=29">
+                    <td>
+                      <a href="/admin/admin_mods?mod_nid=29">Connection module</a>
+                    </td>
+                    <td>Public level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_mods?mod_nid=22">
+                    <td>
+                      <a href="/admin/admin_mods?mod_nid=22">Groups administration module</a>
+                    </td>
+                    <td>Administration level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_mods?mod_nid=28">
+                    <td>
+                      <a href="/admin/admin_mods?mod_nid=28">Journal module</a>
+                    </td>
+                    <td>Administration level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_mods?mod_nid=23">
+                    <td>
+                      <a href="/admin/admin_mods?mod_nid=23">Levels administration module</a>
+                    </td>
+                    <td>Administration level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_mods?mod_nid=24">
+                    <td>
+                      <a href="/admin/admin_mods?mod_nid=24">Modules administration module</a>
+                    </td>
+                    <td>Administration level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_mods?mod_nid=31">
+                    <td>
+                      <a href="/admin/admin_mods?mod_nid=31">Node module</a>
+                    </td>
+                    <td>Public level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_mods?mod_nid=30">
+                    <td>
+                      <a href="/admin/admin_mods?mod_nid=30">Online users</a>
+                    </td>
+                    <td>Administration level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_mods?mod_nid=25">
+                    <td>
+                      <a href="/admin/admin_mods?mod_nid=25">Pages administration module</a>
+                    </td>
+                    <td>Administration level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_mods?mod_nid=27">
+                    <td>
+                      <a href="/admin/admin_mods?mod_nid=27">Texts edition module</a>
+                    </td>
+                    <td>Edition level</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_mods?mod_nid=26">
+                    <td>
+                      <a href="/admin/admin_mods?mod_nid=26">Users administration module</a>
+                    </td>
+                    <td>Administration level</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="Bottom" class="box">
+          <div class="box-content">
+            <p>You are here: <a href="/admin/admin_mods">/admin/admin_mods</a><br />You are logged in as <strong>Admin Luna</strong> [<form method="post" class="logout-form" action="/logout"><input type="hidden" name="csrf_token" value="CSRF" /><button type="submit" class="linkbutton">Logout</button></form>] <br />Site powered by <a href="https://github.com/jeromev/LunarSystem">lunarSystem</a> VER</p>
+          </div>
+        </div>
+      </main>
+      <hr />
+      <nav id="Nav">
+        <h1 class="off">Navigation</h1>
+        <div id="SiteMap">
+          <h2 class="box-handle collapsed">Site map</h2>
+          <div class="box-content">
+            <ul class="tv">
+              <li>
+                <a href="/">Home</a>
+                <ul class="tv">
+                  <li>
+                    <a href="/admin">Administration</a>
+                    <ul class="tv">
+                      <li>
+                        <a href="/admin/admin_groups">Groups administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/journal">Journal</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_levels">Levels administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_mods">Modules administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_pages">Pages administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_users">Users administration</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="/edition">Edition</a>
+                    <ul class="tv">
+                      <li>
+                        <a href="/edition/edit_texts">Texts edition</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="/logout">Logout</a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div id="Options">
+          <h2 class="off">Languages</h2>
+          <ul class="langs">
+            <li>
+              <a class="on" href="/admin/admin_mods/?lang=en-US" title="English">English</a>
+            </li>
+            <li>
+              <a href="/admin/admin_mods/?lang=fr-FR" title="Français">Français</a>
+            </li>
+          </ul>
+          <h2 class="off">Output formats</h2>
+          <ul class="outputs">
+            <li>
+              <a class="on" href="/admin/admin_mods/?output=html" title="html">html</a>
+            </li>
+            <li>
+              <a href="/admin/admin_mods/?output=xml" title="xml">xml</a>
+            </li>
+            <li>
+              <a href="/admin/admin_mods/?output=turtle" title="turtle">turtle</a>
+            </li>
+            <li>
+              <a href="/admin/admin_mods/?output=json" title="json">json</a>
+            </li>
+            <li>
+              <a href="/admin/admin_mods/?output=n3" title="n3">n3</a>
+            </li>
+            <li>
+              <a href="/admin/admin_mods/?output=jsonld" title="jsonld">jsonld</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+  </body>
+</html>
