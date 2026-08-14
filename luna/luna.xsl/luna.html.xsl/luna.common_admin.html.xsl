@@ -630,7 +630,7 @@
 								</td>
 								<td>
 									<xsl:for-each select="luna:mod">
-										<xsl:sort select="@rdf:resource"/>
+										<xsl:sort select="/rdf:RDF/luna:mod[@rdf:about = current()/@rdf:resource]/luna:lid"/>
 										<xsl:variable name="resource" select="@rdf:resource"/>
 										<xsl:value-of select="/rdf:RDF/luna:mod[@rdf:about = $resource]/schema:name"/>
 										<xsl:if test="not(position() = last())">
@@ -722,7 +722,7 @@
 								</td>
 								<td>
 									<xsl:for-each select="luna:level">
-										<xsl:sort select="@rdf:resource"/>
+										<xsl:sort select="/rdf:RDF/luna:level[@rdf:about = current()/@rdf:resource]/luna:lid"/>
 										<xsl:variable name="res" select="@rdf:resource"/>
 										<xsl:value-of select="/rdf:RDF/luna:level[@rdf:about = $res]/schema:name"/>
 										<xsl:if test="not(position() = last())">
@@ -814,7 +814,7 @@
 								</td>
 								<td>
 									<xsl:for-each select="luna:group">
-										<xsl:sort select="/rdf:RDF/luna:group[@rdf:about = @rdf:resource]/luna:lid"/>
+										<xsl:sort select="/rdf:RDF/luna:group[@rdf:about = current()/@rdf:resource]/luna:lid"/>
 										<xsl:variable name="resource" select="@rdf:resource"/>
 										<xsl:value-of select="/rdf:RDF/luna:group[@rdf:about = $resource]/schema:name"/>
 										<xsl:if test="not(position() = last())">
