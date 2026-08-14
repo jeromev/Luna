@@ -72,7 +72,7 @@ FP=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_users" -o "$FP"
 curl -s -b "$AJ" --data-urlencode submit=Add --data-urlencode mode=add \
   --data-urlencode add_user_email=delegated@test.local --data-urlencode add_user_firstname=Del \
   --data-urlencode add_user_lastname=Egate --data-urlencode add_user_password="$DPASS" \
-  --data-urlencode "add_user_groups[]=$GED" --data-urlencode "csrf_token=$(tok $FP)" "$BASE/admin/admin_users" -o /dev/null
+  --data-urlencode "add_user_groups[]=group_edition" --data-urlencode "csrf_token=$(tok $FP)" "$BASE/admin/admin_users" -o /dev/null
 DUID=$(sql "SELECT nid FROM luna_nodes WHERE lid='delegated@test.local';")
 [ -n "$DUID" ] && pass "created delegated user (group_edition, nid $DUID)" || { fail "could not create delegated user"; exit 1; }
 

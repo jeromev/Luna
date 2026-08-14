@@ -98,9 +98,9 @@ echo "--- lockout attempts (must be blocked) ---"
 
 # T1: strip group_admin from your own account, keeping only group_default
 post admin/admin_users --data-urlencode mode=modify --data-urlencode submit=Modify \
-  --data-urlencode "user_nid=$UADMIN" --data-urlencode "modify_item_nid=$UADMIN" \
+  --data-urlencode "user_lid=$ADMIN_EMAIL" --data-urlencode "modify_item_lid=$ADMIN_EMAIL" \
   --data-urlencode "modify_user_email=$ADMIN_EMAIL" --data-urlencode "modify_user_firstname=Admin" \
-  --data-urlencode "modify_user_lastname=Luna" --data-urlencode "modify_user_groups[]=$GDEF"
+  --data-urlencode "modify_user_lastname=Luna" --data-urlencode "modify_user_groups[]=group_default"
 [ "$(edge "$UADMIN" "$GADMIN")" -ge 2 ] \
   && pass "T1 self-removal from group_admin blocked (membership intact)" \
   || fail "T1 LOCKOUT: admin was removed from group_admin"
@@ -121,7 +121,7 @@ post admin/admin_mods --data-urlencode mode=modify --data-urlencode submit=Delet
 
 # T4: delete the last/own admin user
 post admin/admin_users --data-urlencode mode=modify --data-urlencode submit=Delete \
-  --data-urlencode "user_nid=$UADMIN" --data-urlencode "modify_item_nid=$UADMIN" \
+  --data-urlencode "user_lid=$ADMIN_EMAIL" --data-urlencode "modify_item_lid=$ADMIN_EMAIL" \
   --data-urlencode "modify_user_email=$ADMIN_EMAIL"
 [ "$(exists "$UADMIN")" -ge 1 ] \
   && pass "T4 deletion of the last admin user blocked" \
@@ -133,7 +133,7 @@ echo "--- controls (must succeed — guards must not over-block) ---"
 post admin/admin_users --data-urlencode submit=Add --data-urlencode mode=add \
   --data-urlencode add_user_email=throwaway@test.local --data-urlencode add_user_firstname=Throw \
   --data-urlencode add_user_lastname=Away --data-urlencode add_user_password="$TPASS" \
-  --data-urlencode "add_user_groups[]=$GDEF"
+  --data-urlencode "add_user_groups[]=group_default"
 TUID=$(sql "SELECT nid FROM luna_nodes WHERE lid='throwaway@test.local';")
 [ -n "$TUID" ] && pass "P1 ordinary user creation works" || fail "P1 could not create an ordinary user"
 
@@ -141,7 +141,7 @@ TUID=$(sql "SELECT nid FROM luna_nodes WHERE lid='throwaway@test.local';")
 #     so T2/T3/T4 'survived' verdicts are genuine blocks, not mis-routed no-ops)
 if [ -n "$TUID" ]; then
   post admin/admin_users --data-urlencode mode=modify --data-urlencode submit=Delete \
-    --data-urlencode "user_nid=$TUID" --data-urlencode "modify_item_nid=$TUID" \
+    --data-urlencode "user_lid=throwaway@test.local" --data-urlencode "modify_item_lid=throwaway@test.local" \
     --data-urlencode "modify_user_email=throwaway@test.local"
   [ -z "$(sql "SELECT nid FROM luna_nodes WHERE lid='throwaway@test.local';")" ] \
     && pass "P2 ordinary user deletion works (delete path intact)" \
@@ -155,13 +155,13 @@ fi
 post admin/admin_users --data-urlencode submit=Add --data-urlencode mode=add \
   --data-urlencode add_user_email=throwaway2@test.local --data-urlencode add_user_firstname=Throw \
   --data-urlencode add_user_lastname=Away2 --data-urlencode add_user_password="$TPASS" \
-  --data-urlencode "add_user_groups[]=$GDEF"
+  --data-urlencode "add_user_groups[]=group_default"
 TUID2=$(sql "SELECT nid FROM luna_nodes WHERE lid='throwaway2@test.local';")
 [ -n "$TUID2" ] && pass "P4a second ordinary user created" || fail "P4a could not create the second user"
 
 if [ -n "$TUID2" ]; then
   post admin/admin_users --data-urlencode submit=Delete --data-urlencode mode=delete \
-    --data-urlencode "user_nid=$TUID2" --data-urlencode "modify_item_nid=$TUID2" \
+    --data-urlencode "user_lid=throwaway2@test.local" --data-urlencode "modify_item_lid=throwaway2@test.local" \
     --data-urlencode "modify_user_email=throwaway2@test.local" \
     --data-urlencode modify_user_firstname=Throw --data-urlencode modify_user_lastname=Away2
   [ -z "$(sql "SELECT nid FROM luna_nodes WHERE lid='throwaway2@test.local';")" ] \

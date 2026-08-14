@@ -47,40 +47,40 @@
       <main id="Content">
         <div id="Content-main">
           <div class="box">
-            <form method="post" id="Adduser" action="/admin/admin_users">
+            <form method="post" id="Modifyuser" action="/admin/admin_users">
               <fieldset>
-                <h2 class="box-handle collapsed">Add a user</h2>
-                <div class="box-content off">
+                <h2 class="box-handle expanded">Modify the user <em>Admin Luna</em></h2>
+                <div class="box-content">
                   <div class="fields">
                     <div class="onecol">
-                      <label for="add_user_is_inactive" class=""><input name="add_user_is_inactive" id="add_user_is_inactive" type="checkbox" class="autowidth" value="1" /> Deactivate</label>
+                      <label for="modify_user_is_inactive" class=""><input name="modify_user_is_inactive" id="modify_user_is_inactive" type="checkbox" class="autowidth" value="1" /> Deactivate</label>
                     </div>
                     <div class="col">
-                      <label for="add_user_firstname" class="">
+                      <label for="modify_user_firstname" class="">
                         <span class="label">Firstname</span>
-                        <input name="add_user_firstname" id="add_user_firstname" type="text" value="" />
+                        <input name="modify_user_firstname" id="modify_user_firstname" type="text" value="Admin" />
                       </label>
                       <br />
-                      <label for="add_user_lastname" class="">
+                      <label for="modify_user_lastname" class="">
                         <span class="label">Lastname</span>
-                        <input name="add_user_lastname" id="add_user_lastname" type="text" value="" />
+                        <input name="modify_user_lastname" id="modify_user_lastname" type="text" value="Luna" />
                       </label>
                       <br />
-                      <label for="add_user_email" class="">
+                      <label for="modify_user_email" class="">
                         <span class="label">email</span>
-                        <input name="add_user_email" id="add_user_email" type="text" value="" />
+                        <input name="modify_user_email" id="modify_user_email" type="text" value="admin@luna.local" />
                       </label>
                       <br />
-                      <label for="add_user_password" class="">
+                      <label for="modify_user_password" class="">
                         <span class="label">password</span>
-                        <input name="add_user_password" id="add_user_password" type="password" value="" />
+                        <input name="modify_user_password" id="modify_user_password" type="password" value="" />
                       </label>
                     </div>
                     <div class="col">
-                      <label for="add_user_groups" class="">
+                      <label for="modify_user_groups" class="">
                         <span class="label">groups</span>
-                        <select size="4" id="add_user_groups" name="add_user_groups[]" multiple="multiple">
-                          <option label="Administrators" value="group_admin">Administrators</option>
+                        <select size="4" id="modify_user_groups" name="modify_user_groups[]" multiple="multiple">
+                          <option label="Administrators" value="group_admin" selected="selected">Administrators</option>
                           <option label="Anonymous" value="group_default" selected="selected">Anonymous</option>
                           <option label="Editors" value="group_edition">Editors</option>
                         </select>
@@ -88,67 +88,16 @@
                     </div>
                   </div>
                   <div class="submit">
-                    <input type="hidden" name="mode" value="add" />
-                    <input type="submit" class="submit" name="submit" value="Add" />
+                    <input type="hidden" name="mode" value="modify" />
+                    <input type="hidden" name="user_lid" value="admin@luna.local" />
+                    <input type="hidden" name="modify_item_lid" value="admin@luna.local" />
+                    <input type="submit" class="submit" name="submit" value="Modify" />
+                    <input type="submit" class="submit warning" name="submit" value="Delete" data-confirm="Are you sure you want to delete this user?" />
                   </div>
                 </div>
               </fieldset>
               <input type="hidden" name="csrf_token" value="CSRF" />
             </form>
-          </div>
-          <div id="UsersList" class="box">
-            <h2 class="box-handle expanded">Users</h2>
-            <div class="box-content boxtable">
-              <table class="zebra">
-                <caption class="off">Users</caption>
-                <thead>
-                  <tr>
-                    <td colspan="5">
-                      <div class="pagination"><a class="first" href="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="First page">⇐</a> <a class="prev" href="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="Previous page">←</a> Page: <select name="pagination" size="1" class="autowidth" aria-label="Page: " data-navigate="1"><option label="1" value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" selected="selected">1</option></select>/1 <a class="next" href="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="Next page">→</a> <a class="last" href="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="Last page">⇒</a> Elements per page: <select name="perpage" size="1" class="autowidth" aria-label="Elements per page: " data-navigate="1"><option value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=10">10</option><option selected="selected" value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20">20</option><option value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=30">30</option><option value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=40">40</option><option value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=50">50</option><option value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=60">60</option><option value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=70">70</option><option value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=80">80</option><option value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=90">90</option><option value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=100">100</option><option value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=150">150</option><option value="/admin/admin_users?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=200">200</option></select></div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <a href="/admin/admin_users?order_by=firstname&amp;order_dir=ASC&amp;start=0">Firstname</a>
-                    </th>
-                    <th>
-                      <a href="/admin/admin_users?order_by=lastname&amp;order_dir=ASC&amp;start=0">Lastname</a>
-                    </th>
-                    <th>
-                      <a href="/admin/admin_users?order_by=email&amp;order_dir=ASC&amp;start=0">email</a>
-                    </th>
-                    <th>
-                      <a href="/admin/admin_users?order_by=regis_time&amp;order_dir=DESC&amp;start=0">Registration</a>
-                    </th>
-                    <th>
-                      <a href="/admin/admin_users?order_by=last_time&amp;order_dir=DESC&amp;start=0">
-                        <strong>Last visit</strong>
-                      </a>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr class="active" data-href="/admin/admin_users?user_lid=admin@luna.local">
-                    <td>Admin</td>
-                    <td>Luna</td>
-                    <td>
-                      <a href="/admin/admin_users?user_lid=admin@luna.local">admin@luna.local</a>
-                    </td>
-                    <td class="nowrap">SEEN</td>
-                    <td class="nowrap">SEEN</td>
-                  </tr>
-                  <tr class="active inactive" data-href="/admin/admin_users?user_lid=guest">
-                    <td>guest</td>
-                    <td></td>
-                    <td>
-                      <a href="/admin/admin_users?user_lid=guest">guest</a>
-                    </td>
-                    <td class="nowrap">SEEN</td>
-                    <td class="nowrap">SEEN</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
           </div>
         </div>
         <div id="Bottom" class="box">

@@ -57,7 +57,7 @@
 					<tbody>
 						<xsl:variable name="admin_users_url" select="/rdf:RDF/schema:WebPage[luna:lid = 'admin_users']/luna:alias"/>
 						<xsl:for-each select="/rdf:RDF/foaf:Person">
-							<xsl:variable name="user_nid" select="schema:identifier"/>
+							<xsl:variable name="user_lid" select="luna:lid"/>
 							<tr>
 								<td><xsl:value-of select="foaf:firstName"/></td>
 								<td><xsl:value-of select="foaf:surName"/></td>
@@ -67,8 +67,8 @@
 											<xsl:call-template name="link">
 												<xsl:with-param name="alias" select="/rdf:RDF/schema:WebPage[luna:lid = 'admin_users']/luna:alias"/>
 												<xsl:with-param name="options">
-													<xsl:text>user_nid=</xsl:text>
-													<xsl:value-of select="schema:identifier"/>
+													<xsl:text>user_lid=</xsl:text>
+													<xsl:value-of select="luna:lid"/>
 												</xsl:with-param>
 											</xsl:call-template>
 										</xsl:attribute>
@@ -518,8 +518,8 @@
 									<xsl:call-template name="link">
 										<xsl:with-param name="alias" select="/rdf:RDF/schema:WebPage[schema:identifier = $masternodenid]/luna:alias"/>
 										<xsl:with-param name="options">
-											<xsl:text>user_nid=</xsl:text>
-											<xsl:value-of select="schema:identifier"/>
+											<xsl:text>user_lid=</xsl:text>
+											<xsl:value-of select="luna:lid"/>
 										</xsl:with-param>
 									</xsl:call-template>
 									<xsl:call-template name="onchange4"/>
@@ -533,8 +533,8 @@
 											<xsl:call-template name="link">
 												<xsl:with-param name="alias" select="/rdf:RDF/schema:WebPage[schema:identifier = $masternodenid]/luna:alias"/>
 												<xsl:with-param name="options">
-													<xsl:text>user_nid=</xsl:text>
-													<xsl:value-of select="schema:identifier"/>
+													<xsl:text>user_lid=</xsl:text>
+													<xsl:value-of select="luna:lid"/>
 												</xsl:with-param>
 											</xsl:call-template>
 										</xsl:attribute>

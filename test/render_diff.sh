@@ -106,6 +106,7 @@ sitemap|guest|/sitemap.xml?lang=en-US
 robots|guest|/robots.txt?lang=en-US
 data_root|guest|/data/root?lang=en-US
 admin_users|admin|/admin/admin_users?lang=en-US
+admin_users_edit|admin|/admin/admin_users?user_lid=admin@luna.local&lang=en-US
 admin_groups|admin|/admin/admin_groups?lang=en-US
 admin_groups_edit|admin|/admin/admin_groups?group_lid=group_edition&lang=en-US
 admin_levels|admin|/admin/admin_levels?lang=en-US
@@ -117,6 +118,7 @@ home_admin|admin|/?lang=en-US
 home_fr|guest|/?lang=fr-FR
 login_fr|guest|/login?lang=fr-FR
 admin_users_fr|admin|/admin/admin_users?lang=fr-FR
+admin_users_edit_fr|admin|/admin/admin_users?user_lid=admin@luna.local&lang=fr-FR
 admin_groups_fr|admin|/admin/admin_groups?lang=fr-FR
 admin_groups_edit_fr|admin|/admin/admin_groups?group_lid=group_edition&lang=fr-FR
 admin_levels_fr|admin|/admin/admin_levels?lang=fr-FR

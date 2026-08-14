@@ -17,11 +17,11 @@
 	<xsl:include href="./luna.header.html.xsl"/>
 	<xsl:include href="./luna.common_admin.html.xsl"/>
 
-	<xsl:variable name="modify_item_nid"><xsl:value-of select="/rdf:RDF/ui:data[ui:lid = 'modify_item_nid']/ui:value"/></xsl:variable>
+	<xsl:variable name="modify_item_lid"><xsl:value-of select="/rdf:RDF/ui:data[ui:lid = 'modify_item_lid']/ui:value"/></xsl:variable>
 
 	<xsl:template name="page">
 		<xsl:if test="/rdf:RDF/luna:mod[luna:lid = $mod_lid]/luna:is_loaded = '1'">
-			<xsl:if test="$modify_item_nid = ''">
+			<xsl:if test="$modify_item_lid = ''">
 				<div class="box">
 					<form method="post" id="Adduser">
 						<xsl:attribute name="action"><xsl:value-of select="$pageurl"/></xsl:attribute>
@@ -81,11 +81,12 @@
 										<xsl:call-template name="forminput">
 											<xsl:with-param name="name">add_user_groups</xsl:with-param>
 											<xsl:with-param name="type">select</xsl:with-param>
+											<xsl:with-param name="option-key">lid</xsl:with-param>
 											<xsl:with-param name="label"><xsl:value-of select="/rdf:RDF/ui:vocabulary[ui:lid = 'groups']/ui:value"/></xsl:with-param>
 											<xsl:with-param name="multiple">yes</xsl:with-param>
 											<xsl:with-param name="size"><xsl:value-of select="count(/rdf:RDF/luna:group)"/></xsl:with-param>
 											<xsl:with-param name="foreach" select="/rdf:RDF/luna:group"/>
-											<xsl:with-param name="required" select="/rdf:RDF/node()[luna:lid = 'group_default']/schema:identifier"/>
+											<xsl:with-param name="required" select="/rdf:RDF/node()[luna:lid = 'group_default']/luna:lid"/>
 										</xsl:call-template>
 									</div>
 								</div>
@@ -102,7 +103,7 @@
 				</div>
 				<xsl:call-template name="userslist"/>
 			</xsl:if>
-			<xsl:if test="not($modify_item_nid = '')">
+			<xsl:if test="not($modify_item_lid = '')">
 			<div class="box">
 				<form method="post" id="Modifyuser">
 					<xsl:attribute name="action"><xsl:value-of select="$pageurl"/></xsl:attribute>
@@ -110,7 +111,7 @@
 						<h2 class="box-handle expanded">
 							<xsl:value-of select="/rdf:RDF/ui:vocabulary[ui:lid = 'Modify the user']/ui:value"/>
 							<xsl:text> </xsl:text>
-							<em><xsl:value-of select="/rdf:RDF/foaf:Person[schema:identifier = $modify_item_nid]/foaf:firstName"/><xsl:text> </xsl:text><xsl:value-of select="/rdf:RDF/foaf:Person[schema:identifier = $modify_item_nid]/foaf:surName"/></em>
+							<em><xsl:value-of select="/rdf:RDF/foaf:Person[luna:lid = $modify_item_lid]/foaf:firstName"/><xsl:text> </xsl:text><xsl:value-of select="/rdf:RDF/foaf:Person[luna:lid = $modify_item_lid]/foaf:surName"/></em>
 						</h2>
 						<div class="box-content">
 							<div class="fields">
@@ -121,7 +122,7 @@
 										<xsl:with-param name="label"><xsl:value-of select="/rdf:RDF/ui:vocabulary[ui:lid = 'Deactivate']/ui:value"/></xsl:with-param>
 										<xsl:with-param name="default-value">
 											<xsl:choose>
-												<xsl:when test="/rdf:RDF/foaf:Person[schema:identifier = $modify_item_nid]/luna:isActive = '1'">
+												<xsl:when test="/rdf:RDF/foaf:Person[luna:lid = $modify_item_lid]/luna:isActive = '1'">
 													<xsl:text>0</xsl:text>
 												</xsl:when>
 												<xsl:otherwise>
@@ -135,13 +136,13 @@
 									<xsl:call-template name="forminput">
 										<xsl:with-param name="name">modify_user_firstname</xsl:with-param>
 										<xsl:with-param name="label"><xsl:value-of select="/rdf:RDF/ui:vocabulary[ui:lid = 'firstname']/ui:value"/></xsl:with-param>
-										<xsl:with-param name="default-value"><xsl:value-of select="/rdf:RDF/foaf:Person[schema:identifier = $modify_item_nid]/foaf:firstName"/></xsl:with-param>
+										<xsl:with-param name="default-value"><xsl:value-of select="/rdf:RDF/foaf:Person[luna:lid = $modify_item_lid]/foaf:firstName"/></xsl:with-param>
 									</xsl:call-template>
 									<br/>
 									<xsl:call-template name="forminput">
 										<xsl:with-param name="name">modify_user_lastname</xsl:with-param>
 										<xsl:with-param name="label"><xsl:value-of select="/rdf:RDF/ui:vocabulary[ui:lid = 'lastname']/ui:value"/></xsl:with-param>
-										<xsl:with-param name="default-value"><xsl:value-of select="/rdf:RDF/foaf:Person[schema:identifier = $modify_item_nid]/foaf:surName"/></xsl:with-param>
+										<xsl:with-param name="default-value"><xsl:value-of select="/rdf:RDF/foaf:Person[luna:lid = $modify_item_lid]/foaf:surName"/></xsl:with-param>
 									</xsl:call-template>
 									<br/>
 									<xsl:call-template name="forminput">
@@ -150,7 +151,7 @@
 										<xsl:with-param name="default-value">
 											<xsl:call-template name="cutstring">
 												<xsl:with-param name="string">
-													<xsl:value-of select="/rdf:RDF/foaf:Person[schema:identifier = $modify_item_nid]/foaf:mbox/@rdf:resource"/>
+													<xsl:value-of select="/rdf:RDF/foaf:Person[luna:lid = $modify_item_lid]/foaf:mbox/@rdf:resource"/>
 												</xsl:with-param>
 												<xsl:with-param name="length">8</xsl:with-param>
 												<xsl:with-param name="before">1</xsl:with-param>
@@ -168,23 +169,24 @@
 									<xsl:call-template name="forminput">
 										<xsl:with-param name="name">modify_user_groups</xsl:with-param>
 										<xsl:with-param name="type">select</xsl:with-param>
+										<xsl:with-param name="option-key">lid</xsl:with-param>
 										<xsl:with-param name="label"><xsl:value-of select="/rdf:RDF/ui:vocabulary[ui:lid = 'groups']/ui:value"/></xsl:with-param>
 										<xsl:with-param name="multiple">yes</xsl:with-param>
 										<xsl:with-param name="size">
 											<xsl:value-of select="count(/rdf:RDF/luna:group)"/>
 										</xsl:with-param>
 										<xsl:with-param name="foreach" select="/rdf:RDF/luna:group"/>
-										<xsl:with-param name="default-value" select="/rdf:RDF/foaf:Person[schema:identifier = $modify_item_nid]/luna:group"/>
+										<xsl:with-param name="default-value" select="/rdf:RDF/foaf:Person[luna:lid = $modify_item_lid]/luna:group"/>
 									</xsl:call-template>
 								</div>
 							</div>
 							<div class="submit">
 								<input type="hidden" name="mode" value="modify"/>
-								<input type="hidden" name="user_nid">
-									<xsl:attribute name="value"><xsl:value-of select="$modify_item_nid"/></xsl:attribute>
+								<input type="hidden" name="user_lid">
+									<xsl:attribute name="value"><xsl:value-of select="$modify_item_lid"/></xsl:attribute>
 								</input>
-								<input type="hidden" name="modify_item_nid">
-									<xsl:attribute name="value"><xsl:value-of select="$modify_item_nid"/></xsl:attribute>
+								<input type="hidden" name="modify_item_lid">
+									<xsl:attribute name="value"><xsl:value-of select="$modify_item_lid"/></xsl:attribute>
 								</input>
 								<input type="submit" class="submit" name="submit">
 									<xsl:attribute name="value"><xsl:value-of select="/rdf:RDF/ui:vocabulary[ui:lid = 'Modify']/ui:value"/></xsl:attribute>

@@ -924,6 +924,13 @@ class lunaModel {
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['rdf'].'type'][0]['value'] = $this->conf['ns']['foaf'].'Person';
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['rdf'].'type'][0]['type'] = 'uri';
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'nid'][0]['value'] = $user['nid'];
+			// The user's slug, which for this type IS the email: load_users() selects it as
+			// `nu.lid as email`. Every other node type has carried luna:lid since 0.9.3-alpha;
+			// Person was the one that did not, so a user was the one node the graph described
+			// without ever stating the name it is addressed by — and get_node_from_slug(), which
+			// matches on luna:lid, could not resolve a user at all. The value is already public
+			// on this node as foaf:mbox, so stating it adds no disclosure.
+			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'lid'][0]['value'] = $user['email'];
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'ip'][0]['value'] = $user['session_ip'] ?? '';
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'isActive'][0]['value'] = $user['is_active'];
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'is_guest'][0]['value'] = $user['email'] == ANONYMOUS ? '1' : '0';

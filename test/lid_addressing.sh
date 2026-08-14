@@ -35,9 +35,10 @@
 # escalation guard still FIRES (by its message) rather than the attempt merely failing to
 # resolve — see the comment there.
 #
-# SCREENS COVERED SO FAR: admin_groups. The rest still address by nid and are converted one
-# release at a time; this file grows with them, and the nid-free sweep in L1 is deliberately
-# scoped to the converted screen rather than the whole admin, so it cannot pass vacuously.
+# SCREENS COVERED SO FAR: admin_groups, admin_users. The rest still address by nid and are
+# converted one release at a time; this file grows with them, and the nid-free sweeps (L1b, L6b)
+# are deliberately scoped to the converted screen rather than to the whole admin, so they cannot
+# pass vacuously while an unconverted screen still emits integers.
 #
 #   BASE=http://localhost:8080 test/lid_addressing.sh
 #
@@ -87,9 +88,20 @@ GP=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_groups?group_lid=group_edition
 grep -q 'name="modify_item_lid"' "$GP" \
   && pass "L3 ?group_lid= reaches the modify form" \
   || fail "L3 ?group_lid= did not reach the modify form"
-grep -q 'value="group_edition"' "$GP" \
+grep -q 'name="modify_item_lid" value="group_edition"' "$GP" \
   && pass "L3b the form is addressed by the lid it was asked for" \
   || fail "L3b the form does not carry the requested lid"
+
+# The members checkbox column, which is its own control and was NOT covered when this screen was
+# converted: it renders one checkbox per member carrying that user's lid. 0.9.10-alpha shipped it
+# emitting name="modify_users_list[]" value="" — luna:lid was absent from foaf:Person, so the
+# lookup resolved to nothing and the batch action posted an empty identifier. Nothing caught it
+# because that baseline was NEW, and a new baseline is captured rather than diffed, so no reader
+# is forced past it. Assert the control carries an actual lid, not merely that it exists.
+GA=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_groups?group_lid=group_admin&lang=en-US" -o "$GA"
+grep -qE 'name="modify_users_list\[[^]]+\]" value="[^"]+"' "$GA" \
+  && pass "L3c the members checkbox carries a member's lid" \
+  || fail "L3c the members checkbox carries an empty identifier"
 
 # --- L4: a lid-addressed save round-trips ---
 # Grant level_admin, assert the database really changed, then put it back. The revert is not
@@ -133,6 +145,49 @@ echo "$RESP2" | grep -qiE 'has been modified' \
   && pass "L5b an unresolvable lid changed nothing" \
   || fail "L5b an unresolvable lid changed the stored level set"
 
-rm -f "$AJ" "$AP" "$LP" "$GP" "$GP2" "$GP3"
+echo "== admin_users =="
+UP=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_users?lang=en-US" -o "$UP"
+
+grep -q "admin_users?user_lid=$ADMIN_EMAIL" "$UP" \
+  && pass "L6 the users list links by lid" \
+  || fail "L6 the users list does not link by lid"
+grep -qE 'admin_users\?user_nid=' "$UP" \
+  && fail "L6b a ?user_nid= link survives on the users list" \
+  || pass "L6b no ?user_nid= link survives on the users list"
+grep -q '<option label="Administrators" value="group_admin"' "$UP" \
+  && pass "L7 the groups picker is keyed by lid" \
+  || fail "L7 the groups picker is not keyed by lid"
+
+UE=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_users?user_lid=$ADMIN_EMAIL&lang=en-US" -o "$UE"
+grep -q "name=\"user_lid\" value=\"$ADMIN_EMAIL\"" "$UE" \
+  && pass "L8 ?user_lid= reaches the modify form, addressed by that lid" \
+  || fail "L8 ?user_lid= did not reach the modify form"
+
+# L9: a lid-addressed user save round-trips. The surname is the safe field to move — the email
+# is the lid and update() refuses slug changes, and the group set is what the lockout guards
+# watch, so neither is a field a round-trip probe should touch.
+NAME_BEFORE=$(sql "SELECT lastname FROM luna_users u JOIN luna_nodes n ON u.nid = n.nid WHERE n.lid = '$ADMIN_EMAIL';")
+curl -s -b "$AJ" --data-urlencode mode=modify --data-urlencode submit=Modify \
+  --data-urlencode "user_lid=$ADMIN_EMAIL" --data-urlencode "modify_item_lid=$ADMIN_EMAIL" \
+  --data-urlencode "modify_user_email=$ADMIN_EMAIL" --data-urlencode "modify_user_firstname=Admin" \
+  --data-urlencode "modify_user_lastname=LidProbe" --data-urlencode "modify_user_groups[]=group_admin" \
+  --data-urlencode "modify_user_groups[]=group_default" --data-urlencode "csrf_token=$(tok $UE)" \
+  "$BASE/admin/admin_users?lang=en-US" -o /dev/null
+[ "$(sql "SELECT lastname FROM luna_users u JOIN luna_nodes n ON u.nid = n.nid WHERE n.lid = '$ADMIN_EMAIL';")" = "LidProbe" ] \
+  && pass "L9 a lid-addressed user save reached the database" \
+  || fail "L9 the user save did NOT reach the database — resolution dropped the user"
+# put the name back through the same path
+UE2=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_users?user_lid=$ADMIN_EMAIL&lang=en-US" -o "$UE2"
+curl -s -b "$AJ" --data-urlencode mode=modify --data-urlencode submit=Modify \
+  --data-urlencode "user_lid=$ADMIN_EMAIL" --data-urlencode "modify_item_lid=$ADMIN_EMAIL" \
+  --data-urlencode "modify_user_email=$ADMIN_EMAIL" --data-urlencode "modify_user_firstname=Admin" \
+  --data-urlencode "modify_user_lastname=$NAME_BEFORE" --data-urlencode "modify_user_groups[]=group_admin" \
+  --data-urlencode "modify_user_groups[]=group_default" --data-urlencode "csrf_token=$(tok $UE2)" \
+  "$BASE/admin/admin_users?lang=en-US" -o /dev/null
+[ "$(sql "SELECT lastname FROM luna_users u JOIN luna_nodes n ON u.nid = n.nid WHERE n.lid = '$ADMIN_EMAIL';")" = "$NAME_BEFORE" ] \
+  && pass "L9b the surname is back to what it was (suite is self-cleaning)" \
+  || fail "L9b the surname was left as the probe value"
+
+rm -f "$AJ" "$AP" "$LP" "$GP" "$GA" "$GP2" "$GP3" "$UP" "$UE" "$UE2"
 echo
 if [ "$fails" -eq 0 ]; then echo "LID ADDRESSING HOLDS"; exit 0; else echo "$fails CHECK(S) FAILED"; exit 1; fi
