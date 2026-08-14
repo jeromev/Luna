@@ -91,10 +91,19 @@ CREATE TABLE `luna_texts` (
   `id` int(11) unsigned NOT NULL auto_increment,
   `nid` int(11) unsigned NOT NULL default '0',
   `title` tinytext,
-  `lang` char(2) default NULL,
+  -- A text node holds ONE row per language. That was always the intent — the column exists, the
+  -- editor posts it, the RDF projection reads it — but nothing said so, and every multilingual
+  -- defect followed from the silence: the editor's UPDATE matched on nid alone and rewrote every
+  -- language at once, and the reader keyed rows by nid so the last one silently won. The invariant
+  -- is stated here now, where it cannot be forgotten by a caller. NOT NULL matters as much as the
+  -- key: MySQL permits unlimited NULLs in a UNIQUE index, so a nullable lang would leave the same
+  -- hole open. Existing installs: bin/migrate-texts.php normalises and applies this idempotently.
+  `lang` char(2) NOT NULL default 'en',
   `content` longtext,
   PRIMARY KEY  (`id`),
-  KEY `nid` (`nid`),
+  -- (nid, lang) is the row's identity. `KEY nid` is gone, not lost: it is the leftmost prefix of
+  -- this index, so nid-only lookups still use it.
+  UNIQUE KEY `nid_lang` (`nid`,`lang`),
   FULLTEXT KEY `content` (`content`,`title`)
 ) ENGINE=MyISAM;
 

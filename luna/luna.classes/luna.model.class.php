@@ -709,22 +709,46 @@ class lunaModel {
 	public function load_texts_sparql(int $page_nid): array {
 		$base = rtrim(luna::$site_uri, '/');
 		$pageuri = $base.'/id/'.rawurlencode(defined('PAGELID') ? PAGELID : '');
+		// The FILTERs correlate the tags, and they are not optional politeness: a text now carries
+		// one headline AND one body AND one luna:content per language on the same subject, so an
+		// uncorrelated join returns the cross-product and would happily hand back an English
+		// headline attached to a French body. Matching lang() across the three keeps a row whole.
+		// The `lang(?title) = ""` arm keeps pre-migration untagged data readable during a resync.
 		$q = 'PREFIX schema: <https://schema.org/> '
-		   .'PREFIX luna: <'.self::LUNA_NS.'> SELECT ?text ?title ?body ?content ?lang ?tident WHERE { '
+		   .'PREFIX luna: <'.self::LUNA_NS.'> SELECT ?text ?title ?body ?content ?tident WHERE { '
 		   .'<'.$pageuri.'> schema:hasPart ?text . '
 		   .'?text a schema:Article ; schema:identifier ?tident ; '
 		   .'schema:headline ?title ; schema:articleBody ?body . '
-		   .'OPTIONAL { ?text schema:inLanguage ?lang } OPTIONAL { ?text luna:content ?content } }';
+		   .'FILTER(lang(?title) = lang(?body)) '
+		   .'OPTIONAL { ?text luna:content ?content FILTER(lang(?content) = lang(?title)) } }';
 		$rows = lunaGraph::sparql_select($q);
-		$items = [];
+		// Titles and bodies are language-tagged literals now, so one text answers once per
+		// translation and the bindings carry an xml:lang. Resolve with the SAME ladder the SQL path
+		// uses (lunaTools::preferred_content_languages()), because a page that answered one
+		// language from MySQL and another from the triplestore would be a worse bug than the one
+		// this replaced — the two read paths must be indistinguishable from outside.
+		$rank = array_flip(lunaTools::preferred_content_languages());
+		$best = [];
 		foreach ($rows as $r) {
+			$uri = isset($r['text']['value']) ? $r['text']['value'] : '';
+			$code = lunaTools::content_language(isset($r['title']['xml:lang']) ? $r['title']['xml:lang'] : '');
+			$s = isset($rank[$code]) ? $rank[$code] : PHP_INT_MAX;
+			if (isset($best[$uri]) && $best[$uri]['score'] <= $s) { continue; }
+			$best[$uri] = ['score' => $s, 'lang' => $code, 'row' => $r];
+		}
+		$items = [];
+		foreach ($best as $picked) {
+			$r = $picked['row'];
 			$texturi = isset($r['text']['value']) ? $r['text']['value'] : '';
 			$lid = ($p = strrpos($texturi, '/id/')) !== false ? substr($texturi, $p + 4) : $texturi;
 			$items[] = [
 				'nid'          => isset($r['tident']['value']) ? $r['tident']['value'] : '',
 				'lid'          => $lid,
 				'title'        => isset($r['title']['value']) ? $r['title']['value'] : '',
-				'lang'         => isset($r['lang']['value']) ? $r['lang']['value'] : luna::$lang,
+				// The tag on the literal IS the language now; schema:inLanguage is still emitted
+				// for the R2RML mapping's benefit but is no longer what we read, because a tag
+				// travels with the value it labels and a separate annotation does not.
+				'lang'         => $picked['lang'] !== '' ? $picked['lang'] : lunaTools::content_language(luna::$lang),
 				'content'      => isset($r['content']['value']) ? $r['content']['value'] : (isset($r['body']['value']) ? $r['body']['value'] : ''),
 				'is_active'    => 1,
 				'save_time'    => 0,
@@ -1366,7 +1390,26 @@ class lunaModel {
 			}
 		}
 		$texts = [];
+		// A text node holds one row per language, so the query returns several rows for the same
+		// nid and the index below holds one text per node. WHICH row wins is therefore a decision,
+		// and it used to be made by accident: every field was overwritten on each pass, so the last
+		// row the database happened to return became the page's text and the visitor's language was
+		// never consulted at all. It is made deliberately now — the first row in preference order
+		// wins (lunaTools::preferred_content_languages(): the requested language, then the site's
+		// configured order), and anything outside that ladder is still accepted rather than dropped,
+		// so a translation nobody configured shows up instead of an empty page. `pages` keeps
+		// accumulating across rows: that one IS genuinely multi-row (a text can be on many pages).
+		$rank = array_flip(lunaTools::preferred_content_languages());
+		$score = function ($lang) use ($rank) {
+			$code = lunaTools::content_language(is_string($lang) ? $lang : '');
+			return isset($rank[$code]) ? $rank[$code] : PHP_INT_MAX;
+		};
+		$chosen = [];
 		while ($row = $res->fetchRow()) {
+			if (isset($row->page_nid)) { $texts[$row->nid]['pages'][$row->page_nid] = $row->page_nid; }
+			$s = $score($row->lang ?? '');
+			if (isset($chosen[$row->nid]) && $chosen[$row->nid] <= $s) { continue; }
+			$chosen[$row->nid] = $s;
 			$texts[$row->nid]['nid'] = $row->nid;
 			$texts[$row->nid]['lid'] = $row->lid;
 			$texts[$row->nid]['title'] = $row->title;
@@ -1374,7 +1417,6 @@ class lunaModel {
 			$texts[$row->nid]['user']['nid'] = $row->user_nid;
 			$texts[$row->nid]['user']['firstname'] = $row->firstname;
 			$texts[$row->nid]['user']['lastname'] = $row->lastname;
-			if (isset($row->page_nid)) { $texts[$row->nid]['pages'][$row->page_nid] = $row->page_nid; }
 			$texts[$row->nid]['save_time'] = $row->ntime;
 			if (isset($row->content)) { $texts[$row->nid]['content'] = $row->content; }
 			if (isset($row->lang)) { $texts[$row->nid]['lang'] = $row->lang; }

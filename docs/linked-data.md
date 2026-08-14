@@ -146,9 +146,32 @@ app-specific things:
 | children | `schema:hasPart` | schema.org |
 | node lid as email | `foaf:mbox` | FOAF |
 | audit (`luna_actions`) | `prov:Activity` / `prov:wasGeneratedBy` / `prov:Agent` | PROV-O |
-| language (`luna_texts.lang`) | `schema:inLanguage` / `dc:language` | schema.org / DC |
+| language (`luna_texts.lang`) | **the literal's language tag** (`"Bonjour"@fr`), plus `schema:inLanguage` | RDF 1.1 / schema.org |
 | taxonomy (`luna_types`) | `rdf:type` against an **RDFS/OWL + SHACL** schema | RDFS / OWL / SHACL |
 | access level | `luna:level` (or Web Access Control, `acl:`) | luna: / WAC |
+
+**Translations are language-tagged literals, and this is the one place the graph stopped being a
+lossy mirror.** A text node holds one row per language, and every one of them is projected onto the
+same subject under the same predicate, told apart by its tag:
+
+```turtle
+</id/welcome> a schema:Article ;
+    schema:headline    "Welcome"@en, "Bienvenue"@fr ;
+    schema:articleBody "…"@en, "…"@fr ;
+    schema:inLanguage  "en", "fr" .
+```
+
+Before `0.8.67-alpha` the projection carried exactly one translation — untagged, with the language
+beside it as a plain `schema:inLanguage` annotation — so the others existed nowhere in RDF and the
+mirror could not represent what MySQL held. Tags fix that, and they are what makes a language-aware
+`CONSTRUCT` possible at all: a query can ask for the French rendering. `schema:inLanguage` is still
+emitted for the R2RML mapping's benefit, but the tag is what the read path now trusts, because a tag
+travels attached to the value it labels while a separate annotation does not.
+
+Anything querying these must correlate the tags — a text carries a headline *and* a body *and* a
+`luna:content` per language, so an uncorrelated join returns the cross-product and can hand back an
+English headline attached to a French body. `lunaModel::load_texts_sparql()` filters on
+`lang(?title) = lang(?body)` for exactly this reason.
 
 Namespaces in play: `schema:` `https://schema.org/`, `dcterms:`
 `http://purl.org/dc/terms/`, `sioc:` `http://rdfs.org/sioc/ns#`, `foaf:`

@@ -5,7 +5,7 @@
 LunarSystem is a small, self-contained PHP content-management system written
 between **2006 and 2010** by Odradek. It was released on
 SourceForge as alpha software and reached version **0.2.7-alpha** in 2010; this
-archival revival carries the version forward to **0.8.66-alpha**.
+archival revival carries the version forward to **0.8.67-alpha**.
 
 Functionally it is a Drupal-like CMS: a tree of pages, a pluggable module
 system, users/groups/access-levels, editable text content, and i18n. What makes

@@ -102,6 +102,12 @@ jobs:
         run: BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" bash test/delegated_admin.sh
       - name: Admin-lockout guardrails
         run: BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" bash test/admin_lockout.sh
+      - name: Multilingual content
+        # The one suite that exercises two languages at once. Everything else here runs on the
+        # seed's single English row, which is exactly why the multilingual defects survived: with
+        # one translation, a write path that clobbers every language and a read path that ignores
+        # the requested one both look correct.
+        run: BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" APP_CONTAINER="$(docker compose ps -q app)" bash test/multilingual.sh
       - name: Render-diff against the committed baseline
         # The output-neutrality gate: every page type is re-rendered and compared byte-for-byte
         # with test/render-baseline/, which is in the repo. This is what makes "the render is

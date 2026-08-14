@@ -62,8 +62,26 @@ page (text node `nid 33`), so a fresh install is not blank. Remove that block fr
 | `id` | `int unsigned` PK | — |
 | `nid` | `int unsigned` | FK to the text node in `luna_nodes` |
 | `title` | `tinytext` | Title |
-| `lang` | `char(2)` | Language code (`en`, `fr`, …) |
+| `lang` | `char(2)` **NOT NULL** | Language code (`en`, `fr`, …) |
 | `content` | `longtext` | Markdown source body (FULLTEXT-indexed for search) |
+
+**`UNIQUE KEY nid_lang (nid, lang)` — the row's identity is the pair, not the id.** The
+one-row-per-language design was always the intent, but until `0.8.67-alpha` nothing enforced it, and
+the whole multilingual feature was broken in the gap: the editor updated on `nid` alone and so
+rewrote every language at once, and the reader keyed rows by `nid` and let the last one win. The
+constraint is what makes those mistakes impossible rather than merely fixed. `lang` is `NOT NULL`
+for the same reason — MySQL allows unlimited `NULL`s inside a `UNIQUE` index, so a nullable column
+would leave the hole open. There is no separate `KEY nid`: it is the leftmost prefix of `nid_lang`.
+
+Two language vocabularies meet here and must not be confused. This column holds the **content**
+code (`fr`); the interface locale used by gettext and `luna::$lang` is the full form (`fr-FR`).
+`lunaTools::content_language()` is the only sanctioned bridge — comparing the two directly is always
+false, which is precisely how the RDF projection came to ignore the requested language for months.
+
+Existing databases: **`make migrate-texts`** reports what needs changing and
+**`make migrate-texts-apply`** performs it (idempotent — it normalises blank languages, collapses
+duplicate pairs keeping the newest row, and adds the key). Follow it with `make resync-triplestore`
+so the graph picks up every translation.
 
 ## Users, sessions, audit
 

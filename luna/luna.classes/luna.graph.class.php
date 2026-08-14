@@ -155,11 +155,19 @@ class lunaGraph {
 			case 'text':
 				$po[] = 'a schema:Article';
 				$po[] = 'schema:identifier '.self::rdf_int($nid);
-				if ($t = self::rdf_text_row($nid)) {
-					$po[] = 'schema:headline '.self::rdf_str($t->title);
-					$po[] = 'schema:articleBody '.self::rdf_str(lunaTools::markdown_to_text($t->content));
-					$po[] = 'luna:content '.self::rdf_str($t->content);
-					$po[] = 'schema:inLanguage '.self::rdf_str($t->lang);
+				// Every translation, each as a language-tagged literal on the same subject. The
+				// graph is no longer a lossy mirror of the text table: what MySQL holds, RDF holds.
+				// schema:inLanguage is kept alongside the tags — redundant for a reader that
+				// understands tags, but it is what the R2RML mapping and the existing SPARQL read
+				// path look for, and dropping it would break them for no gain.
+				foreach (self::rdf_text_rows($nid) as $t) {
+					$lang = isset($t->lang) ? (string) $t->lang : '';
+					$code = lunaTools::content_language($lang);
+					$body = lunaTools::markdown_to_text((string) $t->content);
+					$po[] = 'schema:headline '.self::rdf_lang_str((string) $t->title, $lang);
+					$po[] = 'schema:articleBody '.self::rdf_lang_str($body, $lang);
+					$po[] = 'luna:content '.self::rdf_lang_str((string) $t->content, $lang);
+					if ($code !== '') { $po[] = 'schema:inLanguage '.self::rdf_str($code); }
 				}
 				foreach (self::rdf_edges($nid, ['page']) as $e) { $po[] = 'schema:isPartOf '.self::rdf_uri($e->lid); }
 				break;
@@ -322,6 +330,31 @@ class lunaGraph {
 		return '"'.self::sparql_literal($s).'"';
 	}
 	// }}}
+	// {{{ rdf_lang_str()
+	/**
+	 * A node value as a SPARQL language-tagged string literal — "Bonjour"@fr.
+	 *
+	 * This is the mechanism RDF already has for exactly the problem this CMS was solving badly.
+	 * Before, a text node carried ONE translation plus a `schema:inLanguage "fr"` annotation beside
+	 * an untagged literal, which is why the mirrored graph was lossy: the other translations had
+	 * nowhere to go. Tagged literals let every translation live on the same subject under the same
+	 * predicate, told apart by the tag, which is what makes a language-aware CONSTRUCT possible at
+	 * all.
+	 *
+	 * The tag is the two-letter content code, not the interface locale: we store "fr", so we assert
+	 * `@fr` and not `@fr-FR`, because we do not hold a region and must not invent one. An empty or
+	 * unusable code degrades to a plain literal rather than emitting the syntactically invalid `@`.
+	 *
+	 * @param string $s    the literal value
+	 * @param string $lang any language string; reduced via lunaTools::content_language()
+	 * @return string
+	 */
+	public static function rdf_lang_str(string $s, string $lang): string {
+		$code = lunaTools::content_language($lang);
+		if ($code === '' || !preg_match('/^[a-z]{2}$/', $code)) { return self::rdf_str($s); }
+		return '"'.self::sparql_literal($s).'"@'.$code;
+	}
+	// }}}
 	// {{{ rdf_int()
 	/**
 	 * A node value as a typed SPARQL integer literal, matching the datatype the
@@ -358,24 +391,37 @@ class lunaGraph {
 		return $out;
 	}
 	// }}}
-	// {{{ rdf_text_row()
+	// {{{ rdf_text_rows()
 	/**
-	 * One luna_texts row for a text node — the current request language if present,
-	 * else the first available. (The graph holds a single article per text, as the
-	 * SPARQL read path in load_texts_sparql() expects.)
+	 * EVERY luna_texts row for a text node, one per language, ordered by language so the emitted
+	 * triples are stable between runs (the render/resync diffs are only evidence if the output is
+	 * deterministic).
+	 *
+	 * This replaces rdf_text_row(), which returned exactly one row and so made the triplestore a
+	 * lossy mirror by construction: whichever translation it picked, the others simply did not
+	 * exist in RDF. Its pick was worse than arbitrary — it tried to prefer the request language by
+	 * testing `$row->lang == luna::$lang`, comparing a stored "fr" against an interface locale
+	 * "fr-FR", so the test never once succeeded and the first row always won. Both problems
+	 * disappear here: the caller emits all rows as language-tagged literals, and nothing has to
+	 * choose.
+	 *
 	 * @param int $nid
-	 * @return mixed the row array, or false
+	 * @return array list of rows (title, lang, content); empty when the node has no text
 	 */
-	public static function rdf_text_row(int $nid) {
-		$res = lunaDB::query('SELECT title, lang, content FROM '.luna::get_ini('DBtables', 'TEXTS').' WHERE nid = '.lunaDB::quote($nid));
-		if (!$res) { return false; }
-		$pick = false;
-		while ($r = $res->fetchRow()) {
-			if ($pick === false) { $pick = $r; }
-			if (isset($r->lang) && $r->lang == luna::$lang) { $pick = $r; break; }
-		}
-		$res->free();
-		return $pick;
+	public static function rdf_text_rows(int $nid): array {
+		$res = lunaDB::query('
+			SELECT
+				title, lang, content
+			FROM
+				'.luna::get_ini('DBtables', 'TEXTS').'
+			WHERE
+				nid = '.lunaDB::quote($nid).'
+			ORDER BY
+				lang
+		');
+		$out = [];
+		if ($res) { while ($r = $res->fetchRow()) { $out[] = $r; } $res->free(); }
+		return $out;
 	}
 	// }}}
 	// {{{ rdf_user_row()

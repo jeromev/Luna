@@ -118,6 +118,9 @@ class mod_edit_texts {
 		if ($inerror) { return false; }
 		if ($node = luna::model()->insert('text', $_POST['add_text_lid'], ($_POST['add_text_is_inactive'] ? 0 : 1))) {
 			luna::model()->link($node, $_POST['add_text_pages']);
+			// Same upsert as submit_modify(), for the same reason: (nid, lang) is the row's
+			// identity, so a second add under a language that already exists must update that
+			// translation rather than insert a duplicate the unique index would reject.
 			$res = lunaDB::query('
 				INSERT INTO
 					'.luna::get_ini('DBtables', 'TEXTS').'
@@ -126,9 +129,12 @@ class mod_edit_texts {
 					(
 						'.lunaDB::quote($node).',
 						'.lunaDB::quote($_POST['add_text_title']).',
-						'.lunaDB::quote($_POST['add_text_lang']).',
+						'.lunaDB::quote(lunaTools::content_language($_POST['add_text_lang'])).',
 						'.lunaDB::quote($_POST['add_text_content']).'
 					)
+				ON DUPLICATE KEY UPDATE
+					title = VALUES(title),
+					content = VALUES(content)
 			');
 			// RDF write-through: project the new text (and its page links) into the graph (best-effort).
 			lunaGraph::rdf_sync_node($node);
@@ -192,15 +198,32 @@ class mod_edit_texts {
 		if ($inerror) { return false; }
 		if ($node = luna::model()->update($_POST['modify_item_nid'], $_POST['modify_text_lid'], ($_POST['modify_text_is_inactive'] ? 0 : 1))) {
 			if (isset($_POST['modify_text_pages']) && !empty($_POST['modify_text_pages'])) { luna::model()->unlink($node, 'page'); luna::model()->link($node, $_POST['modify_text_pages']); }
+			// One row per (node, language). The previous statement matched on nid alone and set the
+			// language column too, so saving a translation rewrote EVERY language row for the node
+			// to the submitted language and body — editing the French text destroyed the English
+			// one, silently, with no way back. Keying the write on (nid, lang) makes that
+			// impossible; the UNIQUE index added in luna.mysql.sql means the database refuses it
+			// even if some future caller forgets.
+			//
+			// The upsert is deliberate rather than incidental: the language selector now chooses
+			// WHICH translation is being written, so saving under a language that has no row yet
+			// creates that translation, and saving under one that exists updates it. That is the
+			// whole "add a translation" flow, with no new form and no second code path.
+			$lang = lunaTools::content_language($_POST['modify_text_lang']);
 			$res = lunaDB::query('
-				UPDATE
+				INSERT INTO
 					'.luna::get_ini('DBtables', 'TEXTS').'
-				SET
-					title = '.lunaDB::quote($_POST['modify_text_title']).',
-					lang = '.lunaDB::quote($_POST['modify_text_lang']).',
-					content = '.lunaDB::quote($_POST['modify_text_content']).'
-				WHERE
-					nid = '.lunaDB::quote($node).'
+					(nid, title, lang, content)
+				VALUES
+					(
+						'.lunaDB::quote($node).',
+						'.lunaDB::quote($_POST['modify_text_title']).',
+						'.lunaDB::quote($lang).',
+						'.lunaDB::quote($_POST['modify_text_content']).'
+					)
+				ON DUPLICATE KEY UPDATE
+					title = VALUES(title),
+					content = VALUES(content)
 			');
 			// RDF write-through: re-project the edited text into the graph
 			// (best-effort; see docs/linked-data.md).

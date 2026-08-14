@@ -49,7 +49,7 @@ If you are new to the codebase, read in this order:
 
 ## Status
 
-This is an RDF-native Semantic Web CMS on `main` (`0.8.66-alpha`) — see
+This is an RDF-native Semantic Web CMS on `main` (`0.8.67-alpha`) — see
 [linked-data.md](linked-data.md). The original, preserved on the `legacy` branch
 as `v0.2.14-alpha`, is the unmodified starting point. It runs on **PHP 8.3 /
 MySQL 8.0** via PDO; see [security.md](security.md) before exposing it publicly.

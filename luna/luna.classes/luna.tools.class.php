@@ -669,6 +669,58 @@ class lunaTools {
 		return $str;
 	}
 	// }}}
+	// {{{ content_language()
+	/**
+	 * The two-letter code a *content* row is stored under, derived from any language string.
+	 *
+	 * There are two language vocabularies in this system and they are not interchangeable. The
+	 * INTERFACE one is a full locale — format_language() turns "en" into "en-US" (and "fr" into
+	 * "fr-FR"), which is what gettext, setlocale() and luna::$lang all speak. The CONTENT one is
+	 * the `char(2)` luna_texts.lang column: "en", "fr".
+	 *
+	 * Comparing the two directly is always false, and that silent mismatch was a real defect
+	 * rather than a hypothetical: lunaGraph::rdf_text_row() tested `$row->lang == luna::$lang`
+	 * to prefer the requested translation, and since that is "en" == "en-US" it never once
+	 * matched — the projection always fell through to the first row it happened to fetch. Every
+	 * comparison between a stored language and a request language must go through here.
+	 *
+	 * @param string|false $lang any language string ("fr", "fr-FR", "fr_FR", …)
+	 * @return string the two-letter code, or '' when there is nothing to derive
+	 */
+	public static function content_language(string|false $lang = false): string {
+		if (empty($lang) || !is_string($lang)) { return ''; }
+		return strtolower(substr($lang, 0, 2));
+	}
+	// }}}
+	// {{{ preferred_content_languages()
+	/**
+	 * The order in which to look for a text row, most wanted first: the language this request
+	 * resolved to, then the site's configured languages in their configured order.
+	 *
+	 * This is the single definition of the fallback ladder — "the language you asked for, else the
+	 * site's first language, else the next" — and both read paths (SQL in
+	 * lunaModel::load_texts(), SPARQL in load_texts_sparql()) resolve through it, so a page cannot
+	 * answer one way from MySQL and another way from the triplestore. A caller that finds no row
+	 * in any of these should fall back to whatever exists rather than render nothing: a
+	 * translation missing from the ladder is a gap in the content, not a reason to show an empty
+	 * page.
+	 *
+	 * @return array list of two-letter codes, in preference order (may be empty before bootstrap)
+	 */
+	public static function preferred_content_languages(): array {
+		$out = [];
+		$req = self::content_language(isset(luna::$lang) ? luna::$lang : '');
+		if ($req !== '') { $out[] = $req; }
+		$site = luna::get_ini('config', 'site_langs');
+		if (is_array($site)) {
+			foreach ($site as $l) {
+				$c = self::content_language(is_string($l) ? $l : '');
+				if ($c !== '' && !in_array($c, $out, true)) { $out[] = $c; }
+			}
+		}
+		return $out;
+	}
+	// }}}
 	// {{{ set_language()
 	/**
 	 * Set the language using Gettext
