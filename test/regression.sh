@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# LunarSystem smoke + security-regression suite.
+# Luna smoke + security-regression suite.
 #
 # Exercises the hardening from the 2026 security pass (docs/security.md) plus a
 # basic render smoke test, against a RUNNING stack. Run it after `docker compose
@@ -10,18 +10,18 @@
 #
 # Env:
 #   BASE          base URL of the running app (default http://localhost:8080)
-#   ADMIN_EMAIL   admin login (default admin@lunarsystem.local)
+#   ADMIN_EMAIL   admin login (default admin@luna.local)
 #   ADMIN_PASS    admin password (default luna)
 #   DB_CONTAINER  mysql container for an optional pre-test throttle reset
-#                 (default lunarsystem-db-1; reset is best-effort/skippable)
+#                 (default luna-db-1; reset is best-effort/skippable)
 #
 # Exits non-zero if any check fails.
 set -u
 
 BASE="${BASE:-http://localhost:8080}"
-ADMIN_EMAIL="${ADMIN_EMAIL:-admin@lunarsystem.local}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-admin@luna.local}"
 ADMIN_PASS="${ADMIN_PASS:-luna}"
-DB_CONTAINER="${DB_CONTAINER:-lunarsystem-db-1}"
+DB_CONTAINER="${DB_CONTAINER:-luna-db-1}"
 
 fails=0
 pass() { printf '  \033[32mPASS\033[0m %s\n' "$1"; }
@@ -46,7 +46,7 @@ for p in / /node/9 /login; do
   c=$(code "$p"); [ "$c" = 200 ] && pass "GET $p -> 200" || fail "GET $p -> $c (expected 200)"
   [ -n "$(body "$p")" ] && pass "GET $p -> non-empty body" || fail "GET $p -> 200 but empty body"
 done
-body / | grep -q "lunarSystem" && pass "home shows the site footer" || fail "home missing expected content"
+body / | grep -q "Luna" && pass "home shows the site footer" || fail "home missing expected content"
 
 echo "== source/secret disclosure: sensitive paths denied (case-insensitive) =="
 for p in /.git/HEAD /.GIT/HEAD /Dockerfile /DOCKERFILE /docker-compose.yml /DOCKER-COMPOSE.YML \

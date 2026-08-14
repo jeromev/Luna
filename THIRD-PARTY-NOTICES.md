@@ -1,6 +1,6 @@
 # Third-party notices
 
-LunarSystem itself is licensed under the **GNU GPL v2** (see [LICENSE](LICENSE)).
+Luna itself is licensed under the **GNU GPL v2** (see [LICENSE](LICENSE)).
 It bundles third-party code two ways: one component vendored in-tree under
 `luna/luna.lib/arc/` (committed, no installer), and a set of **Composer** dependencies under
 `vendor/` (committed too, so the app stays clone-and-run). Each retains its own license
@@ -33,7 +33,7 @@ MIT © Jérôme Vogel), vendored to compile the baseline-grid typography into
 
 A few small utility functions were copied — with attribution in their
 docblocks — directly into the app code rather than vendored as packages. All are
-GPL-compatible with LunarSystem's own GPL v2:
+GPL-compatible with Luna's own GPL v2:
 
 | Function(s) | File | Origin | License |
 |---|---|---|---|
@@ -44,7 +44,7 @@ GPL-compatible with LunarSystem's own GPL v2:
 
 ## Notes
 
-- The project license (GPL v2) governs LunarSystem's own code. The bundled
+- The project license (GPL v2) governs Luna's own code. The bundled
   components above are independent works, aggregated for convenience; their
   permissive/LGPL/BSD/MIT terms are compatible with redistribution here. If you
   repackage or relicense, consult each component's own license text and headers.

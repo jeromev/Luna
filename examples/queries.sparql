@@ -1,4 +1,4 @@
-# LunarSystem — example SPARQL queries
+# Luna — example SPARQL queries
 #
 # These run against the triplestore the app reads from by default. The semantic-web
 # services publish no host port — they live on the internal Docker network — so run

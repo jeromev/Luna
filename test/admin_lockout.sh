@@ -25,9 +25,9 @@
 #
 set -u
 BASE="${BASE:-http://localhost:8080}"
-DB="${DB_CONTAINER:-lunarsystem-db-1}"
-APP="${APP_CONTAINER:-lunarsystem-app-1}"
-ADMIN_EMAIL="${ADMIN_EMAIL:-admin@lunarsystem.local}"
+DB="${DB_CONTAINER:-luna-db-1}"
+APP="${APP_CONTAINER:-luna-app-1}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-admin@luna.local}"
 ADMIN_PASS="${ADMIN_PASS:-luna}"
 TPASS='ThrowAway12345!'
 

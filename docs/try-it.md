@@ -1,6 +1,6 @@
 # Try it
 
-A guided tour of what makes LunarSystem unusual: the same content served as a web
+A guided tour of what makes Luna unusual: the same content served as a web
 page, as machine-readable **data under content negotiation**, and as a **queryable
 RDF graph** — with the storage engine swappable underneath. No prior RDF/SPARQL
 experience needed.
@@ -23,7 +23,7 @@ semantic-web services have no host port — Oxigraph is reachable only through
 `docker-compose exec -T app`.
 
 Open **http://localhost:8080** — the home page. Log in (top of the site) as
-`admin@lunarsystem.local` / `luna` to see the admin pages too.
+`admin@luna.local` / `luna` to see the admin pages too.
 
 ## 1. One URL, many representations
 
@@ -65,8 +65,8 @@ curl -s http://localhost:8080/data/root
 <http://localhost:8080/id/root> a schema:WebPage ;
     schema:name "Home" ;
     schema:hasPart <http://localhost:8080/id/welcome> ;
-    schema:sameAs  <https://github.com/jeromev/LunarSystem> ;   # ← links out
-    rdfs:seeAlso   <https://github.com/jeromev/LunarSystem> .
+    schema:sameAs  <https://github.com/jeromev/Luna> ;   # ← links out
+    rdfs:seeAlso   <https://github.com/jeromev/Luna> .
 ```
 
 `/data/{slug}` content-negotiates too (Turtle by default) and `404`s for a resource

@@ -1,6 +1,6 @@
 # Roadmap
 
-Where LunarSystem is headed. The arc: **finish the RDF-native transition** — make the
+Where Luna is headed. The arc: **finish the RDF-native transition** — make the
 triplestore the system of record for content and retire MySQL for it — then **become a
 data-first server** that emits RDF/XML + JSON-LD under content negotiation.
 

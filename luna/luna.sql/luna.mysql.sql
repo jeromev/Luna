@@ -159,7 +159,7 @@ INSERT INTO `luna_config` (`name`, `value`) VALUES
 ('timezone', '1');
 
 INSERT INTO `luna_nodes` (`nid`, `lid`, `tid`, `parent_nid`, `is_active`) VALUES
-(1, 'admin@lunarsystem.local', 1, NULL, 1),
+(1, 'admin@luna.local', 1, NULL, 1),
 (2, 'guest', 1, NULL, 0),
 (3, 'group_default', 2, NULL, 1),
 (4, 'group_admin', 2, 0, 1),
@@ -304,7 +304,7 @@ INSERT INTO `luna_nodes_map` (`nid1`, `nid2`) VALUES
 INSERT INTO `luna_actions` (`nid`, `unid`, `ntime`) VALUES
 (33, 1, 0);
 INSERT INTO `luna_texts` (`nid`, `title`, `lang`, `content`) VALUES
-(33, 'Welcome to LunarSystem', 'en', '**LunarSystem** is a compact, RDF-native CMS. Every page is modelled as RDF triples and rendered through XSLT.
+(33, 'Welcome to Luna', 'en', '**Luna** is a compact, RDF-native CMS. Every page is modelled as RDF triples and rendered through XSLT.
 
 ### A few things that make it unusual
 
@@ -314,6 +314,6 @@ INSERT INTO `luna_texts` (`nid`, `title`, `lang`, `content`) VALUES
 
 ### Make it your own
 
-Sign in as an administrator, then open **Edition → Edit texts** to change this text or write your own. The full story lives in the [project documentation](https://github.com/jeromev/LunarSystem).');
+Sign in as an administrator, then open **Edition → Edit texts** to change this text or write your own. The full story lives in the [project documentation](https://github.com/jeromev/Luna).');
 
 OPTIMIZE TABLE `luna_actions` , `luna_config` , `luna_logs` , `luna_nodes` , `luna_nodes_map` , `luna_nodes_seq` , `luna_sessions` , `luna_texts` , `luna_types` , `luna_users`;

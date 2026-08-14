@@ -1,6 +1,6 @@
 # The RDF Model
 
-The heart of LunarSystem is
+The heart of Luna is
 [`lunaModel`](../luna/luna.classes/luna.model.class.php) — a singleton that holds
 an **in-memory RDF triple store** for the duration of a request, projects
 relational rows into it, and serialises it (to RDF/XML for XSLT, or to

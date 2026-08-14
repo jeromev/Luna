@@ -1,6 +1,6 @@
 # Templating (XSLT)
 
-LunarSystem's view layer is **XSLT 1.0**. The RDF model is serialised to RDF/XML
+Luna's view layer is **XSLT 1.0**. The RDF model is serialised to RDF/XML
 and a stylesheet transforms it into XHTML (or any text output). There are no PHP
 templates and no template engine — the entire presentation layer is XSL.
 

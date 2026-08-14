@@ -1,6 +1,6 @@
 <?php
 /**
- * LunarSystem house style — PSR-12 with seven named deviations.
+ * Luna house style — PSR-12 with seven named deviations.
  *
  * The deviations and the reasoning for each are in docs/coding-style.md. This file is the
  * machine that holds them; that document is the one that explains them. Keep them in step.
@@ -10,7 +10,7 @@
  *
  * @author  Jérôme Vogel
  * @license http://www.gnu.org/copyleft/gpl.html  GPL
- * @link    https://github.com/jeromev/LunarSystem
+ * @link    https://github.com/jeromev/Luna
  */
 
 // Finder::in() takes DIRECTORIES; single files go in append(). Listing directories rather

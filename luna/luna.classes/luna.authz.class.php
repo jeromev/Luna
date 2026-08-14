@@ -11,8 +11,8 @@
  *
  * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
- * @link		https://github.com/jeromev/LunarSystem
- * @package		lunarSystem
+ * @link		https://github.com/jeromev/Luna
+ * @package		Luna
  *
  * These six methods were the access-control core of the whole application, and they lived in
  * the middle of lunaTools — between a date formatter and a transliteration table — where the

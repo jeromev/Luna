@@ -1,7 +1,7 @@
 <?php
 
 /**
- * preflight — check a host can run the LunarSystem publishing surface before you deploy.
+ * preflight — check a host can run the Luna publishing surface before you deploy.
  *
  * Verifies the PHP version and the extensions the app needs (notably `xsl`, which the
  * XSLT HTML renderer depends on and which some shared hosts omit), the committed vendor
@@ -12,7 +12,7 @@
  *
  * Exit code 0 = ready, 1 = something required is missing. See docs/going-public.md.
  *
- * @package lunarSystem
+ * @package Luna
  */
 
 if (PHP_SAPI !== 'cli') { fwrite(STDERR, "preflight.php is CLI-only.\n"); exit(2); }
@@ -23,7 +23,7 @@ function check($label, $pass, &$ok, $hint = '') {
 	printf("  [%s] %s%s\n", $pass ? ' OK ' : 'FAIL', $label, ($pass || $hint === '') ? '' : "  — $hint");
 }
 
-echo "LunarSystem preflight\n=====================\n";
+echo "Luna preflight\n=====================\n";
 
 // PHP version — 8.3 is the tested stack; 8.1+ should work.
 check('PHP >= 8.1 (have '.PHP_VERSION.')', version_compare(PHP_VERSION, '8.1.0', '>='), $ok, 'select PHP 8.1+ in the host panel');

@@ -2,7 +2,7 @@
 
 ## This is a study artifact, not production software
 
-LunarSystem is **alpha-grade software originally from 2006–2010**, revived as an
+Luna is **alpha-grade software originally from 2006–2010**, revived as an
 educational exploration of the Semantic Web. It reflects the security practices of its
 era, with the major weaknesses since closed — bcrypt passwords with upgrade-on-login,
 CSRF tokens, session-fixation defence, SQLi and header fixes, a per-IP login throttle,

@@ -1,6 +1,6 @@
 # Coding style
 
-LunarSystem follows **[PSR-12](https://www.php-fig.org/psr/psr-12/) (PHP-FIG, Accepted)
+Luna follows **[PSR-12](https://www.php-fig.org/psr/psr-12/) (PHP-FIG, Accepted)
 with seven named deviations**, plus a small set of house rules that no published
 standard covers.
 

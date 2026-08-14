@@ -1,6 +1,6 @@
-# Contributing to LunarSystem
+# Contributing to Luna
 
-Thanks for your interest! LunarSystem is a **small, deliberately-minimal teaching
+Thanks for your interest! Luna is a **small, deliberately-minimal teaching
 artifact** — a 2006–2010 PHP/MySQL CMS revived as a hands-on way to explore the
 Semantic Web (RDF, SPARQL, JSON-LD, virtual vs. materialised triplestores). It is
 **not** production software (see [docs/security.md](docs/security.md)).

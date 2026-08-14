@@ -1,5 +1,5 @@
 
-# Static analysis for LunarSystem — see docs/coding-style.md.
+# Static analysis for Luna — see docs/coding-style.md.
 #
 # There is deliberately NO baseline file. A generated debt file that every contributor is
 # told to ignore is a worse artifact than the errors it hides, and the levels gated here are

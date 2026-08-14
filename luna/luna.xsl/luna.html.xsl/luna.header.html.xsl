@@ -161,7 +161,7 @@
 									</xsl:choose>
 									<xsl:text>] </xsl:text>
 									<br/>
-									<xsl:value-of select="/rdf:RDF/ui:vocabulary[ui:lid = 'Site powered by']/ui:value"/><xsl:text> </xsl:text><a href="https://github.com/jeromev/LunarSystem">lunarSystem</a><xsl:text> </xsl:text><xsl:value-of select="ui:data[ui:lid = 'lunaversion']/ui:value"/>
+									<xsl:value-of select="/rdf:RDF/ui:vocabulary[ui:lid = 'Site powered by']/ui:value"/><xsl:text> </xsl:text><a href="https://github.com/jeromev/Luna">Luna</a><xsl:text> </xsl:text><xsl:value-of select="ui:data[ui:lid = 'lunaversion']/ui:value"/>
 								</p>
 							</div>
 						</div>

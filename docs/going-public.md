@@ -1,6 +1,6 @@
 # Going public — deploy the publishing surface
 
-LunarSystem runs in two shapes:
+Luna runs in two shapes:
 
 | Shape | What runs | Where |
 |---|---|---|
@@ -73,7 +73,7 @@ for it. (The "Ontop endpoint is unauthenticated" caveat is therefore moot on a p
    of [`.htaccess`](../.htaccess).
 
 6. **Change the admin credentials — do this first, before announcing the URL.** The seed ships
-   `admin@lunarsystem.local` / `luna`, which is public knowledge. Log in, then change the
+   `admin@luna.local` / `luna`, which is public knowledge. Log in, then change the
    password (and email) under **Admin → Users**.
 
 7. **Curate your outbound links.** Edit [`semantic/links.ttl`](../semantic/links.ttl) so your

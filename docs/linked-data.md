@@ -107,7 +107,7 @@ related resources:
 @prefix owl:    <http://www.w3.org/2002/07/owl#> .
 @prefix schema: <https://schema.org/> .
 
-<root>             schema:sameAs <https://github.com/jeromev/LunarSystem> .
+<root>             schema:sameAs <https://github.com/jeromev/Luna> .
 <a-concept-page>   owl:sameAs    <https://www.wikidata.org/entity/Q42> .
 ```
 
@@ -127,7 +127,7 @@ statement is merged into **every** representation of its resource:
 Curate honestly: `owl:sameAs` / `schema:sameAs` assert **identity** (the object *is*
 this thing — its Wikidata / ORCID / official URL); `rdfs:seeAlso` / `schema:about` are
 the weaker *related to* / *is about*. This is what lets a consumer — or an agent —
-follow its nose out of LunarSystem, and lets external data point back in.
+follow its nose out of Luna, and lets external data point back in.
 
 ## Decision 2 — Vocabulary mapping (reuse, don't invent)
 
@@ -184,7 +184,7 @@ once as `lunaModel::LUNA_NS` and documented in [`ontology/`](../ontology/) (its 
 publishing it via GitHub Pages so the IRI dereferences). Three URI roles stay distinct: this
 **vocabulary** namespace (project-level, stable); **resource/instance** IRIs (`/id/{slug}`,
 which follow the deployment host via `luna::$site_uri`); and the project **homepage**
-(`https://github.com/jeromev/LunarSystem`). Only the vocabulary namespace is published RDF
+(`https://github.com/jeromev/Luna`). Only the vocabulary namespace is published RDF
 identity — pointing it at the bare code repo would conflate it with the homepage and wouldn't
 dereference to a vocabulary.
 
@@ -366,7 +366,7 @@ default and recommended way to seed and reconcile Oxigraph is the pure-PHP
 
 ```bash
 # 1. materialise the SAME mapping into a static RDF dump (98 triples)
-docker exec lunarsystem-ontop-1 /opt/ontop/ontop materialize \
+docker exec luna-ontop-1 /opt/ontop/ontop materialize \
   -m /opt/ontop/input/mapping.ttl -p /opt/ontop/input/ontop.properties \
   -o /opt/ontop/input/dump.nt -f ntriples
 
@@ -391,7 +391,7 @@ Routing, access control, and content are all served by the triplestore, with the
 PHP unchanged — stopping Ontop entirely leaves the default read path working:
 
 ```text
-docker stop lunarsystem-ontop-1
+docker stop luna-ontop-1
 guest  /              -> 200   (home renders from the triplestore)
 guest  /admin         -> 404   (level-based ACL preserved in the graph)
 admin  /admin/journal -> 200   (deep alias resolved from the graph)

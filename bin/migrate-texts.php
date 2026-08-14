@@ -32,8 +32,8 @@
  *
  * @author      Jérôme Vogel
  * @license     http://www.gnu.org/copyleft/gpl.html  GPL
- * @link        https://github.com/jeromev/LunarSystem
- * @package     lunarSystem
+ * @link        https://github.com/jeromev/Luna
+ * @package     Luna
  */
 
 if (PHP_SAPI !== 'cli') { fwrite(STDERR, "migrate-texts.php is CLI-only.\n"); exit(2); }

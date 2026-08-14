@@ -13,7 +13,7 @@
  *
  * @author  Jérôme Vogel
  * @license http://www.gnu.org/copyleft/gpl.html  GPL
- * @link    https://github.com/jeromev/LunarSystem
+ * @link    https://github.com/jeromev/Luna
  */
 
 $root = dirname(__DIR__);
@@ -107,13 +107,24 @@ echo "--- house rule 11: the ontology namespace agrees everywhere ---\n";
 // ontology/README.md records that this is maintained BY HAND across the model, fifteen
 // stylesheets and the R2RML mapping, and is not auto-derived. That makes it the most
 // fragile cross-file invariant in the repository, and it was enforced by nothing.
+//
+// The published vocabulary and the worked examples belong to the same invariant. A namespace
+// move that updates the model, the stylesheets and the mapping but leaves ontology/ontology.ttl
+// describing the old IRI passes every other gate in the repository: the app renders, the suites
+// go green, and the vocabulary quietly documents a namespace nothing writes. The render
+// namespace is held to the same terms — it is declared in the same fifteen files, by hand, and
+// drifts the same way.
 $model = (string) file_get_contents('luna/luna.classes/luna.model.class.php');
 preg_match("/const LUNA_NS = '([^']+)'/", $model, $m);
 $ns = $m[1] ?? '';
+preg_match("/const LUNA_RENDER_NS = '([^']+)'/", $model, $rm);
+$renderNs = $rm[1] ?? '';
 ok($ns !== '', 'lunaModel::LUNA_NS is readable'.($ns !== '' ? " ({$ns})" : ''));
+ok($renderNs !== '', 'lunaModel::LUNA_RENDER_NS is readable'.($renderNs !== '' ? " ({$renderNs})" : ''));
+
+$xsl = glob('luna/luna.xsl/luna.html.xsl/*.xsl');
 
 if ($ns !== '') {
-	$xsl = glob('luna/luna.xsl/luna.html.xsl/*.xsl');
 	$bad = [];
 	foreach ($xsl as $f) {
 		$src = (string) file_get_contents($f);
@@ -126,6 +137,42 @@ if ($ns !== '') {
 	$ttl = 'semantic/ontop/mapping.ttl';
 	$hasTtl = is_file($ttl) && str_contains((string) file_get_contents($ttl), '<'.$ns.'>');
 	ok($hasTtl, 'semantic/ontop/mapping.ttl binds luna: to LUNA_NS');
+
+	// The vocabulary has to describe the namespace the app actually writes, in both places it
+	// names it: the prefix binding and the subject of the owl:Ontology declaration.
+	$vocabSrc = is_file('ontology/ontology.ttl') ? (string) file_get_contents('ontology/ontology.ttl') : '';
+	$vocabPrefix = preg_match('/@prefix\s+luna:\s*<([^>]*)>/', $vocabSrc, $vm) === 1 ? $vm[1] : '';
+	if ($vocabPrefix !== $ns) { note("ontology/ontology.ttl: @prefix luna: <{$vocabPrefix}>"); }
+	ok($vocabSrc !== '' && $vocabPrefix === $ns, 'ontology/ontology.ttl binds @prefix luna: to LUNA_NS');
+	ok(
+		$vocabSrc !== '' && preg_match('/<'.preg_quote($ns, '/').'>\s+a\s+owl:Ontology/', $vocabSrc) === 1,
+		'ontology/ontology.ttl declares <LUNA_NS> a owl:Ontology'
+	);
+
+	// Every query a reader copies out of examples/queries.sparql has to run against the deployed
+	// store, which means its PREFIX has to be the deployed namespace.
+	$qSrc = is_file('examples/queries.sparql') ? (string) file_get_contents('examples/queries.sparql') : '';
+	preg_match_all('/PREFIX\s+luna:\s*<([^>]*)>/', $qSrc, $qm);
+	$qBad = [];
+	foreach ($qm[1] as $u) {
+		if ($u !== $ns) { $qBad[] = $u; }
+	}
+	foreach ($qBad as $u) { note("examples/queries.sparql: PREFIX luna: <{$u}>"); }
+	ok(
+		$qm[1] !== [] && $qBad === [],
+		sprintf('all %d luna: PREFIXes in examples/queries.sparql equal LUNA_NS', count($qm[1]))
+	);
+}
+
+if ($renderNs !== '') {
+	$badUi = [];
+	foreach ($xsl as $f) {
+		$src = (string) file_get_contents($f);
+		if (!preg_match('/xmlns:ui="([^"]*)"/', $src, $um)) { $badUi[] = "$f: no xmlns:ui"; continue; }
+		if ($um[1] !== $renderNs) { $badUi[] = sprintf('%s: declares %s', $f, $um[1]); }
+	}
+	foreach ($badUi as $b) { note($b); }
+	ok($badUi === [] && $xsl !== [], sprintf('all %d stylesheets declare xmlns:ui = LUNA_RENDER_NS', count($xsl)));
 }
 
 echo "--- house rule 12: a destructive control confirms before it acts ---\n";

@@ -1,6 +1,6 @@
 # Configuration
 
-LunarSystem is **multi-site**: a single codebase serves many hostnames, each with
+Luna is **multi-site**: a single codebase serves many hostnames, each with
 its own configuration directory under
 [luna/luna.domains/](../luna/luna.domains/). Configuration is split between two
 INI files per domain (`luna.ini`, `db.ini`) and the runtime `luna_config` table.

@@ -1,3 +1,9 @@
+# Pinned so container names are a property of the project, not of whatever the checkout
+# directory happens to be called. Without this, `docker-compose` derives the prefix from the
+# folder, and the container names in test/*.sh silently stop matching the moment the directory
+# is renamed or cloned somewhere else.
+name: luna
+
 services:
   app:
     build: .

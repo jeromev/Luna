@@ -89,7 +89,7 @@ jobs:
           # degraded 200 while MySQL is still importing the seed. Combined with the db healthcheck +
           # `depends_on: service_healthy` in docker-compose.yml, this closes the readiness race.
           for i in $(seq 1 90); do
-            curl -s http://localhost:8080/ 2>/dev/null | grep -q "lunarSystem" && exit 0
+            curl -s http://localhost:8080/ 2>/dev/null | grep -q "Luna" && exit 0
             sleep 2
           done
           echo "::error::app did not render seeded content"; docker compose logs --tail=80; exit 1

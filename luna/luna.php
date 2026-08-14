@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Welcome to the lunarSystem. This is the main class.
+ * Welcome to the Luna. This is the main class.
  *
  * PHP 8.1+ (tested on 8.3)
  *
@@ -11,8 +11,8 @@
  *
  * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
- * @link		https://github.com/jeromev/LunarSystem
- * @package		lunarSystem
+ * @link		https://github.com/jeromev/Luna
+ * @package		Luna
  * @since		2006-07-03
  */
 /**
@@ -106,7 +106,7 @@ class luna {
 	 * lunaVersion
 	 * @var		string
 	 */
-	public static $lunaVersion = '0.8.67-alpha';
+	public static $lunaVersion = '0.9.0-alpha';
 	/**
 	 * instance
 	 * @var self|null

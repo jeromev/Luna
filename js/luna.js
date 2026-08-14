@@ -1,4 +1,4 @@
-/* LunarSystem front-end behaviour — dependency-free (no jQuery), no animation.
+/* Luna front-end behaviour — dependency-free (no jQuery), no animation.
  * Behaviour is wired entirely through data-attributes, so there are no inline
  * event handlers and the CSP needs no 'unsafe-inline':
  *   [data-href]                   click a row (off its own controls) to navigate

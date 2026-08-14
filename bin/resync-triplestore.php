@@ -16,7 +16,7 @@
  * for the <base>/id/{slug} resource URIs — SITE_URI MUST match the host the app serves
  * under, or the rebuilt URIs won't match the read path.
  *
- * @package lunarSystem
+ * @package Luna
  */
 
 if (PHP_SAPI !== 'cli') { fwrite(STDERR, "resync-triplestore.php is CLI-only.\n"); exit(2); }

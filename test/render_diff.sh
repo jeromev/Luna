@@ -21,8 +21,8 @@
 # rendered when a check fails, for inspection without reproducing the stack locally.
 set -u
 BASE="${BASE:-http://localhost:8080}"
-DB="${DB_CONTAINER:-lunarsystem-db-1}"
-ADMIN_EMAIL="${ADMIN_EMAIL:-admin@lunarsystem.local}"
+DB="${DB_CONTAINER:-luna-db-1}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-admin@luna.local}"
 ADMIN_PASS="${ADMIN_PASS:-luna}"
 DIR="${BASELINE_DIR:-test/render-baseline}"
 MODE="${1:-check}"

@@ -1,4 +1,4 @@
-# LunarSystem build helpers
+# Luna build helpers
 
 # Default PHP to the containerised php:8.3-cli the project standardizes on (there is usually no
 # local php CLI on the dev host). Override with `make PHP=php …` if you have PHP installed.

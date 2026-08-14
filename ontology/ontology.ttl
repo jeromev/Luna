@@ -1,4 +1,4 @@
-# LunarSystem vocabulary — the `luna:` namespace.
+# Luna vocabulary — the `luna:` namespace.
 #
 # Namespace IRI:  https://jeromev.github.io/LunarSystem/ontology#
 # Single source of truth in code: lunaModel::LUNA_NS (luna/luna.classes/luna.model.class.php);
@@ -9,7 +9,7 @@
 # ui: <https://jeromev.github.io/LunarSystem/render#> (ui:vocabulary, ui:data, ui:request,
 # ui:pager, ui:message, ui:log, …), and never reaches any published graph.
 #
-# LunarSystem publishes content with standard vocabularies — schema.org, Dublin Core, FOAF,
+# Luna publishes content with standard vocabularies — schema.org, Dublin Core, FOAF,
 # SIOC, PROV-O. As projected into the triplestore (R2RML + the model's write-through), the
 # ENTIRE custom vocabulary is the three terms below; everything else is standard:
 # schema:WebPage / schema:Article / foaf:Person, and schema:name / schema:identifier /
@@ -30,9 +30,9 @@
 
 <https://jeromev.github.io/LunarSystem/ontology#>
     a owl:Ontology ;
-    rdfs:label "LunarSystem vocabulary" ;
-    rdfs:comment "The small set of system predicates LunarSystem uses where no schema.org / Dublin Core / FOAF / SIOC / PROV-O term fits. Draft." ;
-    rdfs:seeAlso <https://github.com/jeromev/LunarSystem> ;
+    rdfs:label "Luna vocabulary" ;
+    rdfs:comment "The small set of system predicates Luna uses where no schema.org / Dublin Core / FOAF / SIOC / PROV-O term fits. Draft." ;
+    rdfs:seeAlso <https://github.com/jeromev/Luna> ;
     owl:versionInfo "draft" .
 
 luna:isActive a rdf:Property, owl:DatatypeProperty ;

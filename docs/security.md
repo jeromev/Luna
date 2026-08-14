@@ -1,6 +1,6 @@
 # Security & Known Issues
 
-LunarSystem is **alpha-grade software originally from 2006–2010**, revived for study. It
+Luna is **alpha-grade software originally from 2006–2010**, revived for study. It
 reflects the security practices of its era. The **full Docker stack** (triplestore included)
 is for local study only — its host ports bind to `127.0.0.1`, keep it that way. The
 **publishing surface** (HTML + content-negotiated RDF, served from MySQL with no triplestore)
@@ -76,7 +76,7 @@ intended for a public domain, and only by following the hardening runbook in
   crackable until its owner next logs in, which upgrades it to bcrypt
   (`password_is_legacy()` / `password_needs_rehash()`). Log every legacy admin in once to
   force the upgrade; never reuse a real password.
-- **Weak default admin** — the seed admin is `admin@lunarsystem.local` / `luna`. Change it
+- **Weak default admin** — the seed admin is `admin@luna.local` / `luna`. Change it
   immediately after install.
 - **Markdown content is emitted with `disable-output-escaping`** — safety rests on the
   CommonMark converter (`lunaTools::markdown()`: `html_input=escape`,
@@ -190,7 +190,7 @@ following the runbook in [going-public.md](going-public.md). The security essent
    HSTS and secure cookies then apply automatically.
 3. **`SPARQL_ENABLED=0`** so there is no triplestore / SPARQL surface; the stack stays local.
 4. **Change the admin password and email**, and rotate all DB credentials, before announcing
-   the URL (the seed `admin@lunarsystem.local` / `luna` is public knowledge).
+   the URL (the seed `admin@luna.local` / `luna` is public knowledge).
 5. Restrict the MySQL user to the minimum required grants; never expose MySQL publicly.
 6. Keep `DEBUG = 0` so errors aren't displayed, and keep `db.ini` out of git.
 7. Keep cookie-only sessions (the defaults already enforce this).

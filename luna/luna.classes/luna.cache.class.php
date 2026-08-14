@@ -16,7 +16,7 @@
  *
  * @author   Jérôme Vogel
  * @license  http://www.gnu.org/copyleft/gpl.html  GPL
- * @package  lunarSystem
+ * @package  Luna
  */
 class lunaCache {
 	/** @var string cache directory, with a trailing slash */

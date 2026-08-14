@@ -11,8 +11,8 @@
  *
  * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
- * @link		https://github.com/jeromev/LunarSystem
- * @package		lunarSystem
+ * @link		https://github.com/jeromev/Luna
+ * @package		Luna
  */
 
 // PEAR_LOG_* priority constants — formerly supplied by the vendored PEAR Log base

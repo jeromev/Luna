@@ -1,6 +1,6 @@
 # Installation
 
-> LunarSystem runs on **PHP 8.3 / MySQL 8.0** via PDO / `pdo_mysql`. The Docker
+> Luna runs on **PHP 8.3 / MySQL 8.0** via PDO / `pdo_mysql`. The Docker
 > stack below builds it; a modern PHP install also works directly. See
 > [security.md](security.md).
 
@@ -25,7 +25,7 @@ docker-compose up --build -d
 Then wait ~15 seconds for MySQL to initialise and open
 **http://localhost:8080**.
 
-Log in as **`admin@lunarsystem.local`** / password **`luna`**.
+Log in as **`admin@luna.local`** / password **`luna`**.
 
 What the stack does (see [docker-compose.yml](../docker-compose.yml) and
 [Dockerfile](../Dockerfile)):
@@ -93,7 +93,7 @@ docker-compose up --build -d
 
 ## Option C — Public shared hosting (the publishing surface)
 
-To put LunarSystem on a real domain (e.g. DreamHost shared), deploy the **publishing
+To put Luna on a real domain (e.g. DreamHost shared), deploy the **publishing
 surface** — app + MySQL, no triplestore. It's Option B plus three things: run
 `php bin/preflight.php` to confirm the host (notably the `xsl` extension), set
 `SetEnv SPARQL_ENABLED 0` in `.htaccess` so the app serves entirely from MySQL, and turn on
@@ -125,7 +125,7 @@ Resources are dereferenceable at `/id/{slug}` and `/data/{slug}`. See
 
 ## First steps after install
 
-1. Log in as the seeded admin (`admin@lunarsystem.local` / `luna`) and **change
+1. Log in as the seeded admin (`admin@luna.local` / `luna`) and **change
    the password** immediately.
 2. Edit site settings under **Admin** (`mod_admin`): site name, description,
    languages, timezone.

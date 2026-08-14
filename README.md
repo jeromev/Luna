@@ -1,4 +1,4 @@
-# LunarSystem
+# Luna
 
 A PHP/MySQL CMS that models all content as **RDF triples** and renders pages through **XSLT transformations**.
 
@@ -31,7 +31,7 @@ Wait ~15 seconds for MySQL to initialise, then open **http://localhost:8080**.
 
 > The Docker stack also starts a **triplestore** (Oxigraph) behind an authenticating reverse proxy (`sparql-proxy`) and a virtual **SPARQL endpoint** (Ontop), all on the internal compose network (no host port). The app reads and writes the triplestore through the proxy with credentials; the read path is served from it by default — append `?sparql=0` to any URL to read from MySQL instead, or set `SPARQL_ENDPOINT=http://ontop:8080/sparql` to read live through Ontop. See [docs/linked-data.md](docs/linked-data.md).
 
-Log in as **`admin@lunarsystem.local`** with password **`luna`**. (These are demo credentials shipped in the seed data — change them before exposing the app anywhere.)
+Log in as **`admin@luna.local`** with password **`luna`**. (These are demo credentials shipped in the seed data — change them before exposing the app anywhere.)
 
 > **New here?** Follow the ~10-minute hands-on tour in **[docs/try-it.md](docs/try-it.md)**.
 

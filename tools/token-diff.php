@@ -16,7 +16,7 @@
  *
  * @author  Jérôme Vogel
  * @license http://www.gnu.org/copyleft/gpl.html  GPL
- * @link    https://github.com/jeromev/LunarSystem
+ * @link    https://github.com/jeromev/Luna
  */
 
 $baseDir = rtrim($argv[1] ?? '', '/');

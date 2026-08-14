@@ -1,8 +1,8 @@
-# LunarSystem — outbound links (the "stop being an island" file).
+# Luna — outbound links (the "stop being an island" file).
 #
 # Operator-curated statements that connect THIS site's resources to the wider web of
 # data. Without them the graph is well-formed RDF that links to nothing; with them a
-# consumer — or an agent — can follow its nose from a LunarSystem page out to an
+# consumer — or an agent — can follow its nose from a Luna page out to an
 # external entity, and external datasets can point back in via owl:sameAs.
 #
 # Subjects are RELATIVE /id/ IRIs — <root>, <journal>, … — i.e. a content slug. They
@@ -28,8 +28,8 @@
 # The home page's canonical reference is the project repository; the welcome article
 # is about the project. (Seed examples — replace with your own.)
 <root>
-    schema:sameAs <https://github.com/jeromev/LunarSystem> ;
-    rdfs:seeAlso  <https://github.com/jeromev/LunarSystem> .
+    schema:sameAs <https://github.com/jeromev/Luna> ;
+    rdfs:seeAlso  <https://github.com/jeromev/Luna> .
 
 <welcome>
-    schema:about <https://github.com/jeromev/LunarSystem> .
+    schema:about <https://github.com/jeromev/Luna> .

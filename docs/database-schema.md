@@ -53,7 +53,7 @@ Defines the handful of node types.
 
 ### `luna_texts` — content blocks (per language)
 The actual editable content, one row per language per text node. The seed ships a
-single demo row: a Markdown **"Welcome to LunarSystem"** block linked to the home
+single demo row: a Markdown **"Welcome to Luna"** block linked to the home
 page (text node `nid 33`), so a fresh install is not blank. Remove that block from
 `luna.mysql.sql` for a content-free install.
 
@@ -175,7 +175,7 @@ to `33` (the seed data uses nodes 1–32).
 
 The dump ships a working site:
 
-- **Admin user** — `nid=1`, `lid="admin@lunarsystem.local"`, name "Admin Luna",
+- **Admin user** — `nid=1`, `lid="admin@luna.local"`, name "Admin Luna",
   password MD5 `ba8a48b0e34226a2992d871c65600a7c` (plaintext: **`luna`**).
 - **Guest user** — `nid=2`, `lid="guest"`, `is_active=0` (the anonymous identity).
 - **Three groups** — default, admin, edition.

@@ -11,7 +11,7 @@ honestly, what is not done yet.
 ## The shift in one sentence
 
 A vanilla PHP/MySQL CMS **stores** its content in SQL and can **print** it as RDF
-on the way out. LunarSystem **keeps its content as a live knowledge graph and runs
+on the way out. Luna **keeps its content as a live knowledge graph and runs
 itself on top of that graph** — so the things the Semantic Web is actually *for*
 (querying, sharing, linking, swapping engines) are "right now," not "someday."
 

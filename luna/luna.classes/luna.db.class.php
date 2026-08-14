@@ -11,8 +11,8 @@
  *
  * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
- * @link		https://github.com/jeromev/LunarSystem
- * @package		lunarSystem
+ * @link		https://github.com/jeromev/Luna
+ * @package		Luna
  *
  * PDO/pdo_mysql rewrite (0.5.0-alpha): the original used the unmaintained PEAR
  * MDB2 + ext/mysql (removed in PHP 7). This keeps the exact public surface the
