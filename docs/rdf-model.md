@@ -56,8 +56,8 @@ custom namespace:
 | `owl` | `http://www.w3.org/2002/07/owl#` | declared, but no `owl:` term is used by the content model |
 | `dc` | `http://purl.org/dc/elements/1.1/` | Dublin Core (metadata) |
 | `dcterms` | `http://purl.org/dc/terms/` | Dublin Core terms |
-| **`luna`** | **`https://jeromev.github.io/LunarSystem/ontology#`** | **app-specific CONTENT predicates** with no standard equivalent: `lid`, `isActive`, `content`, `level`, `alias`, `url`, plus user metadata (`ip`, `last-visit`, `registration-date`) and the `luna:group`/`luna:level`/`luna:mod` classes |
-| **`ui`** | **`https://jeromev.github.io/LunarSystem/render#`** | **UI render-model** (chrome only, never published): `ui:vocabulary`/`data`/`request`/`pager`/`message`/`log`/`lang`/`config` + `ui:value`/`lid`/`perpage`/`total`/`link`/`selected`/`code`/… |
+| **`luna`** | **`https://jeromev.github.io/Luna/ontology#`** | **app-specific CONTENT predicates** with no standard equivalent: `lid`, `isActive`, `content`, `level`, `alias`, `url`, plus user metadata (`ip`, `last-visit`, `registration-date`) and the `luna:group`/`luna:level`/`luna:mod` classes |
+| **`ui`** | **`https://jeromev.github.io/Luna/render#`** | **UI render-model** (chrome only, never published): `ui:vocabulary`/`data`/`request`/`pager`/`message`/`log`/`lang`/`config` + `ui:value`/`lid`/`perpage`/`total`/`link`/`selected`/`code`/… |
 
 The `luna:` namespace string is exposed as `lunaModel::$lunaNameSpace`; the `ui:`
 render namespace as the `lunaModel::LUNA_RENDER_NS` constant. Both are registered

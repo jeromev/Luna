@@ -1,6 +1,6 @@
 # `luna:` ontology
 
-The vocabulary served at the namespace IRI **`https://jeromev.github.io/LunarSystem/ontology#`**.
+The vocabulary served at the namespace IRI **`https://jeromev.github.io/Luna/ontology#`**.
 
 - [`ontology.ttl`](ontology.ttl) — the formal vocabulary (Turtle).
 - [`index.html`](index.html) — human-readable rendering of the same terms.
@@ -15,7 +15,7 @@ must match it by hand and are **not** auto-derived:
 1. the 15 `xmlns:luna="…"` declarations in `luna/luna.xsl/luna.html.xsl/*.xsl`
    (one per stylesheet; they must equal the model's RDF output exactly, or the XSLT
    templates stop matching). Each of those files also declares the sibling
-   `xmlns:ui="https://jeromev.github.io/LunarSystem/render#"` render namespace
+   `xmlns:ui="https://jeromev.github.io/Luna/render#"` render namespace
    (`lunaModel::LUNA_RENDER_NS`), which drives the XSLT chrome and is *not* part of
    this content vocabulary;
 2. `semantic/ontop/mapping.ttl` (the R2RML mapping).
@@ -29,7 +29,7 @@ The IRI is a stable *identifier* and the app works whether or not it resolves. T
 *dereference* (GET the IRI → get this vocabulary), publish this folder with GitHub Pages:
 
 - **Settings → Pages →** deploy from the `main` branch. If you serve from the repo root,
-  this folder is reachable at `https://jeromev.github.io/LunarSystem/ontology/`
+  this folder is reachable at `https://jeromev.github.io/Luna/ontology/`
   (a request for `…/ontology` 301-redirects to `…/ontology/`, so `…/ontology#term` resolves).
 - Prefer not to publish the whole repo? Serve Pages from a `/docs` folder or a dedicated
   `gh-pages` branch and copy `ontology/` there instead.

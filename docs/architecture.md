@@ -141,7 +141,7 @@ view data and renders:
 1. Merge in the current user, available languages, available output formats, the
    `luna::$data` metadata, the i18n vocabulary, and the raw `$_REQUEST`. These
    render-scaffolding nodes are built by `lunaModel::load_var()` as blank nodes
-   in the UI render namespace `ui:` (`https://jeromev.github.io/LunarSystem/render#`);
+   in the UI render namespace `ui:` (`https://jeromev.github.io/Luna/render#`);
    they drive the XSLT chrome only and never reach the published RDF graph.
 2. If `output_format != html`, call `lunaModel::dump($format)` ([luna.model.class.php](../luna/luna.classes/luna.model.class.php)),
    which serialises and exits. `dump()` first builds the clean, published graph

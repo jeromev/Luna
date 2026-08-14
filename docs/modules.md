@@ -93,7 +93,7 @@ common calls (see [rdf-model.md](rdf-model.md)):
 - `luna::$model->merge_index(...)` — merge nodes into the store.
 - `luna::$model->load_data($array, $label)` — flatten a PHP array into
   render-model variable nodes (blank nodes in the `ui:` namespace,
-  `https://jeromev.github.io/LunarSystem/render#`).
+  `https://jeromev.github.io/Luna/render#`).
 - `luna::$model->load_var($spec)` — create a single `ui:` render-model blank
   node (the i18n/form/list scaffolding the XSLT chrome reads; it never reaches
   the published content graph).

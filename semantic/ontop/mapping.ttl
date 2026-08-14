@@ -2,7 +2,7 @@
 @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix schema: <https://schema.org/> .
 @prefix foaf:   <http://xmlns.com/foaf/0.1/> .
-@prefix luna:   <https://jeromev.github.io/LunarSystem/ontology#> .
+@prefix luna:   <https://jeromev.github.io/Luna/ontology#> .
 
 # ---------------------------------------------------------------------------
 # R2RML mapping: the luna_* relational schema (MySQL) projected to schema.org /

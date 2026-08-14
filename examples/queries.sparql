@@ -25,7 +25,7 @@
 # Namespaces (note: schema.org is https://, the app ontology is http://):
 #   schema: <https://schema.org/>
 #   foaf:   <http://xmlns.com/foaf/0.1/>
-#   luna:   <https://jeromev.github.io/LunarSystem/ontology#>
+#   luna:   <https://jeromev.github.io/Luna/ontology#>
 
 
 # 1) Census — count every content class in ONE query.
@@ -39,7 +39,7 @@ SELECT ?type (COUNT(?s) AS ?n) WHERE { ?s a ?type } GROUP BY ?type ORDER BY DESC
 
 # 2) Every page with the access level it requires — a graph join, no FK columns named.
 PREFIX schema: <https://schema.org/>
-PREFIX luna:   <https://jeromev.github.io/LunarSystem/ontology#>
+PREFIX luna:   <https://jeromev.github.io/Luna/ontology#>
 SELECT ?page ?level WHERE {
   ?page a schema:WebPage ; luna:level ?lvl .
   ?lvl  schema:name ?level .
@@ -49,7 +49,7 @@ SELECT ?page ?level WHERE {
 # 3) "Which pages share the same access level as `admin`?" — traverse a shared node.
 #    → 6 siblings (admin_groups, admin_levels, admin_mods, admin_pages, admin_users, journal)
 PREFIX schema: <https://schema.org/>
-PREFIX luna:   <https://jeromev.github.io/LunarSystem/ontology#>
+PREFIX luna:   <https://jeromev.github.io/Luna/ontology#>
 SELECT ?sibling WHERE {
   ?admin   schema:name "admin" ; luna:level ?lvl .
   ?sib     luna:level ?lvl ; schema:name ?sibling .
@@ -65,7 +65,7 @@ SELECT ?page ?ancestor WHERE { ?page schema:isPartOf+ ?ancestor } ORDER BY ?page
 
 # 5) Boolean check — is any admin-level page active? → true
 PREFIX schema: <https://schema.org/>
-PREFIX luna:   <https://jeromev.github.io/LunarSystem/ontology#>
+PREFIX luna:   <https://jeromev.github.io/Luna/ontology#>
 ASK {
   ?p luna:level <http://localhost:8080/id/level_admin> ; luna:isActive 1 .
 }

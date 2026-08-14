@@ -54,8 +54,8 @@ class lunaModel {
 	/** The luna: vocabulary namespace — the single source of truth. The 16 XSLT
 	 *  `xmlns:luna="…"` declarations must match this exactly, and the triplestore
 	 *  must be re-projected (`make resync-triplestore`) whenever it changes. */
-	public const LUNA_NS = 'https://jeromev.github.io/LunarSystem/ontology#';
-	public const LUNA_RENDER_NS = 'https://jeromev.github.io/LunarSystem/render#'; // UI render-model (NOT content)
+	public const LUNA_NS = 'https://jeromev.github.io/Luna/ontology#';
+	public const LUNA_RENDER_NS = 'https://jeromev.github.io/Luna/render#'; // UI render-model (NOT content)
 	public $lunaNameSpace = self::LUNA_NS;
 	// {{{ singleton()
 	/**

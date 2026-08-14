@@ -65,7 +65,7 @@ Templates consume the RDF/XML serialisation of the model. The serialiser is fed
 so the XSLT renders from the **schema.org + `/id/{slug}`** graph: content nodes are
 `<schema:WebPage>` (pages) / `<schema:Article>` (text blocks) / `<foaf:Person>` (users),
 the app-specific UI render-model is in the `ui:` namespace
-(`https://jeromev.github.io/LunarSystem/render#`), and the `luna:` namespace carries
+(`https://jeromev.github.io/Luna/render#`), and the `luna:` namespace carries
 only the genuinely app-specific *content* terms that survive the projection (`luna:lid`,
 `luna:content`, `luna:isActive`, `luna:alias`, `luna:level`, plus runtime flags like
 `luna:is_current`/`luna:is_guest`). `luna:content` holds the **Markdown source**; for the
@@ -80,8 +80,8 @@ fragment:
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:schema="https://schema.org/"
-    xmlns:luna="https://jeromev.github.io/LunarSystem/ontology#"
-    xmlns:ui="https://jeromev.github.io/LunarSystem/render#"
+    xmlns:luna="https://jeromev.github.io/Luna/ontology#"
+    xmlns:ui="https://jeromev.github.io/Luna/render#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/">
 
   <ui:data ui:lid="clean_urls"><ui:value>1</ui:value></ui:data>

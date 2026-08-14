@@ -179,7 +179,7 @@ Namespaces in play: `schema:` `https://schema.org/`, `dcterms:`
 `http://www.w3.org/2004/02/skos/core#`. A small `luna:` survives for what nobody
 else models.
 
-The `luna:` namespace IRI is **`https://jeromev.github.io/LunarSystem/ontology#`**, defined
+The `luna:` namespace IRI is **`https://jeromev.github.io/Luna/ontology#`**, defined
 once as `lunaModel::LUNA_NS` and documented in [`ontology/`](../ontology/) (its README covers
 publishing it via GitHub Pages so the IRI dereferences). Three URI roles stay distinct: this
 **vocabulary** namespace (project-level, stable); **resource/instance** IRIs (`/id/{slug}`,

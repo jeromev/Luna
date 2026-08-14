@@ -1,12 +1,12 @@
 # Luna vocabulary — the `luna:` namespace.
 #
-# Namespace IRI:  https://jeromev.github.io/LunarSystem/ontology#
+# Namespace IRI:  https://jeromev.github.io/Luna/ontology#
 # Single source of truth in code: lunaModel::LUNA_NS (luna/luna.classes/luna.model.class.php);
 # the 15 XSLT `xmlns:luna="…"` declarations and semantic/ontop/mapping.ttl must match it.
 #
 # This `luna:` namespace holds app-specific CONTENT terms only. The UI render-model — the
 # i18n strings and XSLT-chrome scaffolding — lives in a SEPARATE namespace,
-# ui: <https://jeromev.github.io/LunarSystem/render#> (ui:vocabulary, ui:data, ui:request,
+# ui: <https://jeromev.github.io/Luna/render#> (ui:vocabulary, ui:data, ui:request,
 # ui:pager, ui:message, ui:log, …), and never reaches any published graph.
 #
 # Luna publishes content with standard vocabularies — schema.org, Dublin Core, FOAF,
@@ -23,12 +23,12 @@
 #  to schema.org at the serialisation boundary, so the XSLT renders from the same schema.org/slug
 #  graph that ?output=xml/n3/json/jsonld serves and that matches the triplestore.)
 
-@prefix luna: <https://jeromev.github.io/LunarSystem/ontology#> .
+@prefix luna: <https://jeromev.github.io/Luna/ontology#> .
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
 
-<https://jeromev.github.io/LunarSystem/ontology#>
+<https://jeromev.github.io/Luna/ontology#>
     a owl:Ontology ;
     rdfs:label "Luna vocabulary" ;
     rdfs:comment "The small set of system predicates Luna uses where no schema.org / Dublin Core / FOAF / SIOC / PROV-O term fits. Draft." ;
