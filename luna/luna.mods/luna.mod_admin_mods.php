@@ -98,21 +98,17 @@ class mod_admin_mods {
 		if (!luna::model()->merge_index(luna::model()->load_nodes('mod', 'page'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
 		// check if the identifier is already used
 		if (!$is_not_taken = luna::model()->check_if_lid_is_taken($_POST['add_mod_lid'])) { return false; }
+		// the level picker and the pages multi-select both post lids; resolve them against the
+		// index loaded above, before the guards, which must run over nids the requester can address
+		$add_mod_level_nid = luna::model()->nid_from_lid($_POST['add_mod_level'] ?? '', 'level');
+		$_POST['add_mod_pages'] = luna::model()->nids_from_lids($_POST['add_mod_pages'] ?? [], 'page');
 		// make sure the level node exists
-		if (!$item_level_node = luna::model()->check_if_node_exists($_POST['add_mod_level'], 'level')) { return false; }
-		if (!lunaAuthz::user_can_access_level(luna::$session->user, intval($_POST['add_mod_level']))) { luna::$messages['warning'][] = _('Access denied: that access level is above your own.'); lunaLog::log('admin_mods: attempt to use an inaccessible access level', PEAR_LOG_WARNING); return false; }
-		// make sure each page node exists
-		if (isset($_POST['add_mod_pages']) && is_array($_POST['add_mod_pages']) && !empty($_POST['add_mod_pages'])) {
-			foreach ($_POST['add_mod_pages'] as $page_nid) {
-				if (!$item_page_node = luna::model()->check_if_node_exists($page_nid, 'page')) { return false; }
-			}
-		} else {
-			$_POST['add_mod_pages'] = [];
-		}
+		if (!$item_level_node = luna::model()->check_if_node_exists($add_mod_level_nid, 'level')) { return false; }
+		if (!lunaAuthz::user_can_access_level(luna::$session->user, $add_mod_level_nid)) { luna::$messages['warning'][] = _('Access denied: that access level is above your own.'); lunaLog::log('admin_mods: attempt to use an inaccessible access level', PEAR_LOG_WARNING); return false; }
 		if ($inerror) { return false; }
 		if ($node = luna::model()->insert('mod', $_POST['add_mod_lid'], ($_POST['add_mod_is_inactive'] ? 0 : 1))) {
 			luna::model()->link($node, $_POST['add_mod_pages']);
-			luna::model()->link($node, [$_POST['add_mod_level']]);
+			luna::model()->link($node, [$add_mod_level_nid]);
 			lunaTools::purge_cache();
 			luna::model()->purge_index();
 			$message = sprintf(_("The module “%1\$s” has been created."), $_POST['add_mod_lid']);
@@ -135,10 +131,9 @@ class mod_admin_mods {
 		$inerror = 0;
 		// clean things
 		$_POST['modify_mod_lid'] = lunaTools::prepare_lid($_POST['modify_mod_lid']);
-		$_POST['modify_item_nid'] = intval($_POST['modify_item_nid']);
 		$_POST['modifymodisinactive'] = isset($_POST['modifymodisinactive']) ? ($_POST['modifymodisinactive'] == 1 ? 1 : 0) : 0;
 		// check emptyness
-		if (!lunaTools::check_emptyness('modify_item_nid', 'Module to modify')) { $inerror++; }
+		if (!lunaTools::check_emptyness('modify_item_lid', 'Module to modify')) { $inerror++; }
 		if (!lunaTools::check_emptyness('modify_mod_lid', 'Module lid')) { $inerror++; }
 		if (!lunaTools::check_emptyness('modify_mod_level', 'Access level')) { $inerror++; }
 		if ($inerror) { return false; }
@@ -146,33 +141,29 @@ class mod_admin_mods {
 		if (!luna::model()->merge_index(luna::model()->load_nodes('mod', 'level'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
 		if (!luna::model()->merge_index(luna::model()->load_nodes('mod', 'page'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
 		// check if node exists
-		if (!$item_node = luna::model()->check_if_node_exists($_POST['modify_item_nid'], 'mod')) { return false; }
+		$modify_item_nid = intval(luna::model()->check_requested_node_by_lid('modify_item_lid', 'mod'));
+		if (!$item_node = luna::model()->check_if_node_exists($modify_item_nid, 'mod')) { return false; }
 		if ($inerror) { return false; }
 		// admin-lockout guardrail: the modules that power the admin pages must not be
 		// renamed, relevelled, deactivated or unbound from their pages.
 		if (!$protected_lid = luna::model()->check_if_lid_is_protected($item_node, ['mod_admin', 'mod_admin_groups', 'mod_admin_levels', 'mod_admin_mods', 'mod_admin_pages', 'mod_admin_users', 'mod_journal'])) { return false; }
 		// check if the identifier is already used by another item
-		if (!$is_not_taken = luna::model()->check_if_lid_is_taken($_POST['modify_mod_lid'], $_POST['modify_item_nid'])) { return false; }
+		if (!$is_not_taken = luna::model()->check_if_lid_is_taken($_POST['modify_mod_lid'], $modify_item_nid)) { return false; }
+		// the level picker and the pages multi-select both post lids
+		$modify_mod_level_nid = luna::model()->nid_from_lid($_POST['modify_mod_level'] ?? '', 'level');
+		$_POST['modify_mod_pages'] = luna::model()->nids_from_lids($_POST['modify_mod_pages'] ?? [], 'page');
 		// make sure the level node exists
-		if (!$item_level_node = luna::model()->check_if_node_exists($_POST['modify_mod_level'], 'level')) { return false; }
-		if (!lunaAuthz::user_can_access_level(luna::$session->user, intval($_POST['modify_mod_level']))) { luna::$messages['warning'][] = _('Access denied: that access level is above your own.'); lunaLog::log('admin_mods: attempt to use an inaccessible access level', PEAR_LOG_WARNING); return false; }
-		// make sure each page node exists
-		if (isset($_POST['modify_mod_pages']) && is_array($_POST['modify_mod_pages']) && !empty($_POST['modify_mod_pages'])) {
-			foreach ($_POST['modify_mod_pages'] as $page_nid) {
-				if (!$item_page_node = luna::model()->check_if_node_exists($page_nid, 'page')) { return false; }
-			}
-		} else {
-			$_POST['modify_mod_pages'] = [];
-		}
+		if (!$item_level_node = luna::model()->check_if_node_exists($modify_mod_level_nid, 'level')) { return false; }
+		if (!lunaAuthz::user_can_access_level(luna::$session->user, $modify_mod_level_nid)) { luna::$messages['warning'][] = _('Access denied: that access level is above your own.'); lunaLog::log('admin_mods: attempt to use an inaccessible access level', PEAR_LOG_WARNING); return false; }
 		$item_lid = luna::model()->get_lid($item_node);
-		if ($node = luna::model()->update($_POST['modify_item_nid'], $_POST['modify_mod_lid'], ($_POST['modifymodisinactive'] ? 0 : 1))) {
+		if ($node = luna::model()->update($modify_item_nid, $_POST['modify_mod_lid'], ($_POST['modifymodisinactive'] ? 0 : 1))) {
 			luna::model()->unlink($node, 'page');
 			luna::model()->unlink($node, 'level');
 			if (isset($_POST['modify_mod_pages']) && !empty($_POST['modify_mod_pages'])) { luna::model()->link($node, $_POST['modify_mod_pages']); }
-			if (isset($_POST['modify_mod_level']) && !empty($_POST['modify_mod_level'])) { luna::model()->link($node, $_POST['modify_mod_level']); }
+			if ($modify_mod_level_nid > 0) { luna::model()->link($node, [$modify_mod_level_nid]); }
 			lunaTools::purge_cache();
 			luna::model()->purge_index();
-			lunaTools::unrequest(['mod_nid', 'mod_nid', 'modify_item_nid']);
+			lunaTools::unrequest(['mod_lid', 'modify_item_lid']);
 			$message = sprintf(_("The module “%1\$s” has been modified."), _($_POST['modify_mod_lid']));
 			luna::$messages['okay'][] = $message;
 			lunaLog::log($message, PEAR_LOG_INFO);
@@ -192,15 +183,15 @@ class mod_admin_mods {
 		// initialise the errors counter
 		$inerror = 0;
 		// clean things
-		$_POST['modify_item_nid'] = intval($_POST['modify_item_nid']);
 		// check emptyness
-		if (!lunaTools::check_emptyness('modify_item_nid', 'Module to delete')) { $inerror++; }
+		if (!lunaTools::check_emptyness('modify_item_lid', 'Module to delete')) { $inerror++; }
 		if ($inerror) { return false; }
 		// load stuff
 		if (!luna::model()->merge_index(luna::model()->load_nodes('mod', 'level'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
 		if (!luna::model()->merge_index(luna::model()->load_nodes('mod', 'page'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
 		// check if node exists
-		if (!$item_node = luna::model()->check_if_node_exists($_POST['modify_item_nid'], 'mod')) { return false; }
+		$modify_item_nid = intval(luna::model()->check_requested_node_by_lid('modify_item_lid', 'mod'));
+		if (!$item_node = luna::model()->check_if_node_exists($modify_item_nid, 'mod')) { return false; }
 		// admin-lockout guardrail: the modules that power the admin pages cannot be deleted.
 		if (!$protected_lid = luna::model()->check_if_lid_is_protected($item_node, ['mod_admin', 'mod_admin_groups', 'mod_admin_levels', 'mod_admin_mods', 'mod_admin_pages', 'mod_admin_users', 'mod_journal'])) { return false; }
 		if (!lunaAuthz::user_can_access_level(luna::$session->user, intval(luna::model()->get_nid(luna::model()->get_level_node($item_node))))) {
@@ -209,10 +200,10 @@ class mod_admin_mods {
 			return false;
 		}
 		if ($inerror) { return false; }
-		if (luna::model()->delete($_POST['modify_item_nid'])) {
+		if (luna::model()->delete($modify_item_nid)) {
 			lunaTools::purge_cache();
 			luna::model()->purge_index();
-			lunaTools::unrequest(['mod_nid', 'mod_nid', 'modify_item_nid']);
+			lunaTools::unrequest(['mod_lid', 'modify_item_lid']);
 			$message = sprintf(_("The module “%1\$s” has been deleted."), _($_POST['modify_mod_lid']));
 			luna::$messages['okay'][] = $message;
 			lunaLog::log($message, PEAR_LOG_INFO);
@@ -232,7 +223,7 @@ class mod_admin_mods {
 		$inerror = 0;
 		if (!luna::model()->merge_index(luna::model()->load_nodes('mod', 'level'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
 		if (!luna::model()->merge_index(luna::model()->load_nodes('mod', 'page'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
-		$nid = luna::model()->check_requested_node('mod_nid', 'mod');
+		$nid = luna::model()->check_requested_node_by_lid('mod_lid', 'mod');
 		return true;
 	}
 	// }}}

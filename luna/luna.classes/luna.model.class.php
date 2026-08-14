@@ -1580,6 +1580,28 @@ class lunaModel {
 		return $nids;
 	}
 	// }}}
+	// {{{ nid_from_lid()
+	/**
+	 * The singular of nids_from_lids(): resolve one posted lid — a single-choice picker, a
+	 * hidden field — to its nid through the ACL-scoped index.
+	 *
+	 * Distinct from get_nid_from_lid(), which is a full-scope query on the node table and is
+	 * the wrong tool for anything a request supplied. Returns 0 rather than false so callers
+	 * can hand the result straight to the guards, which take an int.
+	 *
+	 * @param mixed $lid the posted value
+	 * @param string|false $type the type to require (e.g. 'level')
+	 * @param string $ns the namespace $type belongs to
+	 * @return int the nid, or 0 if it did not resolve
+	 */
+	public function nid_from_lid($lid = false, string|false $type = false, $ns = 'luna'): int {
+		if (empty($lid) || !is_scalar($lid)) { return 0; }
+		if (empty($ns)) { $ns = 'luna'; }
+		$node = $this->get_node_from_slug((string) $lid, "$type", "$ns");
+		if (empty($node)) { return 0; }
+		return intval($this->get_nid($node, "$type", "$ns"));
+	}
+	// }}}
 	// {{{ check_requested_node_by_lid()
 	/**
 	 * Resolve a request parameter that carries a **lid** to the nid the write paths work in.

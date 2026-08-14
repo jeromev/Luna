@@ -35,9 +35,9 @@
 # escalation guard still FIRES (by its message) rather than the attempt merely failing to
 # resolve — see the comment there.
 #
-# SCREENS COVERED SO FAR: admin_groups, admin_users, admin_levels. The rest still address by
-# nid and are converted one release at a time; this file grows with them, and the nid-free sweeps (L1b, L6b)
-# are deliberately scoped to the converted screen rather than to the whole admin, so they cannot
+# SCREENS COVERED SO FAR: admin_groups, admin_users, admin_levels, admin_mods. The rest address
+# by nid and are converted one release at a time; this file grows with them, and the nid-free
+# sweeps (L1b, L6b, L10b, L14b) are deliberately scoped to the converted screen rather than to the whole admin, so they cannot
 # pass vacuously while an unconverted screen still emits integers.
 #
 #   BASE=http://localhost:8080 test/lid_addressing.sh
@@ -236,6 +236,51 @@ GROUPS_AFTER=$(sql "SELECT n2.lid FROM luna_nodes_map m
   && pass "L13b the group set is back to what it was (suite is self-cleaning)" \
   || fail "L13b the group set was left changed: '$GROUPS_AFTER' (was '$GROUPS_BEFORE')"
 
-rm -f "$AJ" "$AP" "$LP" "$GP" "$GA" "$GP2" "$GP3" "$UP" "$UE" "$UE2" "$VP" "$VE" "$VE2"
+echo "== admin_mods =="
+MP=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_mods?lang=en-US" -o "$MP"
+
+grep -q 'admin_mods?mod_lid=mod_admin' "$MP" \
+  && pass "L14 the modules list links by lid" \
+  || fail "L14 the modules list does not link by lid"
+grep -qE 'admin_mods\?mod_nid=' "$MP" \
+  && fail "L14b a ?mod_nid= link survives on the modules list" \
+  || pass "L14b no ?mod_nid= link survives on the modules list"
+grep -q '<option label="Public level" value="level_public"' "$MP" \
+  && pass "L15 the level picker is keyed by lid" \
+  || fail "L15 the level picker is not keyed by lid"
+grep -q '<option label="Home" value="root"' "$MP" \
+  && pass "L15b the pages picker is keyed by lid" \
+  || fail "L15b the pages picker is not keyed by lid"
+
+ME=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_mods?mod_lid=mod_online_users&lang=en-US" -o "$ME"
+grep -q 'name="modify_item_lid" value="mod_online_users"' "$ME" \
+  && pass "L16 ?mod_lid= reaches the modify form, addressed by that lid" \
+  || fail "L16 ?mod_lid= did not reach the modify form"
+
+# L17 is the strongest probe in this file, and it is strong because of how submit_modify() works:
+# it unlinks every page and level from the module and then re-links whatever the form resolved. So
+# posting the module's EXISTING set and finding it intact afterwards is not a tautology — if
+# resolution dropped the list, the unlink would still have run and the module would come back
+# linked to nothing at all. mod_online_users is the safe target: it is not in the protected-lid
+# list, unlike the seven modules that power the admin pages.
+pages_of_mod(){ sql "SELECT n2.lid FROM luna_nodes_map m
+  JOIN luna_nodes n1 ON m.nid1 = n1.nid JOIN luna_nodes n2 ON m.nid2 = n2.nid
+  WHERE n1.lid = '$1' AND n2.tid = (SELECT id FROM luna_types WHERE lid = 'page') ORDER BY n2.lid;"; }
+MOD_PAGES_BEFORE=$(pages_of_mod mod_online_users)
+curl -s -b "$AJ" --data-urlencode submit=Modify --data-urlencode mode=modify \
+  --data-urlencode "modify_item_lid=mod_online_users" --data-urlencode modify_mod_lid=mod_online_users \
+  --data-urlencode "modify_mod_level=level_admin" --data-urlencode "modify_mod_pages[]=admin" \
+  --data-urlencode "csrf_token=$(tok $ME)" "$BASE/admin/admin_mods?lang=en-US" -o /dev/null
+MOD_PAGES_AFTER=$(pages_of_mod mod_online_users)
+[ "$MOD_PAGES_AFTER" = "$MOD_PAGES_BEFORE" ] && [ -n "$MOD_PAGES_AFTER" ] \
+  && pass "L17 a lid-addressed module save re-linked its pages (unlink+link round-tripped)" \
+  || fail "L17 the module lost its page links: '$MOD_PAGES_AFTER' (was '$MOD_PAGES_BEFORE')"
+[ "$(sql "SELECT n2.lid FROM luna_nodes_map m
+  JOIN luna_nodes n1 ON m.nid1 = n1.nid JOIN luna_nodes n2 ON m.nid2 = n2.nid
+  WHERE n1.lid = 'mod_online_users' AND n2.tid = (SELECT id FROM luna_types WHERE lid = 'level');")" = "level_admin" ] \
+  && pass "L17b the level picker's lid resolved and re-linked" \
+  || fail "L17b the module lost its level link"
+
+rm -f "$AJ" "$AP" "$LP" "$GP" "$GA" "$GP2" "$GP3" "$UP" "$UE" "$UE2" "$VP" "$VE" "$VE2" "$MP" "$ME"
 echo
 if [ "$fails" -eq 0 ]; then echo "LID ADDRESSING HOLDS"; exit 0; else echo "$fails CHECK(S) FAILED"; exit 1; fi

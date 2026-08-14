@@ -113,6 +113,7 @@ admin_levels|admin|/admin/admin_levels?lang=en-US
 admin_levels_edit|admin|/admin/admin_levels?level_lid=level_edition&lang=en-US
 admin_pages|admin|/admin/admin_pages?lang=en-US
 admin_mods|admin|/admin/admin_mods?lang=en-US
+admin_mods_edit|admin|/admin/admin_mods?mod_lid=mod_online_users&lang=en-US
 journal_analyse|admin|/admin/journal?log_id=999&lang=en-US
 edit_texts|admin|/edition/edit_texts?lang=en-US
 home_admin|admin|/?lang=en-US
@@ -126,6 +127,7 @@ admin_levels_fr|admin|/admin/admin_levels?lang=fr-FR
 admin_levels_edit_fr|admin|/admin/admin_levels?level_lid=level_edition&lang=fr-FR
 admin_pages_fr|admin|/admin/admin_pages?lang=fr-FR
 admin_mods_fr|admin|/admin/admin_mods?lang=fr-FR
+admin_mods_edit_fr|admin|/admin/admin_mods?mod_lid=mod_online_users&lang=fr-FR
 journal_analyse_fr|admin|/admin/journal?log_id=999&lang=fr-FR
 edit_texts_fr|admin|/edition/edit_texts?lang=fr-FR
 home_admin_fr|admin|/?lang=fr-FR
@@ -197,7 +199,23 @@ while IFS='|' read -r id auth url expect; do
       printf '  \033[32mSAME\033[0m    %-14s HTTP %s\n' "$id" "$code"
     else
       printf '  \033[31mDIFF\033[0m    %-14s HTTP %s\n' "$id" "$code"; diffs=$((diffs+1))
-      diff "$base" "$RUN/$id.norm" | head -12 | sed 's/^/        /'
+      # Show a preview, and SAY SO when there is more. The old form piped straight through
+      # `head -12` and stopped, so a 140-line diff and a 10-line diff looked the same on screen:
+      # a reader who inspected "every changed line" had in fact seen the first twelve, and the
+      # accept-and-recapture that follows is exactly where that matters. DIFF_LINES=0 prints the
+      # whole thing. The full-diff command is printed rather than described so it can be run.
+      dtmp=$(mktemp); diff "$base" "$RUN/$id.norm" > "$dtmp"
+      dtotal=$(grep -c '^[<>]' "$dtmp" || true)
+      dshow="${DIFF_LINES:-12}"
+      if [ "$dshow" -eq 0 ]; then cat "$dtmp" | sed 's/^/        /'; else
+        head -"$dshow" "$dtmp" | sed 's/^/        /'
+        dhidden=$(( $(wc -l < "$dtmp") - dshow ))
+        if [ "$dhidden" -gt 0 ]; then
+          printf '        \033[33m… %s more line(s) hidden; %s changed line(s) in total\033[0m\n' "$dhidden" "$dtotal"
+          printf '        \033[33m  full: diff %s %s   (or DIFF_LINES=0 make render-check)\033[0m\n' "$base" "$RUN/$id.norm"
+        fi
+      fi
+      rm -f "$dtmp"
     fi
   fi
 done <<< "$PAGES"

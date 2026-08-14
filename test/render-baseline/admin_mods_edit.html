@@ -47,36 +47,36 @@
       <main id="Content">
         <div id="Content-main">
           <div class="box">
-            <form method="post" id="Addmod" action="/admin/admin_mods">
+            <form method="post" id="Modifymod" action="/admin/admin_mods">
               <fieldset>
-                <h2 class="box-handle collapsed">Add a module</h2>
-                <div class="box-content off">
+                <h2 class="box-handle expanded">Modify the module <em>Online users</em></h2>
+                <div class="box-content">
                   <div class="fields">
                     <div class="onecol">
-                      <label for="add_mod_is_inactive" class=""><input name="add_mod_is_inactive" id="add_mod_is_inactive" type="checkbox" class="autowidth" value="1" /> Deactivate</label>
+                      <label for="modifymodisinactive" class=""><input name="modifymodisinactive" id="modifymodisinactive" type="checkbox" class="autowidth" value="1" /> Deactivate</label>
                       <br />
                     </div>
                     <div class="col">
-                      <label for="add_mod_lid" class="">
+                      <label for="modify_mod_lid" class="">
                         <span class="label">Literal identifier</span>
-                        <input name="add_mod_lid" id="add_mod_lid" type="text" value="" />
+                        <input name="modify_mod_lid" id="modify_mod_lid" type="text" value="mod_online_users" />
                       </label>
                       <br />
-                      <label for="add_mod_level" class="">
+                      <label for="modify_mod_level" class="">
                         <span class="label">Access level</span>
-                        <select size="1" id="add_mod_level" name="add_mod_level">
-                          <option label="Administration level" value="level_admin">Administration level</option>
+                        <select size="1" id="modify_mod_level" name="modify_mod_level">
+                          <option label="Administration level" value="level_admin" selected="selected">Administration level</option>
                           <option label="Edition level" value="level_edition">Edition level</option>
-                          <option label="Public level" value="level_public" selected="selected">Public level</option>
+                          <option label="Public level" value="level_public">Public level</option>
                         </select>
                       </label>
                       <br />
                     </div>
                     <div class="col">
-                      <label for="add_mod_pages" class="large">
+                      <label for="modify_mod_pages" class="large">
                         <span class="label">Pages using the module</span>
-                        <select size="13" id="add_mod_pages" name="add_mod_pages[]" multiple="multiple">
-                          <option label="Administration" value="admin">Administration</option>
+                        <select size="13" id="modify_mod_pages" name="modify_mod_pages[]" multiple="multiple">
+                          <option label="Administration" value="admin" selected="selected">Administration</option>
                           <option label="Edition" value="edition">Edition</option>
                           <option label="Groups administration" value="admin_groups">Groups administration</option>
                           <option label="Home" value="root">Home</option>
@@ -94,8 +94,11 @@
                     </div>
                   </div>
                   <div class="submit">
-                    <input type="hidden" name="mode" value="add" />
-                    <input type="submit" class="submit" name="submit" value="Add" />
+                    <input type="submit" class="submit" name="submit" value="Modify" />
+                    <input type="hidden" name="mode" value="modify" />
+                    <input type="hidden" name="mod_lid" value="mod_online_users" />
+                    <input type="hidden" name="modify_item_lid" value="mod_online_users" />
+                    <input type="submit" class="submit warning" name="submit" value="Delete" data-confirm="Are you sure you want to delete this module?" />
                   </div>
                 </div>
               </fieldset>
@@ -103,8 +106,8 @@
             </form>
           </div>
           <div id="ModsList" class="box">
-            <h2 class="box-handle expanded">Modules</h2>
-            <div class="box-content boxtable">
+            <h2 class="box-handle collapsed">Modules</h2>
+            <div class="box-content boxtable off">
               <table class="zebra">
                 <caption class="off">Modules</caption>
                 <thead>
