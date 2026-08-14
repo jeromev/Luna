@@ -53,11 +53,6 @@ norm(){ sed -E \
 # id | auth(guest|admin) | url | expected HTTP code (optional, default 200)
 #   — covers each html.xsl stylesheet + the RDF output formats
 #
-# The two `node` cases address the per-node linked-data view (mod_node), which dumps a single
-# node as RDF/XML. It takes the nid from the path: bare /node has no subdir, so mod_node logs a
-# notice and die()s, yielding HTTP 200 with an empty body. They are pointed at real nodes, and
-# split by level so the pair is not redundant: /node/9 (root, level_public) is readable by a
-# guest, /node/10 (admin, level_admin) only by an admin — which exercises mod_node's access gate.
 # The Markdown render path is covered by home/home_admin, which carry the seeded welcome text.
 #
 # sitemap/robots/data_root cover the publishing surface — the crawler-discovery endpoints and
@@ -82,7 +77,7 @@ norm(){ sed -E \
 # can reach; and the vocabulary bnode collision rendered the wrong case-variant of a label, which
 # is invisible in en_US precisely because en_US maps 'user' and 'User' to the same string, while
 # fr_FR maps them to 'usager' and 'Usager'. A French case is the only instrument that separates
-# them. The RDF/data endpoints (out_*, sitemap, robots, data_root, node*) carry no interface
+# them. The RDF/data endpoints (out_*, sitemap, robots, data_root) carry no interface
 # vocabulary, so they are not duplicated.
 #
 # `journal` (the log LIST, as distinct from journal_analyse) sits early on purpose: it renders
@@ -94,7 +89,6 @@ admin|admin|/admin?lang=en-US
 journal|admin|/admin/journal?lang=en-US
 journal_fr|admin|/admin/journal?lang=fr-FR
 home|guest|/?lang=en-US
-node|guest|/node/9?lang=en-US
 login|guest|/login?lang=en-US
 notfound|guest|/no-such-page-xyz?lang=en-US|404
 out_xml|guest|/?output=xml&lang=en-US
@@ -112,7 +106,6 @@ admin_mods|admin|/admin/admin_mods?lang=en-US
 journal_analyse|admin|/admin/journal?log_id=999&lang=en-US
 edit_texts|admin|/edition/edit_texts?lang=en-US
 home_admin|admin|/?lang=en-US
-node_admin|admin|/node/10?lang=en-US
 home_fr|guest|/?lang=fr-FR
 login_fr|guest|/login?lang=fr-FR
 admin_users_fr|admin|/admin/admin_users?lang=fr-FR
@@ -176,8 +169,8 @@ while IFS='|' read -r id auth url expect; do
   # A zero-byte body is not evidence: it compares equal to every other empty render, so such a
   # case can never fail and its "SAME" line asserts nothing. Refuse it on both sides — capture
   # must not record one, and check must not trust one. The app returns 200 with an empty body
-  # whenever a module die()s after its access/argument checks (mod_node on a missing subdir),
-  # which is how two such baselines were recorded, and then passed, unnoticed.
+  # whenever a module die()s after its access/argument checks, which is how two such baselines
+  # were once recorded, and then passed, unnoticed.
   if [ "$size" -eq 0 ]; then
     printf '  \033[31mEMPTY\033[0m   %-14s HTTP %s  0 bytes — %s renders nothing\n' "$id" "$code" "$url"
     fails=$((fails+1)); continue

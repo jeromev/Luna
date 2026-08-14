@@ -106,7 +106,7 @@ class luna {
 	 * lunaVersion
 	 * @var		string
 	 */
-	public static $lunaVersion = '0.9.8-alpha';
+	public static $lunaVersion = '0.9.9-alpha';
 	/**
 	 * instance
 	 * @var self|null
@@ -656,8 +656,7 @@ class luna {
 				'Navigation',
 				'Output formats',
 				'You are logged in as',
-				ANONYMOUS,
-				'node'
+				ANONYMOUS
 			]);
 			// Data outputs (xml/json/n3/jsonld) carry the content graph only — emit here,
 			// before the HTML-only chrome (current user, language/format switchers, site

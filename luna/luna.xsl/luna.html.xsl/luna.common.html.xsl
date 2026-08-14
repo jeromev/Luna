@@ -674,7 +674,7 @@
 									<xsl:for-each select="/rdf:RDF/schema:WebPage[schema:isPartOf/@rdf:resource = $root and @rdf:about != $root]">
 										<xsl:sort select="schema:name"/>
 										<xsl:variable name="child"><xsl:value-of select="@rdf:about"/></xsl:variable>
-										<xsl:if test="luna:isActive = '1' and not($guest = '1' and luna:lid = 'logout') and not($guest = '0' and luna:lid = 'login') and not(luna:lid = 'node')">
+										<xsl:if test="luna:isActive = '1' and not($guest = '1' and luna:lid = 'logout') and not($guest = '0' and luna:lid = 'login')">
 											<li>
 												<a>
 													<xsl:attribute name="href">
@@ -703,7 +703,7 @@
 					<xsl:for-each select="/rdf:RDF/schema:WebPage[schema:isPartOf/@rdf:resource = $index]">
 						<xsl:sort select="schema:name"/>
 						<xsl:variable name="childindex"><xsl:value-of select="@rdf:about"/></xsl:variable>
-						<xsl:if test="luna:isActive = '1' and not($guest = '1' and luna:lid = 'logout') and not($guest = '0' and luna:lid = 'login') and not(luna:lid = 'node')">
+						<xsl:if test="luna:isActive = '1' and not($guest = '1' and luna:lid = 'logout') and not($guest = '0' and luna:lid = 'login')">
 							<li>
 								<a>
 									<xsl:attribute name="href">

@@ -188,9 +188,7 @@ INSERT INTO `luna_nodes` (`nid`, `lid`, `tid`, `parent_nid`, `is_active`) VALUES
 (27, 'mod_edit_texts', 6, NULL, 1),
 (28, 'mod_journal', 6, NULL, 1),
 (29, 'mod_log', 6, NULL, 1),
-(30, 'mod_online_users', 6, NULL, 1),
-(31, 'mod_node', 6, NULL, 1),
-(32, 'node', 5, 9, 1);
+(30, 'mod_online_users', 6, NULL, 1);
 
 INSERT INTO `luna_nodes_seq` (`sequence`) VALUES
 (33);
@@ -241,10 +239,7 @@ INSERT INTO `luna_nodes_map` (`nid1`, `nid2`) VALUES
 (17, 27), (27, 17),
 (18, 28), (28, 18),
 (19, 29), (29, 19),
-(20, 29), (29, 20),
-(31, 32), (32, 31),
-(31, 6), (6, 31),
-(6, 32), (32, 6);
+(20, 29), (29, 20);
 
 INSERT INTO `luna_actions` (`nid`, `unid`, `ntime`) VALUES
 (1, 1, 0),
@@ -276,9 +271,7 @@ INSERT INTO `luna_actions` (`nid`, `unid`, `ntime`) VALUES
 (27, 1, 0),
 (28, 1, 0),
 (29, 1, 0),
-(30, 1, 0),
-(31, 1, 0),
-(32, 1, 0);
+(30, 1, 0);
 
 INSERT INTO `luna_types` (`id`, `lid`, `page_nid`) VALUES
 (1, 'user', 15),

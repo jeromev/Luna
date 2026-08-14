@@ -110,13 +110,14 @@ expressible as a `ui:message` RDF graph a stylesheet can render.
 |---|---|---|
 | 2 | **Dual-write durability** — confirm flipping the Oxigraph `UPDATE` to must-succeed + a relational outbox for replay (no 2PC exists). | P2 |
 | 3 | **Keep or drop MySQL / Ontop** after P2 — retire entirely, or keep as a read-only SQL projection behind Ontop? | P2/P3 |
-| 4 | **Fate of `nid`** — drop the `/node/{nid}` identity entirely, or keep `nid` as a non-identifying `schema:identifier`? | P2 |
 | 5 | **Triplestore for P3** — stay on Oxigraph + external SHACL/inference, or swap to Jena Fuseki / GraphDB for native support? | P3 |
 | 8 | **Draft/version model (P3)** — per-resource named graphs promoted on publish; PROV-O audit in the default graph or a dedicated audit graph? | P3 |
 
 *Resolved: slugs are immutable (rename = create-new + delete-old); client-side XSLT (P5) is dropped;
 the `schema:name` overload is split — the routing key is `luna:lid`, `schema:name` is the display
-name, and both surfaces now assert both (0.9.3-alpha).*
+name, and both surfaces now assert both (0.9.3-alpha); the fate of `nid` — the `/node/{nid}` route
+is retired, so `nid` is no longer a published identity anywhere, surviving only as a
+non-identifying `schema:identifier` and as the loaders' internal key (0.9.9-alpha).*
 
 ## Sequencing
 
