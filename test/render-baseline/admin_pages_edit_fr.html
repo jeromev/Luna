@@ -47,24 +47,24 @@
       <main id="Content">
         <div id="Content-main">
           <div class="box">
-            <form method="post" id="Addpage" action="/admin/admin_pages">
+            <form method="post" id="Modifypage" action="/admin/admin_pages">
               <fieldset>
-                <h2 class="box-handle collapsed">Ajouter une page</h2>
-                <div class="box-content off">
+                <h2 class="box-handle expanded">Modifier la page <em>Édition</em></h2>
+                <div class="box-content">
+                  <div class="onecol">
+                    <label for="modify_page_is_inactive" class=""><input name="modify_page_is_inactive" id="modify_page_is_inactive" type="checkbox" class="autowidth" value="1" /> Désactiver</label>
+                  </div>
                   <div class="fields">
-                    <div class="onecol">
-                      <label for="add_page_is_inactive" class=""><input name="add_page_is_inactive" id="add_page_is_inactive" type="checkbox" class="autowidth" value="1" /> Désactiver</label>
-                    </div>
                     <div class="col">
-                      <label for="add_page_lid" class="">
+                      <label for="modify_page_lid" class="">
                         <span class="label">identifiant littéral</span>
-                        <input name="add_page_lid" id="add_page_lid" type="text" value="" />
+                        <input name="modify_page_lid" id="modify_page_lid" type="text" value="edition" />
                       </label>
                       <br />
-                      <label for="add_parent_lid" class="">
+                      <label for="modify_parent_lid" class="">
                         <span class="label">Page parente</span>
-                        <select size="1" id="add_parent_lid" name="add_parent_lid">
-                          <option label="Accueil" value="root">Accueil</option>
+                        <select size="1" id="modify_parent_lid" name="modify_parent_lid">
+                          <option label="Accueil" value="root" selected="selected">Accueil</option>
                           <option label="Administration" value="admin">Administration</option>
                           <option label="Administration des groupes" value="admin_groups">Administration des groupes</option>
                           <option label="Administration des modules" value="admin_mods">Administration des modules</option>
@@ -79,19 +79,20 @@
                         </select>
                       </label>
                       <br />
-                      <label for="add_page_level" class="">
+                      <label for="modify_page_level" class="">
                         <span class="label">Niveau d’accès de la page</span>
-                        <select size="1" id="add_page_level" name="add_page_level">
+                        <select size="1" id="modify_page_level" name="modify_page_level">
                           <option label="Niveau administration" value="level_admin">Niveau administration</option>
-                          <option label="Niveau public" value="level_public" selected="selected">Niveau public</option>
-                          <option label="Niveau édition" value="level_edition">Niveau édition</option>
+                          <option label="Niveau public" value="level_public">Niveau public</option>
+                          <option label="Niveau édition" value="level_edition" selected="selected">Niveau édition</option>
                         </select>
                       </label>
+                      <br />
                     </div>
                     <div class="col">
-                      <label for="add_page_mods" class="large">
+                      <label for="modify_page_mods" class="large">
                         <span class="label">Modules utilisés sur cette page</span>
-                        <select size="11" id="add_page_mods" name="add_page_mods[]" multiple="multiple">
+                        <select size="11" id="modify_page_mods" name="modify_page_mods[]" multiple="multiple">
                           <option label="Module de connexion" value="mod_log">Module de connexion</option>
                           <option label="Module de journalisation" value="mod_journal">Module de journalisation</option>
                           <option label="Module d’administration" value="mod_admin">Module d’administration</option>
@@ -104,11 +105,15 @@
                           <option label="Usagers en ligne" value="mod_online_users">Usagers en ligne</option>
                         </select>
                       </label>
+                      <br />
                     </div>
                   </div>
                   <div class="submit">
-                    <input type="hidden" name="mode" value="add" />
-                    <input type="submit" class="submit" name="submit" value="Ajouter" />
+                    <input type="submit" class="submit" name="submit" value="Modifier" />
+                    <input type="hidden" name="mode" value="modify" />
+                    <input type="hidden" name="page_lid" value="edition" />
+                    <input type="hidden" name="modify_item_lid" value="edition" />
+                    <input type="submit" class="submit warning" name="submit" value="Supprimer" data-confirm="Êtes-vous sûr de vouloir supprimer cette page?" />
                   </div>
                 </div>
               </fieldset>
@@ -116,8 +121,8 @@
             </form>
           </div>
           <div id="PagesList" class="box">
-            <h2 class="box-handle expanded">Pages</h2>
-            <div class="box-content boxtable">
+            <h2 class="box-handle collapsed">Pages</h2>
+            <div class="box-content boxtable off">
               <table class="zebra">
                 <caption class="off">Pages</caption>
                 <thead>

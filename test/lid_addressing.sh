@@ -35,10 +35,10 @@
 # escalation guard still FIRES (by its message) rather than the attempt merely failing to
 # resolve — see the comment there.
 #
-# SCREENS COVERED SO FAR: admin_groups, admin_users, admin_levels, admin_mods. The rest address
-# by nid and are converted one release at a time; this file grows with them, and the nid-free
-# sweeps (L1b, L6b, L10b, L14b) are deliberately scoped to the converted screen rather than to the whole admin, so they cannot
-# pass vacuously while an unconverted screen still emits integers.
+# SCREENS COVERED SO FAR: admin_groups, admin_users, admin_levels, admin_mods, admin_pages. Only
+# edit_texts still addresses by nid; this file grows with it. The nid-free sweeps (L1b, L6b, L10b,
+# L14b, L18b) are deliberately scoped to the converted screen rather than to the whole admin, so
+# they cannot pass vacuously while an unconverted screen still emits integers.
 #
 #   BASE=http://localhost:8080 test/lid_addressing.sh
 #
@@ -281,6 +281,75 @@ MOD_PAGES_AFTER=$(pages_of_mod mod_online_users)
   && pass "L17b the level picker's lid resolved and re-linked" \
   || fail "L17b the module lost its level link"
 
-rm -f "$AJ" "$AP" "$LP" "$GP" "$GA" "$GP2" "$GP3" "$UP" "$UE" "$UE2" "$VP" "$VE" "$VE2" "$MP" "$ME"
+echo "== admin_pages =="
+PP=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_pages?lang=en-US" -o "$PP"
+
+grep -q 'admin_pages?page_lid=edition' "$PP" \
+  && pass "L18 the pages list links by lid" \
+  || fail "L18 the pages list does not link by lid"
+grep -qE 'admin_pages\?page_nid=' "$PP" \
+  && fail "L18b a ?page_nid= link survives on the pages list" \
+  || pass "L18b no ?page_nid= link survives on the pages list"
+grep -q 'name="add_parent_lid"' "$PP" \
+  && pass "L19 the parent picker posts a lid" \
+  || fail "L19 the parent picker still posts a nid"
+grep -q '<option label="Home" value="root"' "$PP" \
+  && pass "L19b the parent picker is keyed by lid" \
+  || fail "L19b the parent picker is not keyed by lid"
+
+PE=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_pages?page_lid=edition&lang=en-US" -o "$PE"
+grep -q 'name="modify_item_lid" value="edition"' "$PE" \
+  && pass "L20 ?page_lid= reaches the modify form, addressed by that lid" \
+  || fail "L20 ?page_lid= did not reach the modify form"
+
+# L21: the page write path. update() takes the parent as its fourth argument and the mods are
+# unlinked and re-linked, so posting `edition`'s own parent and level back is a live exercise of
+# all three resolvers. The re-parent guards are the reason to be careful what this posts: a page
+# may not become its own parent, nor its own ancestor at any depth (would_create_cycle()), and
+# those checks compare integers that now arrive from lids.
+parent_of(){ sql "SELECT p.lid FROM luna_nodes n JOIN luna_nodes p ON n.parent_nid = p.nid WHERE n.lid = '$1';"; }
+level_of_page(){ sql "SELECT n2.lid FROM luna_nodes_map m
+  JOIN luna_nodes n1 ON m.nid1 = n1.nid JOIN luna_nodes n2 ON m.nid2 = n2.nid
+  WHERE n1.lid = '$1' AND n2.tid = (SELECT id FROM luna_types WHERE lid = 'level');"; }
+PAGE_PARENT_BEFORE=$(parent_of edition); PAGE_LEVEL_BEFORE=$(level_of_page edition)
+PRESP=$(curl -s -b "$AJ" --data-urlencode submit=Modify --data-urlencode mode=modify \
+  --data-urlencode "modify_item_lid=edition" --data-urlencode modify_page_lid=edition \
+  --data-urlencode "modify_parent_lid=root" --data-urlencode "modify_page_level=level_edition" \
+  --data-urlencode "csrf_token=$(tok $PE)" "$BASE/admin/admin_pages?lang=en-US")
+# The success message is asserted FIRST and separately, and that is the whole point. An earlier
+# draft of this check asserted only that the parent and level were unchanged — which is equally
+# true when the save is refused outright, and it was: a missed resolution left the level check
+# comparing a lid against the node table, so every modify returned false and the "nothing
+# changed" assertion passed on a screen whose save never worked. Unchanged state is not evidence
+# of a successful write unless you have separately established that a write happened.
+echo "$PRESP" | grep -qiE 'has been modified' \
+  && pass "L21 a lid-addressed page save reports success" \
+  || fail "L21 the page save was refused — the form did not go through at all"
+[ "$(parent_of edition)" = "$PAGE_PARENT_BEFORE" ] && [ -n "$(parent_of edition)" ] \
+  && pass "L21a the page kept its parent through that save" \
+  || fail "L21a the page lost its parent: '$(parent_of edition)' (was '$PAGE_PARENT_BEFORE')"
+[ "$(level_of_page edition)" = "$PAGE_LEVEL_BEFORE" ] && [ -n "$(level_of_page edition)" ] \
+  && pass "L21b the level picker's lid resolved and re-linked" \
+  || fail "L21b the page lost its level link"
+
+# L22: the cycle guard still fires. edition's child is edit_texts, so re-parenting edition under
+# edit_texts would make a page its own descendant, which only would_create_cycle() catches — the
+# self-parent test above it compares parent == item and is false here. Both hierarchy checks
+# share one message ("The hierarchy is incorrect."), so this asserts that a hierarchy guard
+# refused it and that only the cycle branch could have; if the lids failed to resolve,
+# would_create_cycle(0, 0) is false and the refusal would come from somewhere else entirely.
+PE2=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_pages?page_lid=edition&lang=en-US" -o "$PE2"
+CYC=$(curl -s -b "$AJ" --data-urlencode submit=Modify --data-urlencode mode=modify \
+  --data-urlencode "modify_item_lid=edition" --data-urlencode modify_page_lid=edition \
+  --data-urlencode "modify_parent_lid=edit_texts" --data-urlencode "modify_page_level=level_edition" \
+  --data-urlencode "csrf_token=$(tok $PE2)" "$BASE/admin/admin_pages?lang=en-US")
+echo "$CYC" | grep -qiE 'hierarchy is incorrect' \
+  && pass "L22 the cycle guard refuses a lid-addressed re-parent, by its own message" \
+  || fail "L22 the cycle guard did not fire on a lid-addressed re-parent"
+[ "$(parent_of edition)" = "$PAGE_PARENT_BEFORE" ] \
+  && pass "L22b the tree is intact after the refused re-parent" \
+  || fail "L22b the re-parent went through: edition is now under '$(parent_of edition)'"
+
+rm -f "$AJ" "$AP" "$LP" "$GP" "$GA" "$GP2" "$GP3" "$UP" "$UE" "$UE2" "$VP" "$VE" "$VE2" "$MP" "$ME" "$PP" "$PE" "$PE2"
 echo
 if [ "$fails" -eq 0 ]; then echo "LID ADDRESSING HOLDS"; exit 0; else echo "$fails CHECK(S) FAILED"; exit 1; fi

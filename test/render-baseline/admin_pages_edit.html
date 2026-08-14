@@ -47,27 +47,27 @@
       <main id="Content">
         <div id="Content-main">
           <div class="box">
-            <form method="post" id="Addpage" action="/admin/admin_pages">
+            <form method="post" id="Modifypage" action="/admin/admin_pages">
               <fieldset>
-                <h2 class="box-handle collapsed">Add a page</h2>
-                <div class="box-content off">
+                <h2 class="box-handle expanded">Modify the page <em>Edition</em></h2>
+                <div class="box-content">
+                  <div class="onecol">
+                    <label for="modify_page_is_inactive" class=""><input name="modify_page_is_inactive" id="modify_page_is_inactive" type="checkbox" class="autowidth" value="1" /> Deactivate</label>
+                  </div>
                   <div class="fields">
-                    <div class="onecol">
-                      <label for="add_page_is_inactive" class=""><input name="add_page_is_inactive" id="add_page_is_inactive" type="checkbox" class="autowidth" value="1" /> Deactivate</label>
-                    </div>
                     <div class="col">
-                      <label for="add_page_lid" class="">
+                      <label for="modify_page_lid" class="">
                         <span class="label">Literal identifier</span>
-                        <input name="add_page_lid" id="add_page_lid" type="text" value="" />
+                        <input name="modify_page_lid" id="modify_page_lid" type="text" value="edition" />
                       </label>
                       <br />
-                      <label for="add_parent_lid" class="">
+                      <label for="modify_parent_lid" class="">
                         <span class="label">Parent page</span>
-                        <select size="1" id="add_parent_lid" name="add_parent_lid">
+                        <select size="1" id="modify_parent_lid" name="modify_parent_lid">
                           <option label="Administration" value="admin">Administration</option>
                           <option label="Edition" value="edition">Edition</option>
                           <option label="Groups administration" value="admin_groups">Groups administration</option>
-                          <option label="Home" value="root">Home</option>
+                          <option label="Home" value="root" selected="selected">Home</option>
                           <option label="Journal" value="journal">Journal</option>
                           <option label="Levels administration" value="admin_levels">Levels administration</option>
                           <option label="Login" value="login">Login</option>
@@ -79,19 +79,20 @@
                         </select>
                       </label>
                       <br />
-                      <label for="add_page_level" class="">
+                      <label for="modify_page_level" class="">
                         <span class="label">Page access level</span>
-                        <select size="1" id="add_page_level" name="add_page_level">
+                        <select size="1" id="modify_page_level" name="modify_page_level">
                           <option label="Administration level" value="level_admin">Administration level</option>
-                          <option label="Edition level" value="level_edition">Edition level</option>
-                          <option label="Public level" value="level_public" selected="selected">Public level</option>
+                          <option label="Edition level" value="level_edition" selected="selected">Edition level</option>
+                          <option label="Public level" value="level_public">Public level</option>
                         </select>
                       </label>
+                      <br />
                     </div>
                     <div class="col">
-                      <label for="add_page_mods" class="large">
+                      <label for="modify_page_mods" class="large">
                         <span class="label">Modules to use with this page</span>
-                        <select size="11" id="add_page_mods" name="add_page_mods[]" multiple="multiple">
+                        <select size="11" id="modify_page_mods" name="modify_page_mods[]" multiple="multiple">
                           <option label="Administration module" value="mod_admin">Administration module</option>
                           <option label="Connection module" value="mod_log">Connection module</option>
                           <option label="Groups administration module" value="mod_admin_groups">Groups administration module</option>
@@ -104,11 +105,15 @@
                           <option label="Users administration module" value="mod_admin_users">Users administration module</option>
                         </select>
                       </label>
+                      <br />
                     </div>
                   </div>
                   <div class="submit">
-                    <input type="hidden" name="mode" value="add" />
-                    <input type="submit" class="submit" name="submit" value="Add" />
+                    <input type="submit" class="submit" name="submit" value="Modify" />
+                    <input type="hidden" name="mode" value="modify" />
+                    <input type="hidden" name="page_lid" value="edition" />
+                    <input type="hidden" name="modify_item_lid" value="edition" />
+                    <input type="submit" class="submit warning" name="submit" value="Delete" data-confirm="Are you sure you want to delete this page?" />
                   </div>
                 </div>
               </fieldset>
@@ -116,8 +121,8 @@
             </form>
           </div>
           <div id="PagesList" class="box">
-            <h2 class="box-handle expanded">Pages</h2>
-            <div class="box-content boxtable">
+            <h2 class="box-handle collapsed">Pages</h2>
+            <div class="box-content boxtable off">
               <table class="zebra">
                 <caption class="off">Pages</caption>
                 <thead>

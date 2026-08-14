@@ -107,14 +107,14 @@ post admin/admin_users --data-urlencode mode=modify --data-urlencode submit=Modi
 
 # T2: delete a protected admin page
 post admin/admin_pages --data-urlencode mode=modify --data-urlencode submit=Delete \
-  --data-urlencode "modify_item_nid=$AUPAGE"
+  --data-urlencode "modify_item_lid=admin_users"
 [ "$(exists "$AUPAGE")" -ge 1 ] \
   && pass "T2 deletion of the admin_users page blocked" \
   || fail "T2 LOCKOUT: admin_users page was deleted"
 
 # T3: delete a protected admin module
 post admin/admin_mods --data-urlencode mode=modify --data-urlencode submit=Delete \
-  --data-urlencode "modify_item_nid=$MAU"
+  --data-urlencode "modify_item_lid=mod_admin_users"
 [ "$(exists "$MAU")" -ge 1 ] \
   && pass "T3 deletion of mod_admin_users blocked" \
   || fail "T3 LOCKOUT: mod_admin_users was deleted"
@@ -175,13 +175,13 @@ echo "--- orphan guard (a page with sub-pages must not be deleted) ---"
 # used to succeed and leave the child pointing at a row that no longer existed — still listed
 # in this very admin screen, 404 on every URL, and faithfully reproduced by a resync.
 post admin/admin_pages --data-urlencode submit=Add --data-urlencode mode=add \
-  --data-urlencode add_page_lid=orphan_parent --data-urlencode "add_parent_nid=$ROOTP" \
-  --data-urlencode "add_page_level=$LPUB"
+  --data-urlencode add_page_lid=orphan_parent --data-urlencode "add_parent_lid=root" \
+  --data-urlencode "add_page_level=level_public"
 OPAR=$(sql "SELECT nid FROM luna_nodes WHERE lid='orphan_parent';")
 if [ -n "$OPAR" ]; then
   post admin/admin_pages --data-urlencode submit=Add --data-urlencode mode=add \
-    --data-urlencode add_page_lid=orphan_child --data-urlencode "add_parent_nid=$OPAR" \
-    --data-urlencode "add_page_level=$LPUB"
+    --data-urlencode add_page_lid=orphan_child --data-urlencode "add_parent_lid=orphan_parent" \
+    --data-urlencode "add_page_level=level_public"
 fi
 OCHI=$(sql "SELECT nid FROM luna_nodes WHERE lid='orphan_child';")
 [ -n "$OPAR" ] && [ -n "$OCHI" ] \
@@ -191,7 +191,7 @@ OCHI=$(sql "SELECT nid FROM luna_nodes WHERE lid='orphan_child';")
 # T5: the delete that used to orphan
 if [ -n "$OPAR" ] && [ -n "$OCHI" ]; then
   post admin/admin_pages --data-urlencode mode=modify --data-urlencode submit=Delete \
-    --data-urlencode "modify_item_nid=$OPAR"
+    --data-urlencode "modify_item_lid=orphan_parent"
   [ "$(exists "$OPAR")" -ge 1 ] \
     && pass "T5b deletion of a page with sub-pages blocked" \
     || fail "T5b ORPHAN: the parent page was deleted out from under its child"
@@ -203,14 +203,14 @@ fi
 # P5: the controls — the guard must block only the orphaning case, not deletion as such
 if [ -n "$OCHI" ]; then
   post admin/admin_pages --data-urlencode mode=modify --data-urlencode submit=Delete \
-    --data-urlencode "modify_item_nid=$OCHI"
+    --data-urlencode "modify_item_lid=orphan_child"
   [ "$(exists "$OCHI")" -eq 0 ] \
     && pass "P5a a childless page still deletes (the guard does not over-block)" \
     || fail "P5a the childless page was NOT deleted"
 fi
 if [ -n "$OPAR" ] && [ "$(exists "$OCHI")" -eq 0 ]; then
   post admin/admin_pages --data-urlencode mode=modify --data-urlencode submit=Delete \
-    --data-urlencode "modify_item_nid=$OPAR"
+    --data-urlencode "modify_item_lid=orphan_parent"
   [ "$(exists "$OPAR")" -eq 0 ] \
     && pass "P5b the parent deletes once its child is gone" \
     || fail "P5b the now-childless parent was NOT deleted"
