@@ -87,8 +87,16 @@ services:
     # No host port: the SPARQL endpoint is unauthenticated, so it stays on the internal
     # compose network (reachable by `app`), never the host/browser. Query it for dev with
     #   docker compose exec app curl -s http://ontop:8080/sparql --data-urlencode 'query=…'
+    # Wait for the DB to be *seeded and serving*, exactly as `app` does. Ontop reads the schema
+    # at startup to extract the metadata its R2RML mapping is checked against, so a database that
+    # has merely started is useless to it: on a cold volume MySQL is still running initdb, the
+    # JDBC driver gets "Connection refused", and Ontop exits(1) with an AssertionError out of
+    # it.unibz.inf.ontop.cli.Ontop.main. Nothing restarts it (no service here sets a restart
+    # policy), so the endpoint stays down for the life of the stack until someone brings it up
+    # by hand — which is why the short `- db` form looked fine for as long as the volume was warm.
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   # Semantic-web layer (Phase B): a real triplestore. Loaded out-of-band by
   # materialising the SAME R2RML mapping to N-Triples and POSTing them in (the
