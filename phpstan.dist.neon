@@ -1,0 +1,47 @@
+
+# Static analysis for LunarSystem — see docs/coding-style.md.
+#
+# There is deliberately NO baseline file. A generated debt file that every contributor is
+# told to ignore is a worse artifact than the errors it hides, and the levels gated here are
+# reachable without one. When the level rises, the errors get fixed — not recorded.
+#
+# luna/luna.lib/arc (ARC2) and vendor/ are VENDORED: they are on the scan path so that
+# symbols resolve, and off the analysis path because they are not ours to fix.
+
+parameters:
+	phpVersion:
+		min: 80100        # the supported floor (bin/preflight.php)
+		max: 80399        # the tested stack
+
+	level: 3
+
+	paths:
+		- index.php
+		- bin
+		- luna/luna.php
+		- luna/luna.classes
+		- luna/luna.mods
+		- test
+
+	scanDirectories:
+		- luna/luna.lib/arc
+		- vendor
+
+	bootstrapFiles:
+		- vendor/autoload.php
+		- tools/phpstan-constants.php
+
+	# This is NOT a baseline. A baseline is a generated list of everything currently wrong, kept
+	# so the gate can pass while the code stays broken. This is one hand-written exception with
+	# a reason, and it is here because the analyser is wrong, not because the code is.
+	#
+	# $http_response_header is a magic local the HTTP stream wrapper injects into the calling
+	# scope. PHPStan models it as always defined once a stream function appears in the function;
+	# in reality @file_get_contents can fail — DNS, connection refused, timeout — and leave it
+	# undefined. The isset() is load-bearing: deleting it to satisfy the analyser would create
+	# exactly the notice the analyser says cannot happen.
+	ignoreErrors:
+		-
+			identifier: isset.variable
+			message: '#Variable \$http_response_header in isset\(\) always exists#'
+			path: luna/luna.classes/luna.graph.class.php

@@ -1,14 +1,15 @@
 <?php
+
 /**
  * lunar mod_log module
  *
- * PHP versions 5
+ * PHP 8.1+ (tested on 8.3)
  *
  * LICENSE: This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
  * For more details, see <http://www.gnu.org/copyleft/gpl.html>
  *
- * @author		Odradek
+ * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
  * @link		https://github.com/jeromev/LunarSystem
  * @package		lunarSystem
@@ -17,26 +18,23 @@
 class mod_log {
 	/**
 	 * instance
-	 * @var object
-	 * @access	private
+	 * @var self|null
 	 */
 	private static $instance;
 	// {{{ singleton()
 	/**
-	 * @access public
-	 * @return object
+	 * @return self
 	 */
-	public static function singleton() {
+	public static function singleton(): self {
 		if (!isset(self::$instance)) {
 			$c = __CLASS__;
-			self::$instance = new $c;
+			self::$instance = new $c();
 		}
 		return self::$instance;
 	}
 	// }}}
 	// {{{ __clone()
 	/**
-	 * @access public
 	 * @return void
 	 */
 	public function __clone() { trigger_error('Lunar clones are not allowed.', E_USER_ERROR); }
@@ -44,28 +42,25 @@ class mod_log {
 	// {{{ constructor
 	/**
 	 * Constructor.
-	 * @access	private
-	 * @return boolean
+	 * @return void
 	 */
 	private function __construct() {
-		lunaTools::add_vocabulary(array(
+		lunaTools::add_vocabulary([
 			'Connection form',
 			'Email',
 			'Password',
 			'last_url',
 			'You are now disconnected.'
-		));
-		return true;
+		]);
 	}
 	// }}}
 	// {{{ submit()
 	/**
 	 * submit()
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function submit() {
-		switch(luna::$data['lid']) {
+	public function submit(): bool {
+		switch (luna::$data['lid']) {
 			case 'logout': $this->logout(); break;
 			case 'login': default: $this->login();
 		}
@@ -75,11 +70,10 @@ class mod_log {
 	// {{{ load()
 	/**
 	 * load()
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function load() {
-		switch(luna::$data['lid']) {
+	public function load(): bool {
+		switch (luna::$data['lid']) {
 			case 'logout': $this->logout();
 				break;
 		}
@@ -90,17 +84,16 @@ class mod_log {
 	/**
 	 * logout()
 	 *
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function logout() {
+	public function logout(): bool {
 		// Logout is a state change: require POST + a valid CSRF token. The nav renders
 		// logout as a POST form, so the token is never exposed in a URL/history/log,
 		// and a forged GET /logout (wrong method) or tokenless cross-site POST is rejected.
 		if ($_SERVER['REQUEST_METHOD'] !== 'POST'
 			|| !hash_equals((string) luna::$session->user->csrf_token, (string) ($_POST['csrf_token'] ?? ''))) { return false; }
-		luna::$model->purge_index();
-		$_SESSION = array();
+		luna::model()->purge_index();
+		$_SESSION = [];
 		lunaTools::set_cookie(session_name(), '', NOW - 42000);
 		session_destroy();
 		return true;
@@ -110,17 +103,16 @@ class mod_log {
 	/**
 	 * login()
 	 *
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function login() {
+	public function login(): bool {
 		$inerror = 0;
 		if (!lunaTools::check_emptyness('email')) { $inerror++; }
 		if (!lunaTools::check_emptyness('password')) { $inerror++; }
 		if ($inerror) { return false; }
 
 		if (!$inerror) {
-			$user = array();
+			$user = [];
 			$res = lunaDB::query('
 				SELECT
 					nu.nid,
@@ -172,12 +164,12 @@ class mod_log {
 				$inerror++;
 				luna::$messages['warning'][] = $generic;
 				lunaLog::log('Login failed: unknown user '.$_POST['email'], PEAR_LOG_NOTICE);
-			} else if (!$user->is_active) {
+			} elseif (!$user->is_active) {
 				lunaTools::verify_password($_POST['password'], lunaTools::DUMMY_PASSWORD_HASH);
 				$inerror++;
 				luna::$messages['warning'][] = $generic;
 				lunaLog::log('Login failed: deactivated user '.$user->email, PEAR_LOG_WARNING);
-			} else if (!lunaTools::verify_password($_POST['password'], $user->password)) {
+			} elseif (!lunaTools::verify_password($_POST['password'], $user->password)) {
 				$inerror++;
 				luna::$messages['warning'][] = $generic;
 				lunaLog::log('Login failed: wrong password for '.$user->email, PEAR_LOG_WARNING);
@@ -239,7 +231,7 @@ class mod_log {
 				lunaDB::query('UPDATE '.luna::get_ini('DBtables', 'USERS').' SET password = '.lunaDB::quote(lunaTools::hash_password($_POST['password'])).' WHERE nid = '.lunaDB::quote($user->nid).'');
 			}
 			luna::$session->user = luna::$session->get_user_data(luna::$session->user->session_id);
-			luna::$model->purge_index();
+			luna::model()->purge_index();
 			$message = sprintf(_("You are now connected as %1\$s."), luna::$session->user->firstname.' '.luna::$session->user->lastname);
 			luna::$messages['okay'][] = $message;
 			lunaLog::log($message, PEAR_LOG_INFO);
@@ -251,10 +243,9 @@ class mod_log {
 	/**
 	 * go_guest()
 	 *
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function go_guest() {
+	public function go_guest(): bool {
 		$res = lunaDB::query('
 			UPDATE
 				'.luna::get_ini('DBtables', 'SESSIONS').'
@@ -271,4 +262,3 @@ class mod_log {
 	// }}}
 }
 // }}}
-?>

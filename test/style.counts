@@ -1,0 +1,7 @@
+{
+    "functions_without_return_type": 117,
+    "lines_over_120_columns": 363,
+    "files_over_1000_lines": {
+        "luna/luna.classes/luna.model.class.php": 2142
+    }
+}

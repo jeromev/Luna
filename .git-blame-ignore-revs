@@ -1,0 +1,28 @@
+# Commits that changed how the code is written, never what it does.
+#
+# `git blame` attributes every line it touched to the reformat rather than to the change that
+# actually introduced it. Tell git to look through them:
+#
+#     git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# GitHub reads this file automatically. Only add a revision here if it is genuinely
+# behaviour-neutral — for the whitespace commits below that was proved with
+# `make token-diff`, which compares the PHP token stream with comments and whitespace
+# dropped, and for the rest with `make render-check` plus the write-path suites.
+
+# Correct the docblocks that lie, and wire PHPStan to hold them
+# (comments only; token-diff reported all 16 files identical)
+ebdd363c8b579f927b5c150e1935b2763f858953
+
+# Subtraction: remove 567 lines that documented nothing and ran never
+b62f1e3de700c923915006a1c56e6cadaf33b57d
+
+# Apply the house style, layout tier
+# (whitespace and comments only; token-diff reported every compared file identical)
+885d7aee33bb72681b93f716a9ef2773729d197f
+
+# Apply the house style, token tier
+d2c78c6e33158c1710aa4e7450f33bf9cca353c6
+
+# Modernise array syntax: array() -> []
+ce4ee90c40e23ba694c6afc39726a59edd58f4fa

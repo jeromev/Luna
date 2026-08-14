@@ -206,9 +206,6 @@ html {
   --right-side-optical-adjustment: 1;
   font-size: var(--base-font-size);
   line-height: var(--base-line-height);
-  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, transparent 10%);
-  background-size: 100% var(--base-unit);
-  background-position: left top;
 }
 html {
   /* responsive base font + the baseline unit (--base-unit) */

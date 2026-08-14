@@ -1,14 +1,15 @@
 <?php
+
 /**
  * lunarSystem
  *
- * PHP versions 5
+ * PHP 8.1+ (tested on 8.3)
  *
  * LICENSE: This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
  * For more details, see <http://www.gnu.org/copyleft/gpl.html>
  *
- * @author Odradek
+ * @author Jérôme Vogel
  * @license http://www.gnu.org/copyleft/gpl.html  GPL
  * @link https://github.com/jeromev/LunarSystem
  * @package lunarSystem
@@ -21,5 +22,3 @@ if ($luna = luna::singleton()) {
 		die($luna->transform());
 	}
 }
-
-?>

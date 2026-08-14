@@ -7,16 +7,53 @@ on:
 
 jobs:
   php-lint:
-    name: PHP 8.3 lint (our code)
+    name: PHP ${{ matrix.php }} lint (our code)
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 8.1 is the supported floor (bin/preflight.php gates on it and docs/going-public.md
+        # tells deployers to select 8.1+); 8.3 is the tested stack. Linting only 8.3 meant
+        # 8.2+ syntax could land and be found by a deployer rather than by CI.
+        php: ['8.1', '8.3']
     steps:
       - uses: actions/checkout@v4
       - name: php -l across project code (vendored libs excluded)
         run: |
-          docker run --rm -v "$PWD":/app -w /app php:8.3-cli sh -c '
+          # bin/ and test/ are first-party PHP that CI already *runs* — bin/preflight.php is the
+          # script a deployer executes, and test/*.php is executed by the jobs below. Linting
+          # everything we ship or run is the point; luna/luna.lib/arc and vendor/ stay excluded
+          # because they are vendored (see docs/coding-style.md).
+          docker run --rm -v "$PWD":/app -w /app php:${{ matrix.php }}-cli sh -c '
             set -e
-            find index.php luna/luna.php luna/luna.classes luna/luna.mods \
+            find index.php luna/luna.php luna/luna.classes luna/luna.mods bin test \
               -name "*.php" -print0 | xargs -0 -n1 php -l'
+
+  style:
+    name: house style (php-cs-fixer + the project's own invariants)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the pinned dev tooling
+        # tools/ carries its OWN composer manifest, deliberately separate from the root one:
+        # the committed vendor/ tree is the deployment, and deps-audit.yml audits the root
+        # lock file without --no-dev. See docs/coding-style.md.
+        run: make tools
+      - name: Assert the house style (PSR-12 + seven named deviations)
+        run: make fmt-check
+      - name: Assert the project's own invariants
+        # Fold markers, the ontology namespace across 15 stylesheets + the R2RML mapping,
+        # docs anchors, the module contract, and the ratchets.
+        run: make lint-house
+
+  analyse:
+    name: PHPStan (no baseline)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the pinned dev tooling
+        run: make tools
+      - name: Static analysis
+        run: make analyse
 
   compose-validate:
     name: docker-compose config
@@ -58,6 +95,13 @@ jobs:
           echo "::error::app did not render seeded content"; docker compose logs --tail=80; exit 1
       - name: Run the smoke + security-regression suite
         run: BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" bash test/regression.sh
+      - name: Delegated-admin privilege-escalation guards
+        # `make test` has always run all three suites; CI ran only the first. The two below are the
+        # only coverage the WRITE path has (add/modify/delete through the admin mods), so leaving
+        # them out of CI meant every gate in this workflow was a read-path gate.
+        run: BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" bash test/delegated_admin.sh
+      - name: Admin-lockout guardrails
+        run: BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" bash test/admin_lockout.sh
       - name: Render-diff against the committed baseline
         # The output-neutrality gate: every page type is re-rendered and compared byte-for-byte
         # with test/render-baseline/, which is in the repo. This is what makes "the render is

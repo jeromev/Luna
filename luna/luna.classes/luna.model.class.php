@@ -1,14 +1,15 @@
 <?php
+
 /**
  * lunar model class
  *
- * PHP versions 5
+ * PHP 8.1+ (tested on 8.3)
  *
  * LICENSE: This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
  * For more details, see <http://www.gnu.org/copyleft/gpl.html>
  *
- * @author		Odradek
+ * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
  * @link		https://github.com/jeromev/LunarSystem
  * @package		lunarSystem
@@ -19,91 +20,63 @@ class lunaModel {
 	/**
 	 * index
 	 * @var array
-	 * @access	private
 	 */
-	private $index = array();
+	private $index = [];
 	/**
 	 * node_path
 	 * @var string
-	 * @access	public
 	 */
 	public $node_path = '';
 	/**
 	 * aliases
 	 * @var array
-	 * @access	private
 	 */
-	private $aliases = array();
+	private $aliases = [];
 	/**
 	 * conf
 	 * @var array
-	 * @access	private
 	 */
-	private $conf = array();
+	private $conf = [];
 	/**
 	 * triples
 	 * @var array
-	 * @access	private
 	 */
-	private $triples = array();
+	private $triples = [];
 	/**
 	 * instance
-	 * @var object
-	 * @access	private
+	 * @var self|null
 	 */
 	private static $instance = null;
 	/**
-	 * xsl
-	 * @var object
-	 * @access	private
-	 */
-	private $xsl = null;
-	/**
-	 * xslprocessor
-	 * @var object
-	 * @access	private
-	 */
-	private $xslprocessor = null;
-	/**
-	 * dom
-	 * @var object
-	 * @access	private
-	 */
-	private $dom = null;
-	/**
 	 * lunaNameSpace
-	 * @access	public
 	 * @var		string
 	 */
 	/** The luna: vocabulary namespace — the single source of truth. The 16 XSLT
 	 *  `xmlns:luna="…"` declarations must match this exactly, and the triplestore
 	 *  must be re-projected (`make resync-triplestore`) whenever it changes. */
-	const LUNA_NS = 'https://jeromev.github.io/LunarSystem/ontology#';
-	const LUNA_RENDER_NS = 'https://jeromev.github.io/LunarSystem/render#'; // UI render-model (NOT content)
+	public const LUNA_NS = 'https://jeromev.github.io/LunarSystem/ontology#';
+	public const LUNA_RENDER_NS = 'https://jeromev.github.io/LunarSystem/render#'; // UI render-model (NOT content)
 	public $lunaNameSpace = self::LUNA_NS;
 	// {{{ singleton()
 	/**
-	 * @access public
-	 * @return object
+	 * @return self
 	 */
-	public static function singleton() {
+	public static function singleton(): self {
 		if (!isset(self::$instance)) {
 			$c = __CLASS__;
-			self::$instance = new $c;
+			self::$instance = new $c();
 		}
 		return self::$instance;
 	}
 	// }}}
 	// {{{ __clone()
 	/**
-	 * @access public
 	 * @return void
 	 */
 	public function __clone() { trigger_error('Lunar clones are not allowed.', E_USER_ERROR); }
 	// }}}
 	// {{{ constructor
 	/**
-	 * @access	private
 	 * @return void
 	 */
 	private function __construct() {
@@ -112,9 +85,9 @@ class lunaModel {
 		// skip building the ACL-filtered page index, which requires a live session.
 		if (defined('LUNA_MAINTENANCE') && LUNA_MAINTENANCE) { return; }
 		ksort(luna::$session->user->levels);
-		$cache_rdf_name = 'luna.'.implode('-',luna::$session->user->levels).'.'.luna::$lang;
-		$this->conf = array(
-			'ns' => array(
+		$cache_rdf_name = 'luna.'.implode('-', luna::$session->user->levels).'.'.luna::$lang;
+		$this->conf = [
+			'ns' => [
 				'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
 				'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
 				'foaf' => 'http://xmlns.com/foaf/0.1/',
@@ -124,14 +97,14 @@ class lunaModel {
 				'schema' => 'https://schema.org/',
 				'luna' => $this->lunaNameSpace,
 				'ui' => self::LUNA_RENDER_NS, // UI render-model: vocabulary/data/pager/request/message/log/lang/...
-			),
+			],
 			'serializer_prettyprint_containers' => 1,
 			'serializer_type_nodes' => 1,
-		);
+		];
 		$this->node_path = lunaTools::link('node', true);
-		if (luna::$cache) { $cache_obj = new lunaCache(array('cacheDir' => CACHE_PATH, 'lifetime' => luna::$cache_timeout)); }
+		if (luna::$cache) { $cache_obj = new lunaCache(['cacheDir' => CACHE_PATH, 'lifetime' => luna::$cache_timeout]); }
 		if (luna::$cache && ($cache_str = $cache_obj->get($cache_rdf_name))) {
-			$array = unserialize($cache_str, array('allowed_classes' => false));
+			$array = unserialize($cache_str, ['allowed_classes' => false]);
 			$this->index = $array['index'];
 			$this->aliases = $array['aliases'];
 			unset($array);
@@ -139,25 +112,23 @@ class lunaModel {
 			// load the page tree into the model — from the graph by default, falling
 			// back to SQL if the SPARQL path is off or yields nothing (routing safety net).
 			$nodes = false;
-			if (self::sparql_reads()) { $nodes = $this->load_nodes_sparql('page'); }
+			if (lunaGraph::sparql_reads()) { $nodes = $this->load_nodes_sparql('page'); }
 			if (empty($nodes)) { $nodes = $this->load_nodes('page', 'level'); }
 			$this->merge_index($nodes);
 			if (empty($this->index)) { throw new lunaException(_('Error: cannot build index.'), PEAR_LOG_CRIT); }
-			if (luna::$cache) { $cache_obj->save(serialize(array('index' => $this->index, 'aliases' => $this->aliases))); }
+			if (luna::$cache) { $cache_obj->save(serialize(['index' => $this->index, 'aliases' => $this->aliases])); }
 		}
-		return true;
 	}
 	// }}}
 	// {{{ get_node()
 	/**
-	 * @access public
-	 * @param int $nid
-	 * @param string $type
+	 * @param int|false $nid
+	 * @param string|false $type
 	 * @return mixed
 	 */
-	public function get_node($nid = false, $type = false, $ns = 'luna') {
+	public function get_node(int|false $nid = false, $type = false, $ns = 'luna') {
 		$nid = intval($nid);
-		if (empty($nid)) { return false; }
+		if ($nid < 1) { return false; }
 		if (empty($ns) || !isset($this->conf['ns']["$ns"])) { $ns = 'luna'; }
 		$ns = $this->conf['ns']["$ns"];
 		if (!isset($this->index[$this->node_path.'/'.$nid])) { return false; }
@@ -167,23 +138,18 @@ class lunaModel {
 		return $this->index[$this->node_path.'/'.$nid];
 	}
 	// }}}
-	// {{{ get_ns()
-	/**
-	 * @access public
-	 * @param string $lid
-	 * @return mixed
-	 */
-	public function get_ns($lid = 'luna') {
-		if (empty($lid)) { $lid = 'luna'; }
-		if (!isset($this->conf['ns']["$lid"])) { $lid = 'luna'; }
-		return $this->conf['ns']["$lid"];
-	}
-	// }}}
 	// {{{ merge_index()
 	/**
-	 * @access public
-	 * @param array $nodes
-	 * @return mixed
+	 * Merge a set of nodes into the working index.
+	 *
+	 * Takes `false` as well as an array, and that is the contract rather than an accident:
+	 * every loader that feeds this returns `array|false`, returning false when it finds
+	 * nothing, and the `!empty()` below is what absorbs it. The docblock used to say `array`,
+	 * which is how a native `array` type came to be added here four times and take the login
+	 * page down each time — the login page is the one with no text blocks.
+	 *
+	 * @param array|false $nodes
+	 * @return true
 	 */
 	public function merge_index($nodes) {
 		if (!empty($nodes)) { $this->index = $this->merge_nodes($this->index, $nodes); }
@@ -192,12 +158,11 @@ class lunaModel {
 	// }}}
 	// {{{ purge_index()
 	/**
-	 * @access public
 	 * @return mixed
 	 */
 	public function purge_index() {
-		$this->index = array();
-		$this->aliases = array();
+		$this->index = [];
+		$this->aliases = [];
 		$this->merge_index($this->load_nodes('page', 'level'));
 		if (empty($this->index)) { throw new lunaException(_('Error: cannot build index.'), PEAR_LOG_CRIT); }
 		return true;
@@ -205,24 +170,23 @@ class lunaModel {
 	// }}}
 	// {{{ merge_nodes()
 	/**
-	 * @access public
 	 * @param array $nodes1
 	 * @param array $nodes2
-	 * @return array
+	 * @return array|false
 	 */
-	public function merge_nodes($nodes1, $nodes2) {
+	public function merge_nodes($nodes1, $nodes2): array|false {
 		if (!is_array($nodes1) || !is_array($nodes2)) { return false; }
-		foreach($nodes2 as $node2_uri => $node2_data) {
+		foreach ($nodes2 as $node2_uri => $node2_data) {
 			if (!isset($nodes1[$node2_uri])) {
 				$nodes1[$node2_uri] = $node2_data;
 			} else {
-				foreach($node2_data as $data2_uri => $data2_array) {
+				foreach ($node2_data as $data2_uri => $data2_array) {
 					if (!isset($nodes1[$node2_uri][$data2_uri])) {
 						$nodes1[$node2_uri][$data2_uri] = $data2_array;
 					} else {
-						foreach($data2_array as $k2 => $data2) {
+						foreach ($data2_array as $k2 => $data2) {
 							$found = false;
-							foreach($nodes1[$node2_uri][$data2_uri] as $k1 => $data1) {
+							foreach ($nodes1[$node2_uri][$data2_uri] as $k1 => $data1) {
 								if ($data1['value'] == $data2['value']) {
 									$found = true;
 								}
@@ -238,8 +202,7 @@ class lunaModel {
 	// }}}
 	// {{{ get_level_node()
 	/**
-	 * @access public
-	 * @param array $node
+	 * @param array|false $node
 	 * @return mixed
 	 */
 	public function get_level_node($node = false) {
@@ -251,7 +214,6 @@ class lunaModel {
 	// }}}
 	// {{{ get_page_node_from_alias()
 	/**
-	 * @access public
 	 * @param string $path (optional)
 	 * @return mixed
 	 */
@@ -285,9 +247,8 @@ class lunaModel {
 	// }}}
 	// {{{ get_node_from_alias()
 	/**
-	 * @access public
 	 * @param string $alias
-	 * @param string $type
+	 * @param string|false $type
 	 * @param string $ns
 	 * @return mixed
 	 */
@@ -305,9 +266,8 @@ class lunaModel {
 	// }}}
 	// {{{ get_nid()
 	/**
-	 * @access public
-	 * @param array $node
-	 * @param string $type
+	 * @param array|false $node
+	 * @param string|false $type
 	 * @param string $ns
 	 * @return mixed
 	 */
@@ -324,8 +284,7 @@ class lunaModel {
 	// }}}
 	// {{{ get_type()
 	/**
-	 * @access public
-	 * @param array $node
+	 * @param array|false $node
 	 * @return mixed
 	 */
 	public function get_type($node = false) {
@@ -336,8 +295,7 @@ class lunaModel {
 	// }}}
 	// {{{ get_lid()
 	/**
-	 * @access public
-	 * @param array $node
+	 * @param array|false $node
 	 * @return mixed
 	 */
 	public function get_lid($node = false) {
@@ -354,12 +312,11 @@ class lunaModel {
 	 * exactly as the HTML route 404s. Backs the Linked Data /id/{slug} and /data/{slug}
 	 * URIs, whose local name is the slug, not the breadcrumb alias.
 	 *
-	 * @access public
 	 * @param string $slug
 	 * @param string $type a luna: type to require (e.g. 'page'); '' to accept any
 	 * @return mixed the node, or false
 	 */
-	public function get_node_from_slug($slug = '', $type = 'page') {
+	public function get_node_from_slug(string $slug = '', $type = 'page') {
 		if ($slug === '' || $slug === false) { return false; }
 		$lid   = $this->conf['ns']['luna'].'lid';
 		$rtype = $this->conf['ns']['rdf'].'type';
@@ -378,8 +335,7 @@ class lunaModel {
 	 * derived) — '' for the root page. Used to point the /id/{slug} 303 at the HTML
 	 * document and to re-enter the normal pipeline for /data/{slug}.
 	 *
-	 * @access public
-	 * @param array $node
+	 * @param array|false $node
 	 * @return mixed the alias string (possibly ''), or false if the node carries none
 	 */
 	public function get_alias($node = false) {
@@ -388,24 +344,23 @@ class lunaModel {
 		return $node[$this->conf['ns']['luna'].'alias'][0]['value'];
 	}
 	// }}}
-	// {{{ emit_sitemap()
+	// {{{ build_sitemap()
 	/**
-	 * Emit an XML sitemap of the page tree and exit. Lists every active page the
+	 * Build an XML sitemap of the page tree. Lists every active page the
 	 * *current* requester can see — which, for the anonymous crawler this is meant for,
 	 * is exactly the public set — as canonical HTML URLs (those pages carry the JSON-LD
 	 * and the Link headers that lead on to /id and /data). Part of the publishing
 	 * surface; needs no triplestore. See docs/going-public.md.
 	 *
-	 * @access public
-	 * @return void  (sends the response and exits)
+	 * @return string the sitemap XML; the caller emits it
 	 */
-	public function emit_sitemap() {
+	public function build_sitemap(): string {
 		$luna = $this->conf['ns']['luna'];
 		$rdf  = $this->conf['ns']['rdf'];
 		$pagetype = $luna.'page';
 		// utility pages that aren't indexable content
-		$skip = array('login' => 1, 'logout' => 1);
-		$urls = array();
+		$skip = ['login' => 1, 'logout' => 1];
+		$urls = [];
 		foreach ($this->index as $node) {
 			if (!isset($node[$rdf.'type'][0]['value']) || $node[$rdf.'type'][0]['value'] !== $pagetype) { continue; }
 			if (isset($node[$luna.'isActive'][0]['value']) && (string) $node[$luna.'isActive'][0]['value'] === '0') { continue; }
@@ -419,31 +374,26 @@ class lunaModel {
 		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
 		foreach ($urls as $u) { $xml .= '  <url><loc>'.htmlspecialchars($u, ENT_QUOTES | ENT_XML1, 'UTF-8').'</loc></url>'."\n"; }
 		$xml .= '</urlset>'."\n";
-		if (!headers_sent()) { header('Content-Type: application/xml; charset=utf-8'); }
-		die($xml);
+		return $xml;
 	}
 	// }}}
-	// {{{ emit_robots()
+	// {{{ build_robots()
 	/**
-	 * Emit a robots.txt that allows crawling and points at the sitemap with an absolute
-	 * URL (correct on any host). Exits.
+	 * Build a robots.txt that allows crawling and points at the sitemap with an absolute
+	 * URL (correct on any host).
 	 *
-	 * @access public
-	 * @return void  (sends the response and exits)
+	 * @return string the robots.txt body; the caller emits it
 	 */
-	public function emit_robots() {
+	public function build_robots(): string {
 		$base = rtrim(luna::$site_uri, '/');
-		$txt  = "User-agent: *\nAllow: /\nSitemap: ".$base."/sitemap.xml\n";
-		if (!headers_sent()) { header('Content-Type: text/plain; charset=utf-8'); }
-		die($txt);
+		return "User-agent: *\nAllow: /\nSitemap: ".$base."/sitemap.xml\n";
 	}
 	// }}}
 	// {{{ set_property()
 	/**
-	 * @access public
-	 * @param array $node
-	 * @param string $prop_lid
-	 * @param string $prop_value
+	 * @param array|false $node
+	 * @param string|false $prop_lid
+	 * @param string|false $prop_value
 	 * @param string $ns
 	 * @return mixed
 	 */
@@ -458,8 +408,7 @@ class lunaModel {
 	// }}}
 	// {{{ get_nid_from_lid()
 	/**
-	 * @access public
-	 * @param string $lid
+	 * @param string|false $lid
 	 * @return mixed
 	 */
 	public function get_nid_from_lid($lid = false) {
@@ -481,47 +430,26 @@ class lunaModel {
 	// }}}
 	// {{{ get_parent_node()
 	/**
-	 * @access public
-	 * @param array $node
-	 * @return array
+	 * @param array|false $node
+	 * @return array|false
 	 */
-	public function get_parent_node($node = false) {
+	public function get_parent_node($node = false): array|false {
 		if (empty($node) || !is_array($node)) { return false; }
 		if (!isset($node[$this->conf['ns']['schema'].'isPartOf'][0]['value'])) { return false; }
 		if (!isset($this->index[$node[$this->conf['ns']['schema'].'isPartOf'][0]['value']])) { return false; }
 		return $this->index[$node[$this->conf['ns']['schema'].'isPartOf'][0]['value']];
 	}
 	// }}}
-	// {{{ get_children_nids()
-	/**
-	 * @access public
-	 * @param array $parent_node
-	 * @return array
-	 */
-	public function get_children_nids($parent_node = false) {
-		if (empty($parent_node) || !is_array($parent_node)) { return false; }
-		$children_nodes = $this->get_children_nodes($parent_node);
-		$children_nids = array();
-		if ($children_nodes) {
-			foreach($children_nodes as $node) {
-				$nid = $this->get_nid($node);
-				$children_nids[$nid] = $nid;
-			}
-		}
-		return $children_nids;
-	}
-	// }}}
 	// {{{ get_children_nodes()
 	/**
-	 * @access public
-	 * @param array $parent_node
-	 * @return array
+	 * @param array|false $parent_node
+	 * @return array|false
 	 */
-	public function get_children_nodes($parent_node = false) {
+	public function get_children_nodes($parent_node = false): array|false {
 		if (empty($parent_node) || !is_array($parent_node)) { return false; }
-		$children = array();
+		$children = [];
 		$parent_nid = $this->get_nid($parent_node);
-		foreach($this->index as $node) {
+		foreach ($this->index as $node) {
 			$node_parent_node = $this->get_parent_node($node);
 			$node_parent_nid = $this->get_nid($node_parent_node);
 			if ($node_parent_nid == $parent_nid) {
@@ -535,56 +463,69 @@ class lunaModel {
 		return $children;
 	}
 	// }}}
-	// {{{ dump()
+	// {{{ serialize()
 	/**
-	 * @access public
-	 * @param string $flavor
-	 * @param boolean $return
-	 * @return mixed
+	 * Serialise the published graph into one of the RDF flavours and RETURN it.
+	 *
+	 * This used to be dump(), and it ended the request: every branch finished with header()
+	 * and die(). That is why it needed a $return flag to be usable as a function at all, and
+	 * why to_jsonld() needed one too. The caller now decides what to do with the document —
+	 * emit it with lunaTools::emit(), embed it in a page, or hand it to a test.
+	 *
+	 * @param string $flavor xml | json | n3 | turtle | jsonld
+	 * @param array|false $node serialise this sub-graph instead of the whole published one
+	 * @return string
 	 */
-	public function dump($flavor = 'xml', $return = false, $node = false) {
-		require_once('arc/ARC2.php');
-		$index = (empty($node) || !is_array($node))? $this->build_schema_index() : $node;
-		// These non-HTML data responses (xml/json/n3/jsonld) are shown by the browser's
-		// built-in data viewer, which injects an inline stylesheet — the strict global CSP
-		// (style-src 'self') blocks it and the document renders as unstyled run-on text.
-		// Relax the CSP for the data response only; HTML pages keep script-src/style-src 'self'.
-		if (!$return && !headers_sent()) {
-			header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; img-src data:");
-		}
-		switch($flavor) {
+	public function serialize(string $flavor = 'xml', $node = false): string {
+		require_once LUNAPATH.'luna.lib/arc/ARC2.php';
+		$index = (empty($node) || !is_array($node)) ? $this->build_schema_index() : $node;
+		switch ($flavor) {
 			case 'json':
-				$ser = ARC2::getRDFJSONSerializer($this->conf);
-				$doc = $ser->getSerializedIndex($index);
-				if ($return) { return $doc; }
-				header('Content-Type: application/rdf+json');
-				die($doc);
+				return ARC2::getRDFJSONSerializer($this->conf)->getSerializedIndex($index);
 			case 'n3':
-				$ser = ARC2::getNtriplesSerializer($this->conf);
-				$doc = $ser->getSerializedIndex($index);
-				if ($return) { return $doc; }
-				header('Content-Type: application/rdf+n3');
-				die($doc);
+				return ARC2::getNtriplesSerializer($this->conf)->getSerializedIndex($index);
 			case 'jsonld':
-				return $this->to_jsonld($return);
+				return $this->to_jsonld();
 			case 'turtle':
-				$ser = ARC2::getTurtleSerializer($this->conf);
-				$doc = $ser->getSerializedIndex($index);
-				if ($return) { return $doc; }
-				// Turtle is the canonical RDF text form a Linked Data client expects from /data/{slug}.
-				header('Content-Type: text/turtle; charset=utf-8');
-				die($doc);
+				return ARC2::getTurtleSerializer($this->conf)->getSerializedIndex($index);
 			case 'xml':
 			default:
-				$ser = ARC2::getRDFXMLSerializer($this->conf);
-				$doc = $ser->getSerializedIndex($index);
-				if ($return) { return $doc; }
-				// Serve as application/xml (not application/rdf+xml) so browsers render
-				// the RDF/XML inline instead of downloading it as a .rdf file. The body
-				// is still valid RDF/XML for any consumer that parses the content.
-				header('Content-Type: application/xml; charset=utf-8');
-				die($doc);
+				return ARC2::getRDFXMLSerializer($this->conf)->getSerializedIndex($index);
 		}
+	}
+	// }}}
+	// {{{ content_type()
+	/**
+	 * The Content-Type each flavour is served as. Turtle is what a Linked Data client expects
+	 * from /data/{slug}; RDF/XML goes out as application/xml (not application/rdf+xml) so a
+	 * browser renders it inline instead of offering it as a .rdf download — the body is still
+	 * valid RDF/XML for anything that parses it.
+	 *
+	 * @param string $flavor
+	 * @return string
+	 */
+	public static function content_type(string $flavor = 'xml'): string {
+		static $types = [
+			'json'   => 'application/rdf+json',
+			'n3'     => 'application/rdf+n3',
+			'jsonld' => 'application/ld+json',
+			'turtle' => 'text/turtle; charset=utf-8',
+			'xml'    => 'application/xml; charset=utf-8',
+		];
+		return isset($types[$flavor]) ? $types[$flavor] : $types['xml'];
+	}
+	// }}}
+	// {{{ data_response_csp()
+	/**
+	 * The relaxed CSP a data response needs. These non-HTML documents are shown by the
+	 * browser's built-in data viewer, which injects an inline stylesheet; the strict global
+	 * policy (style-src 'self') blocks it and the document renders as unstyled run-on text.
+	 * HTML pages keep the strict policy.
+	 *
+	 * @return array one header line, for lunaTools::emit()
+	 */
+	public static function data_response_csp(): array {
+		return ["Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; img-src data:"];
 	}
 	// }}}
 	// {{{ to_jsonld()
@@ -594,22 +535,20 @@ class lunaModel {
 	 * Phase-0 prototype of the Linked Data direction — see docs/linked-data.md.
 	 * In Phase A this same shape comes from a SPARQL CONSTRUCT instead.
 	 *
-	 * @access public
-	 * @param boolean $return return the JSON string instead of emitting it
-	 * @return string|void
+	 * @return string the JSON-LD document; the caller emits or embeds it
 	 */
-	public function to_jsonld($return = false) {
+	public function to_jsonld(): string {
 		$base    = rtrim(luna::$site_uri, '/');
 		$rdf     = $this->conf['ns']['rdf'];
 		$rdfs    = $this->conf['ns']['rdfs'];
 		$luna    = $this->conf['ns']['luna'];
 		$owl     = $this->conf['ns']['owl'];
-		$pagenid = defined('PAGENID')? PAGENID : false;
+		$pagenid = defined('PAGENID') ? PAGENID : false;
 		$pageuri = $this->node_path.'/'.$pagenid;
 		// first value of a predicate on an ARC2-style node, or null
-		$first = function($node, $pred) { return isset($node[$pred][0]['value'])? $node[$pred][0]['value'] : null; };
+		$first = function ($node, $pred) { return isset($node[$pred][0]['value']) ? $node[$pred][0]['value'] : null; };
 
-		$doc = array('@context' => 'https://schema.org/');
+		$doc = ['@context' => 'https://schema.org/'];
 		if ($pagenid !== false && isset($this->index[$pageuri])) {
 			$page = $this->index[$pageuri];
 			$slug = $first($page, $luna.'lid');
@@ -623,16 +562,16 @@ class lunaModel {
 			$parent = $first($page, $this->conf['ns']['schema'].'isPartOf');
 			if ($parent && $parent != $pageuri && isset($this->index[$parent])) {
 				$pslug = $first($this->index[$parent], $luna.'lid');
-				if ($pslug !== null) { $doc['isPartOf'] = array('@id' => $base.'/id/'.rawurlencode($pslug)); }
+				if ($pslug !== null) { $doc['isPartOf'] = ['@id' => $base.'/id/'.rawurlencode($pslug)]; }
 			}
 			// text blocks attached to this page -> schema:hasPart Articles
-			$parts = array();
+			$parts = [];
 			foreach ($this->index as $node) {
 				if ($first($node, $rdf.'type') !== $luna.'text' || !isset($node[$luna.'page'])) { continue; }
 				$belongs = false;
 				foreach ($node[$luna.'page'] as $p) { if ($p['value'] == $pageuri) { $belongs = true; break; } }
 				if (!$belongs) { continue; }
-				$part = array('@type' => 'Article');
+				$part = ['@type' => 'Article'];
 				$headline = $first($node, $rdfs.'label');
 				if ($headline !== null) { $part['headline'] = $headline; $part['name'] = $headline; }
 				if (isset($node[$luna.'content'][0]['value'])) {
@@ -648,15 +587,15 @@ class lunaModel {
 			$out = $this->outbound_index();
 			if (isset($doc['@id'], $out[$doc['@id']])) {
 				$schemans = 'https://schema.org/';
-				$add = array();
+				$add = [];
 				foreach ($out[$doc['@id']] as $pred => $vals) {
-					$key = (strpos($pred, $schemans) === 0)? substr($pred, strlen($schemans)) : $pred;
+					$key = (strpos($pred, $schemans) === 0) ? substr($pred, strlen($schemans)) : $pred;
 					foreach ($vals as $v) {
 						if (!isset($v['value'])) { continue; }
-						$add[$key][] = (isset($v['type']) && $v['type'] === 'uri')? array('@id' => $v['value']) : $v['value'];
+						$add[$key][] = (isset($v['type']) && $v['type'] === 'uri') ? ['@id' => $v['value']] : $v['value'];
 					}
 				}
-				foreach ($add as $key => $list) { $doc[$key] = (count($list) === 1)? $list[0] : $list; }
+				foreach ($add as $key => $list) { $doc[$key] = (count($list) === 1) ? $list[0] : $list; }
 			}
 		} else {
 			// no content page (e.g. an admin screen) -> a minimal WebSite node
@@ -667,11 +606,8 @@ class lunaModel {
 		}
 		// JSON_HEX_TAG/AMP keep the block safe inside <script> in the HTML <head>.
 		$flags = 0;
-		foreach (array('JSON_PRETTY_PRINT', 'JSON_UNESCAPED_UNICODE', 'JSON_UNESCAPED_SLASHES', 'JSON_HEX_TAG', 'JSON_HEX_AMP') as $f) { if (defined($f)) { $flags |= constant($f); } }
-		$json = json_encode($doc, $flags);
-		if ($return) { return $json; }
-		header('Content-Type: application/ld+json');
-		die($json);
+		foreach (['JSON_PRETTY_PRINT', 'JSON_UNESCAPED_UNICODE', 'JSON_UNESCAPED_SLASHES', 'JSON_HEX_TAG', 'JSON_HEX_AMP'] as $f) { if (defined($f)) { $flags |= constant($f); } }
+		return (string) json_encode($doc, $flags);
 	}
 	// }}}
 	// {{{ build_schema_index()
@@ -686,10 +622,9 @@ class lunaModel {
 	 * owl:isChildOf and luna:is_active are gone everywhere, not just from the published RDF.
 	 * to_jsonld() is the JSON-LD form of the same projection.
 	 *
-	 * @access private
 	 * @return array an ARC2 index (uri => predicate => [ {value,type,datatype?,lang?} ])
 	 */
-	private function build_schema_index() {
+	private function build_schema_index(): array {
 		$base   = rtrim(luna::$site_uri, '/');
 		$rdf    = $this->conf['ns']['rdf'];
 		$rdfs   = $this->conf['ns']['rdfs'];
@@ -697,31 +632,31 @@ class lunaModel {
 		$owl    = $this->conf['ns']['owl'];
 		$schema = 'https://schema.org/';
 		$xint   = 'http://www.w3.org/2001/XMLSchema#integer';
-		$first  = function($node, $pred) { return isset($node[$pred][0]['value'])? $node[$pred][0]['value'] : null; };
-		$index  = array();
-		$pagenid = defined('PAGENID')? PAGENID : false;
+		$first  = function ($node, $pred) { return isset($node[$pred][0]['value']) ? $node[$pred][0]['value'] : null; };
+		$index  = [];
+		$pagenid = defined('PAGENID') ? PAGENID : false;
 		$pinternal = $this->node_path.'/'.$pagenid;
 		// no content page (e.g. an admin screen): a minimal schema:WebSite node
 		if ($pagenid === false || !isset($this->index[$pinternal])) {
 			$site = $base.'/id/site';
-			$index[$site][$rdf.'type'][] = array('value'=>$schema.'WebSite', 'type'=>'uri');
-			if (isset(luna::$data['sitename'])) { $index[$site][$schema.'name'][] = array('value'=>(string) luna::$data['sitename'], 'type'=>'literal'); }
+			$index[$site][$rdf.'type'][] = ['value' => $schema.'WebSite', 'type' => 'uri'];
+			if (isset(luna::$data['sitename'])) { $index[$site][$schema.'name'][] = ['value' => (string) luna::$data['sitename'], 'type' => 'literal']; }
 			return $index;
 		}
 		$page = $this->index[$pinternal];
 		$slug = $first($page, $luna.'lid');
 		if ($slug === null) { return $index; }
 		$puri = $base.'/id/'.rawurlencode($slug);
-		$index[$puri][$rdf.'type'][] = array('value'=>$schema.'WebPage', 'type'=>'uri');
-		if (($name = $first($page, $rdfs.'label')) !== null) { $index[$puri][$schema.'name'][] = array('value'=>(string)$name, 'type'=>'literal'); }
-		if (($nid  = $first($page, $luna.'nid'))    !== null) { $index[$puri][$schema.'identifier'][] = array('value'=>(string)$nid, 'type'=>'literal', 'datatype'=>$xint); }
-		if (($act  = $first($page, $luna.'isActive')) !== null) { $index[$puri][$luna.'isActive'][] = array('value'=>(string)$act, 'type'=>'literal', 'datatype'=>$xint); }
+		$index[$puri][$rdf.'type'][] = ['value' => $schema.'WebPage', 'type' => 'uri'];
+		if (($name = $first($page, $rdfs.'label')) !== null) { $index[$puri][$schema.'name'][] = ['value' => (string)$name, 'type' => 'literal']; }
+		if (($nid  = $first($page, $luna.'nid'))    !== null) { $index[$puri][$schema.'identifier'][] = ['value' => (string)$nid, 'type' => 'literal', 'datatype' => $xint]; }
+		if (($act  = $first($page, $luna.'isActive')) !== null) { $index[$puri][$luna.'isActive'][] = ['value' => (string)$act, 'type' => 'literal', 'datatype' => $xint]; }
 		if (($lvl = $first($page, $luna.'level')) !== null && isset($this->index[$lvl]) && ($lslug = $first($this->index[$lvl], $luna.'lid')) !== null) {
-			$index[$puri][$luna.'level'][] = array('value'=>$base.'/id/'.rawurlencode($lslug), 'type'=>'uri');
+			$index[$puri][$luna.'level'][] = ['value' => $base.'/id/'.rawurlencode($lslug), 'type' => 'uri'];
 		}
 		$parent = $first($page, $this->conf['ns']['schema'].'isPartOf');
 		if ($parent && $parent != $pinternal && isset($this->index[$parent]) && ($pslug = $first($this->index[$parent], $luna.'lid')) !== null) {
-			$index[$puri][$schema.'isPartOf'][] = array('value'=>$base.'/id/'.rawurlencode($pslug), 'type'=>'uri');
+			$index[$puri][$schema.'isPartOf'][] = ['value' => $base.'/id/'.rawurlencode($pslug), 'type' => 'uri'];
 		}
 		foreach ($this->index as $node) {
 			if ($first($node, $rdf.'type') !== $luna.'text' || !isset($node[$luna.'page'])) { continue; }
@@ -731,20 +666,20 @@ class lunaModel {
 			$tslug = $first($node, $luna.'lid');
 			if ($tslug === null) { continue; }
 			$turi = $base.'/id/'.rawurlencode($tslug);
-			$index[$turi][$rdf.'type'][] = array('value'=>$schema.'Article', 'type'=>'uri');
-			if (($tnid = $first($node, $luna.'nid')) !== null) { $index[$turi][$schema.'identifier'][] = array('value'=>(string)$tnid, 'type'=>'literal', 'datatype'=>$xint); }
-			if (($head = $first($node, $rdfs.'label')) !== null) { $index[$turi][$schema.'headline'][] = array('value'=>(string)$head, 'type'=>'literal'); $index[$turi][$schema.'name'][] = array('value'=>(string)$head, 'type'=>'literal'); }
+			$index[$turi][$rdf.'type'][] = ['value' => $schema.'Article', 'type' => 'uri'];
+			if (($tnid = $first($node, $luna.'nid')) !== null) { $index[$turi][$schema.'identifier'][] = ['value' => (string)$tnid, 'type' => 'literal', 'datatype' => $xint]; }
+			if (($head = $first($node, $rdfs.'label')) !== null) { $index[$turi][$schema.'headline'][] = ['value' => (string)$head, 'type' => 'literal']; $index[$turi][$schema.'name'][] = ['value' => (string)$head, 'type' => 'literal']; }
 			if (isset($node[$luna.'content'][0]['value'])) {
 				$body = $node[$luna.'content'][0]['value'];
-				$lang = isset($node[$luna.'content'][0]['lang'])? $node[$luna.'content'][0]['lang'] : '';
-				$ab = array('value'=>lunaTools::markdown_to_text($body), 'type'=>'literal'); if ($lang !== '') { $ab['lang'] = $lang; }
+				$lang = isset($node[$luna.'content'][0]['lang']) ? $node[$luna.'content'][0]['lang'] : '';
+				$ab = ['value' => lunaTools::markdown_to_text($body), 'type' => 'literal']; if ($lang !== '') { $ab['lang'] = $lang; }
 				$index[$turi][$schema.'articleBody'][] = $ab;
-				$cn = array('value'=>$body, 'type'=>'literal'); if ($lang !== '') { $cn['lang'] = $lang; }
+				$cn = ['value' => $body, 'type' => 'literal']; if ($lang !== '') { $cn['lang'] = $lang; }
 				$index[$turi][$luna.'content'][] = $cn;
-				if ($lang !== '') { $index[$turi][$schema.'inLanguage'][] = array('value'=>$lang, 'type'=>'literal'); }
+				if ($lang !== '') { $index[$turi][$schema.'inLanguage'][] = ['value' => $lang, 'type' => 'literal']; }
 			}
-			$index[$turi][$schema.'isPartOf'][] = array('value'=>$puri, 'type'=>'uri');
-			$index[$puri][$schema.'hasPart'][] = array('value'=>$turi, 'type'=>'uri');
+			$index[$turi][$schema.'isPartOf'][] = ['value' => $puri, 'type' => 'uri'];
+			$index[$puri][$schema.'hasPart'][] = ['value' => $turi, 'type' => 'uri'];
 		}
 		// Merge the operator-curated outbound links for every resource this document
 		// describes (the page and its articles), so ?output=* and /data/{slug} reach
@@ -761,45 +696,6 @@ class lunaModel {
 		return $index;
 	}
 	// }}}
-	// {{{ sparql_select()
-	/**
-	 * Run a SPARQL SELECT against the Ontop endpoint (Phase A) and return the
-	 * result bindings. The read path goes *through* SPARQL rather than the
-	 * hand-written joins — see docs/linked-data.md.
-	 *
-	 * @access public
-	 * @param string $query
-	 * @return array bindings (each a map of var => {type,value})
-	 */
-	/**
-	 * Build the HTTP basic-auth header the app presents to the SPARQL proxy.
-	 * Empty when no credentials are configured (so a bare, unauthenticated
-	 * endpoint still works) — see SPARQL_AUTH_USER/PASS in luna.php.
-	 *
-	 * @access private
-	 * @return string a CRLF-terminated Authorization header, or ''
-	 */
-	private function sparql_auth_header() {
-		if (defined('SPARQL_AUTH_USER') && SPARQL_AUTH_USER !== '') {
-			return 'Authorization: Basic '.base64_encode(SPARQL_AUTH_USER.':'.(defined('SPARQL_AUTH_PASS')? SPARQL_AUTH_PASS : ''))."\r\n";
-		}
-		return '';
-	}
-	public function sparql_select($query) {
-		if (defined('SPARQL_ENABLED') && !SPARQL_ENABLED) { return array(); }
-		if (!defined('SPARQL_ENDPOINT')) { return array(); }
-		$url = SPARQL_ENDPOINT.'?query='.rawurlencode($query);
-		$ctx = stream_context_create(array('http' => array(
-			'method' => 'GET',
-			'header' => "Accept: application/sparql-results+json\r\n".$this->sparql_auth_header(),
-			'timeout' => 5
-		)));
-		$json = @file_get_contents($url, false, $ctx);
-		if ($json === false) { return array(); }
-		$data = json_decode($json, true);
-		return (isset($data['results']['bindings']))? $data['results']['bindings'] : array();
-	}
-	// }}}
 	// {{{ load_texts_sparql()
 	/**
 	 * SPARQL-backed replacement for load_texts(): fetches a page's text blocks
@@ -807,36 +703,35 @@ class lunaModel {
 	 * load_text() index builder, so the model — and therefore the HTML/JSON-LD
 	 * views — are populated identically whether sourced from SQL or SPARQL.
 	 *
-	 * @access public
-	 * @param integer $page_nid
+	 * @param int $page_nid
 	 * @return array nodes
 	 */
-	public function load_texts_sparql($page_nid) {
+	public function load_texts_sparql(int $page_nid): array {
 		$base = rtrim(luna::$site_uri, '/');
-		$pageuri = $base.'/id/'.rawurlencode(defined('PAGELID')? PAGELID : '');
+		$pageuri = $base.'/id/'.rawurlencode(defined('PAGELID') ? PAGELID : '');
 		$q = 'PREFIX schema: <https://schema.org/> '
-		   . 'PREFIX luna: <'.self::LUNA_NS.'> SELECT ?text ?title ?body ?content ?lang ?tident WHERE { '
-		   . '<'.$pageuri.'> schema:hasPart ?text . '
-		   . '?text a schema:Article ; schema:identifier ?tident ; '
-		   . 'schema:headline ?title ; schema:articleBody ?body . '
-		   . 'OPTIONAL { ?text schema:inLanguage ?lang } OPTIONAL { ?text luna:content ?content } }';
-		$rows = $this->sparql_select($q);
-		$items = array();
+		   .'PREFIX luna: <'.self::LUNA_NS.'> SELECT ?text ?title ?body ?content ?lang ?tident WHERE { '
+		   .'<'.$pageuri.'> schema:hasPart ?text . '
+		   .'?text a schema:Article ; schema:identifier ?tident ; '
+		   .'schema:headline ?title ; schema:articleBody ?body . '
+		   .'OPTIONAL { ?text schema:inLanguage ?lang } OPTIONAL { ?text luna:content ?content } }';
+		$rows = lunaGraph::sparql_select($q);
+		$items = [];
 		foreach ($rows as $r) {
-			$texturi = isset($r['text']['value'])? $r['text']['value'] : '';
-			$lid = ($p = strrpos($texturi, '/id/')) !== false? substr($texturi, $p + 4) : $texturi;
-			$items[] = array(
-				'nid'          => isset($r['tident']['value'])? $r['tident']['value'] : '',
+			$texturi = isset($r['text']['value']) ? $r['text']['value'] : '';
+			$lid = ($p = strrpos($texturi, '/id/')) !== false ? substr($texturi, $p + 4) : $texturi;
+			$items[] = [
+				'nid'          => isset($r['tident']['value']) ? $r['tident']['value'] : '',
 				'lid'          => $lid,
-				'title'        => isset($r['title']['value'])? $r['title']['value'] : '',
-				'lang'         => isset($r['lang']['value'])? $r['lang']['value'] : luna::$lang,
-				'content'      => isset($r['content']['value'])? $r['content']['value'] : (isset($r['body']['value'])? $r['body']['value'] : ''),
+				'title'        => isset($r['title']['value']) ? $r['title']['value'] : '',
+				'lang'         => isset($r['lang']['value']) ? $r['lang']['value'] : luna::$lang,
+				'content'      => isset($r['content']['value']) ? $r['content']['value'] : (isset($r['body']['value']) ? $r['body']['value'] : ''),
 				'is_active'    => 1,
 				'save_time'    => 0,
-				'pages'        => array($page_nid)
-			);
+				'pages'        => [$page_nid]
+			];
 		}
-		if (empty($items)) { return array(); }
+		if (empty($items)) { return []; }
 		return $this->load_text($items);
 	}
 	// }}}
@@ -847,230 +742,42 @@ class lunaModel {
 	 * graph and rebuilds it through the same load_node() + calculate_aliases()
 	 * the SQL path uses — so routing and access control are driven by SPARQL.
 	 *
-	 * @access public
 	 * @param string $type1  unused — accepted only for signature parity with load_nodes()
 	 * @return array nodes
 	 */
-	public function load_nodes_sparql($type1 = 'page') {
-		$levels = (luna::$session && isset(luna::$session->user->levels) && is_array(luna::$session->user->levels))? luna::$session->user->levels : array();
-		if (empty($levels)) { return array(); }
-		$vals = array();
+	public function load_nodes_sparql(string $type1 = 'page'): array|false {
+		$levels = (luna::$session && isset(luna::$session->user->levels) && is_array(luna::$session->user->levels)) ? luna::$session->user->levels : [];
+		if (empty($levels)) { return []; }
+		$vals = [];
 		foreach ($levels as $l) { $vals[] = '"'.intval($l).'"'; }
 		$q = 'PREFIX schema: <https://schema.org/> '
-		   . 'PREFIX luna: <'.self::LUNA_NS.'> '
-		   . 'SELECT DISTINCT ?pnid ?lid ?active ?lnid ?llid ?lactive ?parentNid WHERE { '
-		   . '?page a schema:WebPage ; schema:identifier ?pnid ; schema:name ?lid ; '
-		   . 'luna:isActive ?active ; luna:level ?level . '
-		   . '?level schema:identifier ?lnid ; schema:name ?llid ; luna:isActive ?lactive . '
-		   . 'OPTIONAL { ?page schema:isPartOf ?parent . ?parent schema:identifier ?parentNid } '
-		   . 'FILTER ( STR(?lnid) IN ('.implode(', ', $vals).') ) }';
-		$rows = $this->sparql_select($q);
-		$nodes = array();
+		   .'PREFIX luna: <'.self::LUNA_NS.'> '
+		   .'SELECT DISTINCT ?pnid ?lid ?active ?lnid ?llid ?lactive ?parentNid WHERE { '
+		   .'?page a schema:WebPage ; schema:identifier ?pnid ; schema:name ?lid ; '
+		   .'luna:isActive ?active ; luna:level ?level . '
+		   .'?level schema:identifier ?lnid ; schema:name ?llid ; luna:isActive ?lactive . '
+		   .'OPTIONAL { ?page schema:isPartOf ?parent . ?parent schema:identifier ?parentNid } '
+		   .'FILTER ( STR(?lnid) IN ('.implode(', ', $vals).') ) }';
+		$rows = lunaGraph::sparql_select($q);
+		$nodes = [];
 		foreach ($rows as $r) {
-			$row = array(
-				'nid'        => isset($r['pnid']['value'])? $r['pnid']['value'] : '',
+			$row = [
+				'nid'        => isset($r['pnid']['value']) ? $r['pnid']['value'] : '',
 				'type1'      => 'page',
-				'lid'        => isset($r['lid']['value'])? $r['lid']['value'] : '',
-				'is_active'  => isset($r['active']['value'])? $r['active']['value'] : '1',
-				'parent_nid' => isset($r['parentNid']['value'])? $r['parentNid']['value'] : 0,
-				'nid2'       => isset($r['lnid']['value'])? $r['lnid']['value'] : null,
-				'lid2'       => isset($r['llid']['value'])? $r['llid']['value'] : null,
-				'is_active2' => isset($r['lactive']['value'])? $r['lactive']['value'] : '1'
-			);
+				'lid'        => isset($r['lid']['value']) ? $r['lid']['value'] : '',
+				'is_active'  => isset($r['active']['value']) ? $r['active']['value'] : '1',
+				'parent_nid' => isset($r['parentNid']['value']) ? $r['parentNid']['value'] : 0,
+				'nid2'       => isset($r['lnid']['value']) ? $r['lnid']['value'] : null,
+				'lid2'       => isset($r['llid']['value']) ? $r['llid']['value'] : null,
+				'is_active2' => isset($r['lactive']['value']) ? $r['lactive']['value'] : '1'
+			];
 			$nodes = $this->merge_nodes($nodes, $this->load_node($row, 'page', 'level'));
 		}
 		if (!empty($nodes)) {
-			$this->aliases = array();
-			if (!$nodes = $this->calculate_aliases($nodes)) { return array(); }
+			$this->aliases = [];
+			if (!$nodes = $this->calculate_aliases($nodes)) { return []; }
 		}
 		return $nodes;
-	}
-	// }}}
-	// {{{ sparql_update()
-	/**
-	 * Send a SPARQL UPDATE to the triplestore (Oxigraph) — the write counterpart
-	 * to sparql_select(). Best-effort: returns false (no exception) if the update
-	 * endpoint is unset or unreachable, so a failed mirror never breaks a save.
-	 * Pushing content writes into RDF is step 1 toward an RDF-native store; see
-	 * docs/linked-data.md.
-	 *
-	 * @access public
-	 * @param string $update a SPARQL UPDATE request
-	 * @return boolean true on a 2xx response
-	 */
-	public function sparql_update($update) {
-		if (defined('SPARQL_ENABLED') && !SPARQL_ENABLED) { return false; }
-		if (!defined('SPARQL_UPDATE_ENDPOINT') || !SPARQL_UPDATE_ENDPOINT) { return false; }
-		$ctx = stream_context_create(array('http' => array(
-			'method'        => 'POST',
-			'header'        => "Content-Type: application/sparql-update\r\n".$this->sparql_auth_header(),
-			'content'       => $update,
-			'timeout'       => 5,
-			'ignore_errors' => true
-		)));
-		$res = @file_get_contents(SPARQL_UPDATE_ENDPOINT, false, $ctx);
-		if (isset($http_response_header)) {
-			foreach ($http_response_header as $h) { if (preg_match('#^HTTP/\S+\s+2\d\d#', $h)) { return true; } }
-		}
-		return false;
-	}
-	// }}}
-	// {{{ sparql_literal()
-	/**
-	 * Escape a value for use inside a double-quoted SPARQL string literal.
-	 * @access public
-	 * @param string $s
-	 * @return string
-	 */
-	public static function sparql_literal($s) {
-		return str_replace(
-			array('\\', '"', "\n", "\r", "\t"),
-			array('\\\\', '\\"', '\\n', '\\r', '\\t'),
-			(string) $s
-		);
-	}
-	// }}}
-	// {{{ rdf_sync_node()
-	/**
-	 * Project a node's current relational state into the triplestore via a SPARQL
-	 * UPDATE — the generic, RDF-native write-through. Replaces the whole description
-	 * of <base/id/{lid}> with the triples the R2RML mapping (semantic/ontop/
-	 * mapping.ttl) derives for that node, so anything mutated through insert() /
-	 * update() / link() / unlink() is mirrored into Oxigraph in real time.
-	 * Best-effort: a missing or unreachable endpoint is a no-op, never a failure.
-	 * See docs/linked-data.md.
-	 *
-	 * @access public
-	 * @param integer $nid
-	 * @return boolean
-	 */
-	public function rdf_sync_node($nid = false) {
-		if (empty($nid) || !defined('SPARQL_UPDATE_ENDPOINT') || !SPARQL_UPDATE_ENDPOINT) { return false; }
-		$nid = intval($nid);
-		if (empty($nid)) { return false; }
-		// the node, its type slug and its parent slug (mirrors the mapping's joins)
-		$res = lunaDB::query('
-			SELECT n.lid AS lid, t.lid AS type1, n.is_active AS is_active, pn.lid AS parent_lid
-			FROM '.luna::get_ini('DBtables', 'NODES').' n
-			JOIN '.luna::get_ini('DBtables', 'CLASSES').' t ON t.id = n.tid
-			LEFT JOIN '.luna::get_ini('DBtables', 'NODES').' pn ON pn.nid = n.parent_nid
-			WHERE n.nid = '.lunaDB::quote($nid).'
-		');
-		if (!$res || !($row = $res->fetchRow())) { return false; }
-		$res->free();
-		$uri = self::rdf_uri($row->lid);
-		$po  = array();
-		switch ($row->type1) {
-			case 'page':
-				$po[] = 'a schema:WebPage';
-				$po[] = 'schema:name '.self::rdf_str($row->lid);
-				$po[] = 'schema:identifier '.self::rdf_int($nid);
-				$po[] = 'luna:isActive '.self::rdf_int($row->is_active);
-				if (!empty($row->parent_lid)) { $po[] = 'schema:isPartOf '.self::rdf_uri($row->parent_lid); }
-				foreach ($this->rdf_edges($nid, array('text', 'level')) as $e) {
-					if ($e->type1 == 'text')  { $po[] = 'schema:hasPart '.self::rdf_uri($e->lid); }
-					if ($e->type1 == 'level') { $po[] = 'luna:level '.self::rdf_uri($e->lid); }
-				}
-				break;
-			case 'text':
-				$po[] = 'a schema:Article';
-				$po[] = 'schema:identifier '.self::rdf_int($nid);
-				if ($t = $this->rdf_text_row($nid)) {
-					$po[] = 'schema:headline '.self::rdf_str($t->title);
-					$po[] = 'schema:articleBody '.self::rdf_str(lunaTools::markdown_to_text($t->content));
-					$po[] = 'luna:content '.self::rdf_str($t->content);
-					$po[] = 'schema:inLanguage '.self::rdf_str($t->lang);
-				}
-				foreach ($this->rdf_edges($nid, array('page')) as $e) { $po[] = 'schema:isPartOf '.self::rdf_uri($e->lid); }
-				break;
-			case 'level':
-				$po[] = 'schema:identifier '.self::rdf_int($nid);
-				$po[] = 'schema:name '.self::rdf_str($row->lid);
-				$po[] = 'luna:isActive '.self::rdf_int($row->is_active);
-				break;
-			case 'user':
-				$po[] = 'a foaf:Person';
-				if ($u = $this->rdf_user_row($nid)) { $po[] = 'foaf:name '.self::rdf_str(trim($u->firstname.' '.$u->lastname)); }
-				break;
-			default:
-				// group, mod, … — a minimal generic projection
-				$po[] = 'schema:name '.self::rdf_str($row->lid);
-				$po[] = 'schema:identifier '.self::rdf_int($nid);
-				$po[] = 'luna:isActive '.self::rdf_int($row->is_active);
-		}
-		$update = self::rdf_prefixes()
-			. 'DELETE { '.$uri.' ?p ?o } '
-			. 'INSERT { '.$uri.' '.implode(' ; ', $po).' } '
-			. 'WHERE  { OPTIONAL { '.$uri.' ?p ?o } }';
-		return $this->sparql_update($update);
-	}
-	// }}}
-	// {{{ rdf_delete_node()
-	/**
-	 * Remove a node from the triplestore: drop every triple that mentions its
-	 * resource URI, as subject or as object. Call it *before* the relational
-	 * delete, while the lid can still be resolved. Best-effort. See rdf_sync_node().
-	 *
-	 * @access public
-	 * @param integer $nid
-	 * @return boolean
-	 */
-	public function rdf_delete_node($nid = false) {
-		if (empty($nid) || !defined('SPARQL_UPDATE_ENDPOINT') || !SPARQL_UPDATE_ENDPOINT) { return false; }
-		$nid = intval($nid);
-		if (empty($nid)) { return false; }
-		$res = lunaDB::query('SELECT lid FROM '.luna::get_ini('DBtables', 'NODES').' WHERE nid = '.lunaDB::quote($nid));
-		if (!$res || !($row = $res->fetchRow())) { return false; }
-		$res->free();
-		$uri = self::rdf_uri($row->lid);
-		$update = 'DELETE WHERE { '.$uri.' ?p ?o } ; DELETE WHERE { ?s ?p '.$uri.' }';
-		return $this->sparql_update($update);
-	}
-	// }}}
-	// {{{ rdf_clear()
-	/**
-	 * Drop every triple from the triplestore (default graph). The destructive half of
-	 * a full rebuild — see rdf_resync_all($prune = true). Best-effort: a missing or
-	 * unreachable endpoint is a no-op, never a failure.
-	 *
-	 * @access public
-	 * @return boolean
-	 */
-	public function rdf_clear() {
-		if (!defined('SPARQL_UPDATE_ENDPOINT') || !SPARQL_UPDATE_ENDPOINT) { return false; }
-		return $this->sparql_update('DELETE WHERE { ?s ?p ?o }');
-	}
-	// }}}
-	// {{{ rdf_resync_all()
-	/**
-	 * Re-project every node from MySQL into the triplestore — the pure-PHP
-	 * bootstrap / repair of the graph, replacing the Ontop "materialise" step.
-	 * Reconciles MySQL → graph (every relational node is upserted). With
-	 * $prune = false (default) it does not remove graph-only orphans; pass
-	 * $prune = true for a full REBUILD that clears the store first (see rdf_clear()),
-	 * so orphans are dropped too. Run it to seed Oxigraph, to reconcile after the
-	 * best-effort dual-write drifts, or via bin/resync-triplestore.php. See
-	 * rdf_sync_node().
-	 *
-	 * @access public
-	 * @param boolean $prune clear the whole graph first (full rebuild) rather than upsert-only
-	 * @return integer the number of nodes synced
-	 */
-	public function rdf_resync_all($prune = false) {
-		if (!defined('SPARQL_UPDATE_ENDPOINT') || !SPARQL_UPDATE_ENDPOINT) { return 0; }
-		// A pruning resync is a full REBUILD: drop the whole graph first so triples for
-		// nodes deleted out-of-band (e.g. a test's raw-SQL teardown) don't survive as
-		// orphans. Default ($prune = false) keeps the non-destructive upsert behaviour.
-		if ($prune) { $this->rdf_clear(); }
-		$nids = array();
-		$res = lunaDB::query('SELECT nid FROM '.luna::get_ini('DBtables', 'NODES').' ORDER BY nid');
-		if ($res) { while ($row = $res->fetchRow()) { $nids[] = intval($row->nid); } $res->free(); }
-		$n = 0;
-		foreach ($nids as $nid) { if ($this->rdf_sync_node($nid)) { $n++; } }
-		// Load the operator-curated outbound links (semantic/links.ttl) so the
-		// triplestore matches the published /data + JSON-LD projections.
-		$this->rdf_load_links();
-		return $n;
 	}
 	// }}}
 	// {{{ outbound_index()
@@ -1083,198 +790,46 @@ class lunaModel {
 	 * file is deployment-independent; here they resolve against the live {site}/id/
 	 * base. Parsed once per request. A missing or unparseable file is an empty no-op.
 	 *
-	 * @access public
 	 * @return array an ARC2 index keyed by absolute /id/{slug} IRIs
 	 */
-	public function outbound_index() {
+	public function outbound_index(): array {
 		static $cache = null;
 		if ($cache !== null) { return $cache; }
-		$cache = array();
+		$cache = [];
 		if (!defined('LUNAPATH')) { return $cache; }
 		$file = dirname(rtrim(LUNAPATH, '/')).'/semantic/links.ttl';
 		if (!is_readable($file)) { return $cache; }
 		$ttl = @file_get_contents($file);
 		if ($ttl === false || trim($ttl) === '') { return $cache; }
-		require_once('arc/ARC2.php');
-		$conf = (isset($this->conf) && is_array($this->conf))? $this->conf : array();
+		require_once LUNAPATH.'luna.lib/arc/ARC2.php';
+		$conf = (isset($this->conf) && is_array($this->conf)) ? $this->conf : [];
 		// resolve the file's relative <slug> subjects against {site}/id/
 		$base = rtrim(luna::$site_uri, '/').'/id/';
 		$parser = ARC2::getTurtleParser($conf);
 		$parser->parse($base, $ttl);
 		$index = $parser->getSimpleIndex(0);
-		$cache = is_array($index)? $index : array();
+		$cache = is_array($index) ? $index : [];
 		return $cache;
 	}
 	// }}}
-	// {{{ rdf_load_links()
-	/**
-	 * Mirror the curated outbound links (outbound_index()) into the triplestore via a
-	 * SPARQL `INSERT DATA`, so a direct SPARQL query sees the same owl:sameAs /
-	 * rdfs:seeAlso / … the /data + JSON-LD projections carry. Idempotent (RDF set
-	 * semantics), best-effort. Called at the end of rdf_resync_all().
-	 *
-	 * @access public
-	 * @return boolean
-	 */
-	public function rdf_load_links() {
-		if (!defined('SPARQL_UPDATE_ENDPOINT') || !SPARQL_UPDATE_ENDPOINT) { return false; }
-		$out = $this->outbound_index();
-		if (empty($out)) { return false; }
-		require_once('arc/ARC2.php');
-		$conf = (isset($this->conf) && is_array($this->conf))? $this->conf : array();
-		$ser = ARC2::getNtriplesSerializer($conf);
-		$nt = $ser->getSerializedIndex($out);
-		if (trim($nt) === '') { return false; }
-		return $this->sparql_update('INSERT DATA { '.$nt.' }');
-	}
-	// }}}
-	// {{{ rdf_prefixes()
-	/**
-	 * The SPARQL PREFIX preamble shared by every write-through update.
-	 * @access public
-	 * @return string
-	 */
-	public static function rdf_prefixes() {
-		return 'PREFIX schema: <https://schema.org/> '
-			. 'PREFIX foaf: <http://xmlns.com/foaf/0.1/> '
-			. 'PREFIX luna: <'.self::LUNA_NS.'> '
-			. 'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ';
-	}
-	// }}}
-	// {{{ sparql_reads()
-	/**
-	 * Whether the read path (routing / ACL / texts) should be served from SPARQL.
-	 * Defaults to the SPARQL_READS constant; `?sparql=1` forces it on for a single
-	 * request and `?sparql=0` forces it off (the SQL path), regardless of default.
-	 *
-	 * @access public
-	 * @return boolean
-	 */
-	public static function sparql_reads() {
-		// per-request override read straight from $_GET: ?sparql=1 forces SPARQL,
-		// ?sparql=0 forces SQL. The (bool) cast copes both with the raw '0' string
-		// and with the boolean false that sanitize_inputs() turns '0' into (PHP's
-		// empty('0') is true, so lunaTools::request() can't see the opt-out at all).
-		if (defined('SPARQL_ENABLED') && !SPARQL_ENABLED) { return false; }
-		if (isset($_GET['sparql'])) { return (bool) $_GET['sparql']; }
-		return defined('SPARQL_READS') ? (bool) SPARQL_READS : false;
-	}
-	// }}}
-	// {{{ rdf_uri()
-	/**
-	 * Build a resource URI <base/id/{lid}> — the same identity scheme as the
-	 * JSON-LD projection and the R2RML mapping.
-	 * @access public
-	 * @param string $lid
-	 * @return string an angle-bracketed absolute IRI
-	 */
-	public static function rdf_uri($lid) {
-		return '<'.rtrim(luna::$site_uri, '/').'/id/'.rawurlencode($lid).'>';
-	}
-	// }}}
-	// {{{ rdf_str()
-	/**
-	 * A node value as a SPARQL string literal.
-	 * @access public
-	 * @param string $s
-	 * @return string
-	 */
-	public static function rdf_str($s) {
-		return '"'.self::sparql_literal($s).'"';
-	}
-	// }}}
-	// {{{ rdf_int()
-	/**
-	 * A node value as a typed SPARQL integer literal, matching the datatype the
-	 * R2RML mapping infers for numeric columns (nid, is_active).
-	 * @access public
-	 * @param mixed $v
-	 * @return string
-	 */
-	public static function rdf_int($v) {
-		return '"'.intval($v).'"^^xsd:integer';
-	}
-	// }}}
-	// {{{ rdf_edges()
-	/**
-	 * The slugs and type-slugs of the nodes linked from $nid (as nid1) whose type
-	 * is one of $types — the edge rows the mapping turns into hasPart / level /
-	 * isPartOf triples.
-	 * @access public
-	 * @param integer $nid
-	 * @param array $types
-	 * @return array rows of array('lid' => ..., 'type1' => ...)
-	 */
-	public function rdf_edges($nid, array $types) {
-		if (empty($types)) { return array(); }
-		$in = array();
-		foreach ($types as $t) { $in[] = lunaDB::quote($t); }
-		$res = lunaDB::query('
-			SELECT DISTINCT n2.lid AS lid, t2.lid AS type1
-			FROM '.luna::get_ini('DBtables', 'NODES_MAP').' m
-			JOIN '.luna::get_ini('DBtables', 'NODES').' n2 ON n2.nid = m.nid2
-			JOIN '.luna::get_ini('DBtables', 'CLASSES').' t2 ON t2.id = n2.tid
-			WHERE m.nid1 = '.lunaDB::quote($nid).' AND t2.lid IN ('.implode(', ', $in).')
-		');
-		$out = array();
-		if ($res) { while ($r = $res->fetchRow()) { $out[] = $r; } $res->free(); }
-		return $out;
-	}
-	// }}}
-	// {{{ rdf_text_row()
-	/**
-	 * One luna_texts row for a text node — the current request language if present,
-	 * else the first available. (The graph holds a single article per text, as the
-	 * SPARQL read path in load_texts_sparql() expects.)
-	 * @access public
-	 * @param integer $nid
-	 * @return mixed the row array, or false
-	 */
-	public function rdf_text_row($nid) {
-		$res = lunaDB::query('SELECT title, lang, content FROM '.luna::get_ini('DBtables', 'TEXTS').' WHERE nid = '.lunaDB::quote($nid));
-		if (!$res) { return false; }
-		$pick = false;
-		while ($r = $res->fetchRow()) {
-			if ($pick === false) { $pick = $r; }
-			if (isset($r->lang) && $r->lang == luna::$lang) { $pick = $r; break; }
-		}
-		$res->free();
-		return $pick;
-	}
-	// }}}
-	// {{{ rdf_user_row()
-	/**
-	 * The firstname/lastname row for a user node, or false.
-	 * @access public
-	 * @param integer $nid
-	 * @return mixed
-	 */
-	public function rdf_user_row($nid) {
-		$res = lunaDB::query('SELECT firstname, lastname FROM '.luna::get_ini('DBtables', 'USERS').' WHERE nid = '.lunaDB::quote($nid));
-		if (!$res) { return false; }
-		$r = $res->fetchRow();
-		$res->free();
-		return $r;
-	}
-	// }}}
 	// {{{ load_messages()
-	/** @access public
-	 * @param array $messages
-	 * @return array
+	/**
+	 * @param array|false $messages
+	 * @return array|false
 	 */
-	public function load_messages($messages = false) {
+	public function load_messages($messages = false): array|false {
 		if (!is_array($messages)) { return false; }
-		$nodes = array();
-		foreach($messages as $code => $code_messages) {
-			foreach($code_messages as $k => $message) {
-				$var_node = $this->load_var(array(
+		$nodes = [];
+		foreach ($messages as $code => $code_messages) {
+			foreach ($code_messages as $k => $message) {
+				$var_node = $this->load_var([
 					'type' => 'message',
 					'lid' => $k.md5($message),
-					'value' => array(
+					'value' => [
 						'value' => "$message",
 						'code' => "$code"
-					)
-				));
+					]
+				]);
 				$nodes = $this->merge_nodes($nodes, $var_node);
 			}
 		}
@@ -1282,59 +837,58 @@ class lunaModel {
 	}
 	// }}}
 	// {{{ load_pager()
-	/** @access public
-	 * @param integer $total_items
-	 * @param integer $start_item
-	 * @param integer $per_page
-	 * @param string $name
-	 * @return array
+	/**
+	 * @param int $total_items
+	 * @param int $start_item
+	 * @param int $per_page
+	 * @param int|string $name
+	 * @return array|false
 	 */
-	public function load_pager($total_items = 0, $start_item = 0, $per_page = 0, $name = 0) {
+	public function load_pager($total_items = 0, int $start_item = 0, int $per_page = 0, $name = 0): array|false {
 		if (empty($total_items)) { return false; }
 		if (empty($name)) { $name = 'default'; }
 		$total_items = intval($total_items);
 		$start_item = intval($start_item);
 		$per_page = intval($per_page);
-		$per_page = $per_page > 0? $per_page : PERPAGE;
-		$total_pages = ceil($total_items/$per_page);
+		$per_page = $per_page > 0 ? $per_page : PERPAGE;
+		$total_pages = ceil($total_items / $per_page);
 		$on_page = floor($start_item / $per_page) + 1;
-		$var_node = $this->load_var(array(
+		$var_node = $this->load_var([
 			'type' => 'pager',
 			'lid' => "$name",
-			'value' => array(
+			'value' => [
 				'value' => "$on_page",
 				'perpage' => "$per_page",
 				'total' => "$total_pages"
-			)
-		));
+			]
+		]);
 		return $var_node;
 	}
 	// }}}
 	// {{{ load_user()
 	/**
-	 * @access public
 	 * @param mixed $user
-	 * @param boolean $is_current
+	 * @param int|bool $is_current
 	 * @return mixed
 	 */
 	public function load_user($user = false, $is_current = false) {
 		if (empty($user)) { return false; }
-		$nodes = array();
+		$nodes = [];
 		if (is_array($user) && !isset($user['nid'])) {
-			foreach($user as $k => $u) { $nodes = $this->merge_nodes($nodes, $this->load_user($u)); }
+			foreach ($user as $k => $u) { $nodes = $this->merge_nodes($nodes, $this->load_user($u)); }
 		} else {
 			if (is_object($user)) { $user = get_object_vars($user); }
-			if (isset($user['is_current'])) { $is_current = $user['is_current']? 1 : 0; }
+			if (isset($user['is_current'])) { $is_current = $user['is_current'] ? 1 : 0; }
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['rdf'].'type'][0]['value'] = $this->conf['ns']['foaf'].'Person';
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['rdf'].'type'][0]['type'] = 'uri';
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'nid'][0]['value'] = $user['nid'];
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'ip'][0]['value'] = $user['session_ip'] ?? '';
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'isActive'][0]['value'] = $user['is_active'];
-			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'is_guest'][0]['value'] = $user['email'] == ANONYMOUS? '1' : '0';
-			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'is_current'][0]['value'] = $is_current? '1' : '0';
+			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'is_guest'][0]['value'] = $user['email'] == ANONYMOUS ? '1' : '0';
+			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'is_current'][0]['value'] = $is_current ? '1' : '0';
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'url'][0]['value'] = $user['last_url'];
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'last-visit'][0]['value'] = lunaTools::get_time_since($user['last_time']);
-			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'registration-date'][0]['value'] = ($user['regis_time'] == 0? '' : lunaTools::format_date($user['regis_time']));
+			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'registration-date'][0]['value'] = ($user['regis_time'] == 0 ? '' : lunaTools::format_date($user['regis_time']));
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['foaf'].'name'][0]['value'] = trim(lunaTools::display_string($user['firstname']).' '.lunaTools::display_string($user['lastname']));
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['foaf'].'firstName'][0]['value'] = trim(lunaTools::display_string($user['firstname']));
 			$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['foaf'].'surName'][0]['value'] = trim(lunaTools::display_string($user['lastname']));
@@ -1345,10 +899,10 @@ class lunaModel {
 					$nodes[$this->node_path.'/'.$group_nid][$this->conf['ns']['luna'].'nid'][0]['value'] = $group_nid;
 					$nodes[$this->node_path.'/'.$group_nid][$this->conf['ns']['rdf'].'type'][0]['value'] = $this->conf['ns']['luna'].'group';
 					$nodes[$this->node_path.'/'.$group_nid][$this->conf['ns']['rdf'].'type'][0]['type'] = 'uri';
-					$needle = array(
+					$needle = [
 						'value' => $this->node_path.'/'.$group_nid,
 						'type' => 'uri'
-					);
+					];
 					if (!isset($nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'group']) || !in_array($needle, $nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'group'])) {
 						$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'group'][] = $needle;
 					}
@@ -1359,10 +913,10 @@ class lunaModel {
 					$nodes[$this->node_path.'/'.$level_nid][$this->conf['ns']['luna'].'nid'][0]['value'] = $level_nid;
 					$nodes[$this->node_path.'/'.$level_nid][$this->conf['ns']['rdf'].'type'][0]['value'] = $this->conf['ns']['luna'].'level';
 					$nodes[$this->node_path.'/'.$level_nid][$this->conf['ns']['rdf'].'type'][0]['type'] = 'uri';
-					$needle = array(
+					$needle = [
 						'value' => $this->node_path.'/'.$level_nid,
 						'type' => 'uri'
-					);
+					];
 					if (!isset($nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'level']) || !in_array($needle, $nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'level'])) {
 						$nodes[$this->node_path.'/'.$user['nid']][$this->conf['ns']['luna'].'level'][] = $needle;
 					}
@@ -1374,14 +928,13 @@ class lunaModel {
 	// }}}
 	// {{{ load_users()
 	/**
-	 * @access public
-	 * @param integer $user_nid
-	 * @param integer $group
+	 * @param int|false $user_nid
+	 * @param int|false $group
 	 * @return array
 	 */
-	public function load_users($user_nid = false, $group = false) {
+	public function load_users($user_nid = false, $group = false): array|false {
 		lunaTools::parse_sort_cookie(luna::$data['lid'] ?? '');
-		$nodes = array();
+		$nodes = [];
 		$user_nid = intval($user_nid);
 		if (!empty($user_nid)) {
 			$res = lunaDB::query('
@@ -1425,101 +978,36 @@ class lunaModel {
 			$cookie['order_by'] = luna::$data['order_by'] = lunaTools::request('order_by', 0, 'last_time');
 			if (!empty($group)) { $_POST['group_nid'] = intval($group); }
 			$group_nid = lunaTools::request('group_nid');
-			$groupsql = !empty($group_nid)? ' AND g.nid = '.lunaDB::quote(intval($group_nid)).' ' : '';
+			$groupsql = !empty($group_nid) ? ' AND g.nid = '.lunaDB::quote(intval($group_nid)).' ' : '';
 			$order_dir = lunaTools::request('order_dir', 0, 'DESC');
 			$alphastyle = 0;
 			// Whitelist the sort column: order_by is request input, so the raw value must
 			// never reach a SQL identifier (nor be reflected/persisted unfiltered).
-			$order_map = array(
-				'nid'        => array('nu.nid',       false, 'ASC'),
-				'firstname'  => array('u.firstname',  true,  'ASC'),
-				'lastname'   => array('u.lastname',   true,  'ASC'),
-				'email'      => array('nu.lid',       true,  'ASC'),
-				'regis_time' => array('u.regis_time', false, 'DESC'),
-				'last_time'  => array('u.last_time',  false, 'DESC'),
-			);
-			$order_key = isset($order_map[$cookie['order_by']])? $cookie['order_by'] : 'last_time';
+			$order_map = [
+				'nid'        => ['nu.nid',       false, 'ASC'],
+				'firstname'  => ['u.firstname',  true,  'ASC'],
+				'lastname'   => ['u.lastname',   true,  'ASC'],
+				'email'      => ['nu.lid',       true,  'ASC'],
+				'regis_time' => ['u.regis_time', false, 'DESC'],
+				'last_time'  => ['u.last_time',  false, 'DESC'],
+			];
+			$order_key = isset($order_map[$cookie['order_by']]) ? $cookie['order_by'] : 'last_time';
 			$cookie['order_by'] = luna::$data['order_by'] = $order_key;
 			$order_by_ok = $order_map[$order_key][0];
 			$alphastyle  = $order_map[$order_key][1];
 			if (empty($order_dir)) { $order_dir = $order_map[$order_key][2]; }
-			$order_dir = ($order_dir == 'DESC' || empty($order_dir))? 'DESC' : 'ASC';
+			$order_dir = ($order_dir == 'DESC') ? 'DESC' : 'ASC';
 			luna::$data['order_dir'] = $order_dir;
 			$cookie['order_dir'] = luna::$data['order_dir'];
 			if (!defined('PERPAGE')) { define('PERPAGE', 20); }
 			luna::$data['limit'] = max(1, intval(lunaTools::request('limit', 0, PERPAGE)));
 			$start = max(0, intval(lunaTools::request('start', 0, 0)));
 			luna::$data['start'] = luna::$data['start'] = $start;
-			/*
-			$letters = array();
-			$this->letter = 'A';
-			if ($alphastyle) {
-				switch($cookie['order_by']) {
-					case 'firstname':
-					case 'lastname':
-					case 'email':
-						$res = lunaDB::query('
-							SELECT
-								DISTINCT LEFT('.$order_by_ok.', 1) as letter
-							FROM
-								'.luna::get_ini('DBtables', 'USERS').' u,
-								'.luna::get_ini('DBtables', 'NODES').' nu,
-								'.luna::get_ini('DBtables', 'NODES').' g,
-								'.luna::get_ini('DBtables', 'NODES_MAP').' ug,
-								'.luna::get_ini('DBtables', 'CLASSES').' tu,
-								'.luna::get_ini('DBtables', 'CLASSES').' tg
-							WHERE
-								tu.lid = '.lunaDB::quote('user').' AND nu.tid = tu.id
-								AND tg.lid = '.lunaDB::quote('group').' AND g.tid = tg.id
-								AND ug.nid1 = nu.nid AND ug.nid2 = g.nid '.$groupsql.'
-						');
-						break;
-				}
-				$letters = array();
-				while ($row = $res->fetchRow()) {
-					$letter = strtoupper(substr($row->letter,0,1));
-					if (!empty($letter)) { $letters[] = $letter; }
-				}
-				$res->free();
-				$letters = array_unique($letters);
-				sort($letters);
-				if ($l = lunaTools::request('letter')) { $this->letter = substr($l, 0, 1); } else if (!empty($letters)) { $this->letter = $letters[0]; }
-				if (!in_array($this->letter, $letters)) { $this->letter = isset($letters[0])? $letters[0] : '' ; }
-				luna::$model->insert_alphabet_nav($letters, $this->letter);
-				luna::$data['letter'] = $this->letter;
-				$cookie['letter'] = luna::$data['letter'];
-			}
-			*/
 			lunaTools::set_cookie(luna::$data['lid'].'_sort', $cookie);
-			switch($cookie['order_by']) {
+			switch ($cookie['order_by']) {
 				case 'firstname':
 				case 'lastname':
 				case 'email':
-				/*
-					$res = lunaDB::query('
-						SELECT
-							COUNT(DISTINCT nu.nid) as total
-						FROM
-							'.luna::get_ini('DBtables', 'USERS').' u,
-							'.luna::get_ini('DBtables', 'NODES').' nu,
-							'.luna::get_ini('DBtables', 'NODES').' g,
-							'.luna::get_ini('DBtables', 'NODES_MAP').' ug,
-							'.luna::get_ini('DBtables', 'CLASSES').' tu,
-							'.luna::get_ini('DBtables', 'CLASSES').' tg
-						WHERE 1 = 1
-							AND tu.lid = '.lunaDB::quote('user').'
-							AND nu.tid = tu.id
-							AND u.nid = nu.nid
-							AND tg.lid = '.lunaDB::quote('group').'
-							AND g.tid = tg.id
-							AND ug.nid1 = nu.nid
-							AND ug.nid2 = g.nid '.$groupsql.'
-							AND '.$order_by_ok.' LIKE '.lunaDB::quote($this->letter.'%').'
-						ORDER BY
-							'.$order_by_ok.' '.$order_dir.'
-					');
-					break;
-				*/
 				case 'nid':
 				case 'regis_time':
 				case 'last_time':
@@ -1549,48 +1037,11 @@ class lunaModel {
 			}
 			$row = $res->fetchRow();
 			$res->free();
-			$total = empty($row)? 0 : $row->total;
-			switch($cookie['order_by']) {
+			$total = empty($row) ? 0 : $row->total;
+			switch ($cookie['order_by']) {
 				case 'firstname':
 				case 'lastname':
 				case 'email':
-				/*
-					$res = lunaDB::query('
-						SELECT
-							nu.nid,
-							nu.is_active,
-							u.firstname,
-							u.lastname,
-							nu.lid as email,
-							u.regis_time,
-							u.last_time,
-							u.last_url,
-							u.lang
-						FROM
-							'.luna::get_ini('DBtables', 'USERS').' u,
-							'.luna::get_ini('DBtables', 'NODES').' nu,
-							'.luna::get_ini('DBtables', 'NODES').' g,
-							'.luna::get_ini('DBtables', 'NODES_MAP').' ug,
-							'.luna::get_ini('DBtables', 'CLASSES').' tu,
-							'.luna::get_ini('DBtables', 'CLASSES').' tg
-						WHERE 1 = 1
-							AND tu.lid = '.lunaDB::quote('user').'
-							AND nu.tid = tu.id
-							AND u.nid = nu.nid
-							AND tg.lid = '.lunaDB::quote('group').'
-							AND g.tid = tg.id
-							AND ug.nid1 = nu.nid
-							AND ug.nid2 = g.nid '.$groupsql.'
-							AND '.$order_by_ok.' LIKE '.lunaDB::quote($this->letter.'%').'
-						GROUP BY
-							nu.nid
-						ORDER BY
-							'.$order_by_ok.' '.$order_dir.'
-						LIMIT
-							'.$start.', '.luna::$data['limit'].'
-					');
-					break;
-				*/
 				case 'nid':
 				case 'regis_time':
 				case 'last_time':
@@ -1640,7 +1091,7 @@ class lunaModel {
 					break;
 			}
 		}
-		$users = array();
+		$users = [];
 		while ($row = $res->fetchRow()) {
 			$users[$row->nid]['nid'] = $row->nid;
 			$users[$row->nid]['is_active'] = $row->is_active;
@@ -1653,25 +1104,24 @@ class lunaModel {
 			$users[$row->nid]['lang'] = $row->lang;
 			$users[$row->nid]['groups'][$row->group_nid] = $row->group_nid;
 			$users[$row->nid]['levels'][$row->level_nid] = $row->level_nid;
-			$users[$row->nid]['is_current'] = ($row->nid == luna::$session->user->nid)? 1 : 0;
+			$users[$row->nid]['is_current'] = ($row->nid == luna::$session->user->nid) ? 1 : 0;
 		}
 		$res->free();
-		$nodes = luna::$model->merge_nodes($nodes, luna::$model->load_user($users));
-		luna::$model->merge_index(luna::$model->load_pager(($total ?? 0), ($start ?? 0), (luna::$data['limit'] ?? PERPAGE), (luna::$data['lid'] ?? '')));
+		$nodes = luna::model()->merge_nodes($nodes, luna::model()->load_user($users));
+		luna::model()->merge_index(luna::model()->load_pager(($total ?? 0), ($start ?? 0), (luna::$data['limit'] ?? PERPAGE), (luna::$data['lid'] ?? '')));
 		return $nodes;
 	}
 	// }}}
 	// {{{ load_text()
 	/**
-	 * @access public
 	 * @param mixed $item
 	 * @return mixed
 	 */
 	public function load_text($item = false) {
 		if (empty($item)) { return false; }
-		$nodes = array();
+		$nodes = [];
 		if (is_array($item) && !isset($item['nid'])) {
-			foreach($item as $k => $v) { $nodes = $this->merge_nodes($nodes, $this->load_text($v)); }
+			foreach ($item as $k => $v) { $nodes = $this->merge_nodes($nodes, $this->load_text($v)); }
 		} else {
 			if (is_object($item)) { $item = get_object_vars($item); }
 			$nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['rdf'].'type'][0]['value'] = $this->conf['ns']['luna'].'text';
@@ -1682,7 +1132,7 @@ class lunaModel {
 			$nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['rdfs'].'label'][0]['type'] = 'literal';
 			$nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['rdfs'].'label'][0]['lang'] = lunaTools::format_language($item['lang']);
 			$nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['luna'].'isActive'][0]['value'] = $item['is_active'];
-			$nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['luna'].'save_time'][0]['value'] = ($item['save_time'] == 0? '' : lunaTools::format_date($item['save_time']));
+			$nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['luna'].'save_time'][0]['value'] = ($item['save_time'] == 0 ? '' : lunaTools::format_date($item['save_time']));
 			if (isset($item['content']) && !empty($item['content'])) {
 				$nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['luna'].'content'][0]['value'] = $item['content'];
 				$nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['luna'].'content'][0]['type'] = 'literal';
@@ -1692,23 +1142,23 @@ class lunaModel {
 				$nodes[$this->node_path.'/'.$item['user']['nid']][$this->conf['ns']['luna'].'nid'][0]['value'] = $item['user']['nid'];
 				$nodes[$this->node_path.'/'.$item['user']['nid']][$this->conf['ns']['rdf'].'type'][0]['value'] = $this->conf['ns']['foaf'].'Person';
 				$nodes[$this->node_path.'/'.$item['user']['nid']][$this->conf['ns']['rdf'].'type'][0]['type'] = 'uri';
-				$needle = array(
+				$needle = [
 					'value' => $this->node_path.'/'.$item['user']['nid'],
 					'type' => 'uri'
-				);
+				];
 				if (!isset($nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['luna'].'user']) || !in_array($needle, $nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['luna'].'user'])) {
 					$nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['luna'].'user'][] = $needle;
 				}
 			}
 			if (isset($item['pages'])) {
-				foreach($item['pages'] as $page_nid) {
+				foreach ($item['pages'] as $page_nid) {
 					$nodes[$this->node_path.'/'.$page_nid][$this->conf['ns']['luna'].'nid'][0]['value'] = $page_nid;
 					$nodes[$this->node_path.'/'.$page_nid][$this->conf['ns']['rdf'].'type'][0]['value'] = $this->conf['ns']['luna'].'page';
 					$nodes[$this->node_path.'/'.$page_nid][$this->conf['ns']['rdf'].'type'][0]['type'] = 'uri';
-					$needle = array(
+					$needle = [
 						'value' => $this->node_path.'/'.$page_nid,
 						'type' => 'uri'
-					);
+					];
 					if (!isset($nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['luna'].'page']) || !in_array($needle, $nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['luna'].'page'])) {
 						$nodes[$this->node_path.'/'.$item['nid']][$this->conf['ns']['luna'].'page'][] = $needle;
 					}
@@ -1720,15 +1170,14 @@ class lunaModel {
 	// }}}
 	// {{{ load_texts()
 	/**
-	 * @access public
-	 * @param integer $item_nid
-	 * @param integer $page_nid
+	 * @param int|false $item_nid
+	 * @param int|false $page_nid
 	 * @return array
 	 */
-	public function load_texts($item_nid = false, $page_nid = false) {
+	public function load_texts($item_nid = false, $page_nid = false): array|false {
 		lunaTools::parse_sort_cookie(luna::$data['lid'] ?? '');
-		$cookie = array();
-		$nodes = array();
+		$cookie = [];
+		$nodes = [];
 		$item_nid = intval($item_nid);
 		$page_nid = intval($page_nid);
 		if (!empty($item_nid)) {
@@ -1769,7 +1218,7 @@ class lunaModel {
 					AND map.nid1 = n.nid
 					AND map.nid2 = p.nid
 			');
-		} else if (!empty($page_nid)) {
+		} elseif (!empty($page_nid)) {
 			$res = lunaDB::query('
 				SELECT DISTINCT
 					t.title,
@@ -1811,7 +1260,7 @@ class lunaModel {
 			$cookie['order_by'] = luna::$data['order_by'] = lunaTools::request('order_by', 0, 'last_time');
 			$order_dir = lunaTools::request('order_dir', 'DESC');
 			$alphastyle = 0;
-			switch(luna::$data['order_by']) {
+			switch (luna::$data['order_by']) {
 				case 'lid':
 					$order_by_ok = 'n.'.luna::$data['order_by'];
 					$alphastyle = true;
@@ -1830,75 +1279,20 @@ class lunaModel {
 					if (empty($order_dir)) { $order_dir = 'DESC'; }
 					break;
 			}
-			$cookie['order_dir'] = luna::$data['order_dir'] = ($order_dir == 'DESC' || empty($order_dir))? 'DESC' : 'ASC';
+			$cookie['order_dir'] = luna::$data['order_dir'] = ($order_dir == 'DESC') ? 'DESC' : 'ASC';
 			if (!defined('PERPAGE')) { define('PERPAGE', 20); }
 			luna::$data['limit'] = max(1, intval(lunaTools::request('limit', 0, PERPAGE)));
 			$cookie['limit'] = luna::$data['limit'];
 			$start = max(0, intval(lunaTools::request('start', 0, 0)));
 			if (empty($start)) { $start = 0; }
 			$cookie['start'] = luna::$data['start'] = $start;
-	/*	$letters = array();
-			$this->letter = 'A';
-			if ($alphastyle) {
-				$res = lunaDB::query('
-					SELECT
-						DISTINCT LEFT('.$order_by_ok.', 1) as letter
-					FROM
-						'.luna::get_ini('DBtables', 'NODES').' n,
-						'.luna::get_ini('DBtables', 'TEXTS').' t
-					WHERE
-						n.tid = (
-							SELECT
-								id
-							FROM
-								'.luna::get_ini('DBtables', 'CLASSES').'
-							WHERE
-								lid = '.lunaDB::quote('text').'
-						)
-						AND n.nid = t.nid
-				');
-				$letters = array();
-				while ($row = $res->fetchRow()) {
-					$letter = strtoupper(substr($row->letter,0,1));
-					if (!empty($letter)) { $letters[] = $letter; }
-				}
-				$res->free();
-				$letters = array_unique($letters);
-				sort($letters);
-				if ($l = lunaTools::request('letter')) { $this->letter = substr($l, 0, 1); } else if (!empty($letters)) { $this->letter = $letters[0]; }
-				if (!in_array($this->letter, $letters)) { $this->letter = isset($letters[0])? $letters[0] : ''; }
-				lunaTools::insert_alphabet_nav(lunaTools::RDF, $letters, $this->letter);
-				luna::$data['letter'] = $this->letter;
-				$cookie['letter'] = luna::$data['letter'];
-			}
-			*/
 			lunaTools::set_cookie(luna::$data['lid'].'_sort', $cookie);
-			switch(luna::$data['order_by']) {
+			// Every accepted ordering runs the same query; only $order_by_ok and $order_dir,
+			// both validated above, differ. The cases are listed to record what is accepted.
+			switch (luna::$data['order_by']) {
 				case 'lid':
 				case 'title':
 				case 'lang':
-				/*	$res = lunaDB::query('
-						SELECT
-							COUNT(DISTINCT n.nid) as total
-						FROM
-							'.luna::get_ini('DBtables', 'NODES').' n,
-							'.luna::get_ini('DBtables', 'TEXTS').' t
-						WHERE
-							n.tid = (
-								SELECT
-									id
-								FROM
-									'.luna::get_ini('DBtables', 'CLASSES').'
-								WHERE
-									lid = '.lunaDB::quote('text').'
-							)
-							AND n.nid = t.nid
-							AND '.$order_by_ok.' LIKE '.lunaDB::quote($this->letter.'%').'
-						ORDER BY
-							'.$order_by_ok.' '.$order_dir.'
-					');
-					break;
-				*/
 				case 'last_time':
 				default:
 					$res = lunaDB::query('
@@ -1926,46 +1320,13 @@ class lunaModel {
 			}
 			$row = $res->fetchRow();
 			$res->free();
-			$total = empty($row)? 0 : $row->total;
-			switch(luna::$data['order_by']) {
+			$total = empty($row) ? 0 : $row->total;
+			// Every accepted ordering runs the same query; only $order_by_ok and $order_dir,
+			// both validated above, differ. The cases are listed to record what is accepted.
+			switch (luna::$data['order_by']) {
 				case 'lid':
 				case 'title':
 				case 'lang':
-				/*	$res = lunaDB::query('
-						SELECT
-							t.title,
-							t.lang,
-							n.nid,
-							n.lid,
-							n.is_active,
-							u.firstname,
-							u.lastname,
-							a.ntime
-						FROM
-							'.luna::get_ini('DBtables', 'NODES').' n,
-							'.luna::get_ini('DBtables', 'TEXTS').' t,
-							'.luna::get_ini('DBtables', 'ACTIONS').' a,
-							'.luna::get_ini('DBtables', 'USERS').' u
-						WHERE
-							n.tid = (
-								SELECT
-									id
-								FROM
-									'.luna::get_ini('DBtables', 'CLASSES').'
-								WHERE
-									lid = '.lunaDB::quote('text').'
-							)
-							AND t.nid = n.nid
-							AND a.nid = n.nid
-							AND u.nid = a.unid
-							AND '.$order_by_ok.' LIKE '.lunaDB::quote($this->letter.'%').'
-						ORDER BY
-							'.$order_by_ok.' '.$order_dir.'
-						LIMIT
-							'.$start.', '.luna::$data['limit'].'
-					');
-					break;
-				*/
 				case 'last_time':
 				default:
 					$res = lunaDB::query('
@@ -2004,7 +1365,7 @@ class lunaModel {
 					break;
 			}
 		}
-		$texts = array();
+		$texts = [];
 		while ($row = $res->fetchRow()) {
 			$texts[$row->nid]['nid'] = $row->nid;
 			$texts[$row->nid]['lid'] = $row->lid;
@@ -2019,39 +1380,38 @@ class lunaModel {
 			if (isset($row->lang)) { $texts[$row->nid]['lang'] = $row->lang; }
 		}
 		$res->free();
-		$nodes = luna::$model->merge_nodes($nodes, luna::$model->load_text($texts));
-		luna::$model->merge_index(luna::$model->load_pager(($total ?? 0), ($start ?? 0), (luna::$data['limit'] ?? PERPAGE), (luna::$data['lid'] ?? '')));
+		$nodes = luna::model()->merge_nodes($nodes, luna::model()->load_text($texts));
+		luna::model()->merge_index(luna::model()->load_pager(($total ?? 0), ($start ?? 0), (luna::$data['limit'] ?? PERPAGE), (luna::$data['lid'] ?? '')));
 		return $nodes;
 	}
 	// }}}
 	// {{{ load_data()
 	/**
-	 * @access public
-	 * @param array $data
-	 * @return array
+	 * @param array|false $data
+	 * @return array|false
 	 */
-	public function load_data($data = false, $label = 'data') {
+	public function load_data($data = false, $label = 'data'): array|false {
 		if (!is_array($data)) { return false; }
-		$nodes = array();
-		foreach($data as $k => $v) {
+		$nodes = [];
+		foreach ($data as $k => $v) {
 			if (is_array($v)) {
-				foreach($v as $vk => $vv) {
+				foreach ($v as $vk => $vv) {
 					if ($vk != 'PHPSESSID') {
-						$var_node = $this->load_var(array(
+						$var_node = $this->load_var([
 							'type' => $label,
 							'lid' => "$k.$vk",
 							'value' => "$vv"
-						));
+						]);
 						$nodes = $this->merge_nodes($nodes, $var_node);
 					}
 				}
 			} else {
 				if ($k != 'PHPSESSID') {
-					$var_node = $this->load_var(array(
+					$var_node = $this->load_var([
 						'type' => $label,
 						'lid' => "$k",
 						'value' => "$v"
-					));
+					]);
 					$nodes = $this->merge_nodes($nodes, $var_node);
 				}
 			}
@@ -2061,27 +1421,26 @@ class lunaModel {
 	// }}}
 	// {{{ load_request
 	/**
-	 * @access public
-	 * @param array $data
-	 * @param string $label
-	 * @return boolean
+	 * @param array|false $data
+	 * @param string|false $label
+	 * @return bool|array
 	 */
-	public function load_request($data = false, $label = false) {
+	public function load_request($data = false, $label = false): bool|array {
 		if (empty($label)) { return false; }
-		$nodes = array();
+		$nodes = [];
 		if (is_array($data)) {
-			foreach($data as $k => $v) {
+			foreach ($data as $k => $v) {
 				if (is_array($v)) {
-					$klabel = ($label == 'request')? "$k" : $label.'.'."$k";
+					$klabel = ($label == 'request') ? "$k" : $label.'.'."$k";
 					$nodes = $this->merge_nodes($nodes, $this->load_request($v, $klabel));
 				} else {
 					if (empty($k)) { $k = "0"; }
 					if ($k != 'PHPSESSID') {
-						$klabel = ($label == 'request')? "$k" : $label.'.'."$k";
+						$klabel = ($label == 'request') ? "$k" : $label.'.'."$k";
 						$serv = $v;
 						// Guard against PHP object injection: only expand serialized
 						// arrays/scalars from request input, never objects (O:/C:).
-						$unserv = (is_string($v) && !preg_match('/(?:^|;)[OC]:[0-9]+:/', $v))? @unserialize($v) : false;
+						$unserv = (is_string($v) && !preg_match('/(?:^|;)[OC]:[0-9]+:/', $v)) ? @unserialize($v) : false;
 						if (empty($unserv)) {
 							$nodes = $this->merge_nodes($nodes, $this->load_request($serv, $klabel));
 						} else {
@@ -2092,11 +1451,11 @@ class lunaModel {
 			}
 		} else {
 			if ($label != 'PHPSESSID') {
-				$var_node = $this->load_var(array(
+				$var_node = $this->load_var([
 					'type' => 'request',
 					'lid' => "$label",
 					'value' => "$data"
-				));
+				]);
 				$nodes = $this->merge_nodes($nodes, $var_node);
 			}
 		}
@@ -2105,20 +1464,19 @@ class lunaModel {
 	// }}}
 	// {{{ load_vocabulary()
 	/**
-	 * @access public
-	 * @param array $vocabulary
-	 * @return array
+	 * @param array|false $vocabulary
+	 * @return array|false
 	 */
-	public function load_vocabulary($vocabulary = false) {
+	public function load_vocabulary($vocabulary = false): array|false {
 		if (!is_array($vocabulary)) { return false; }
-		$nodes = array();
-		foreach($vocabulary as $k => $v) {
-			$var_node = $this->load_var(array(
+		$nodes = [];
+		foreach ($vocabulary as $k => $v) {
+			$var_node = $this->load_var([
 				'type' => 'vocabulary',
 				'lid' => "$k",
 				'value' => _("$v"),
 				'lang' => luna::$lang
-			));
+			]);
 			$nodes = $this->merge_nodes($nodes, $var_node);
 		}
 		return $nodes;
@@ -2126,28 +1484,27 @@ class lunaModel {
 	// }}}
 	// {{{ check_requested_node()
 	/**
-	 * @access public
-	 * @param string var
-	 * @param string type
-	 * @param string ns
-	 * @return integer
+	 * @param string|false $var
+	 * @param string|false $type
+	 * @param string $ns
+	 * @return int|false
 	 */
-	public function check_requested_node($var = false, $type = false, $ns = 'luna') {
+	public function check_requested_node($var = false, string|false $type = false, $ns = 'luna'): int|false {
 		if (empty($var)) { return false; }
 		if (empty($ns)) { $ns = 'luna'; }
 		$nid = lunaTools::request("$var");
 		$node = false;
-		if ($nid) { $node = luna::$model->get_node($nid, "$type", "$ns"); }
+		if ($nid) { $node = luna::model()->get_node($nid, "$type", "$ns"); }
 		if (!empty($node)) {
 			$_POST["$var"] = $_REQUEST["$var"] = $nid;
 			luna::$data['modify_item_nid'] = $nid;
 		} else {
 			if (isset(luna::$data['subdir']) && !empty(luna::$data['subdir'])) {
-				$nid = luna::$model->get_nid_from_lid(luna::$data['subdir']);
-				$node = luna::$model->get_node($nid, "$type");
+				$nid = luna::model()->get_nid_from_lid(luna::$data['subdir']);
+				$node = luna::model()->get_node($nid, "$type");
 				if ($node) { $_POST[$var] = $_REQUEST[$var] = $nid; }
 				luna::$data['modify_item_nid'] = $nid;
-				luna::$model->merge_index(luna::$model->load_users(false, $nid));
+				luna::model()->merge_index(luna::model()->load_users(false, $nid));
 			}
 		}
 		return $nid;
@@ -2155,15 +1512,14 @@ class lunaModel {
 	// }}}
 	// {{{ check_if_node_exists()
 	/**
-	 * @access public
-	 * @param integer nid
-	 * @param string type
-	 * @return array
+	 * @param int|false $nid
+	 * @param string|false $type
+	 * @return array|false
 	 */
-	public function check_if_node_exists($nid = false, $type = false) {
+	public function check_if_node_exists($nid = false, $type = false): array|false {
 		$nid = intval($nid);
 		if (empty($nid) || empty($type)) { return false; }
-		$item_node = luna::$model->get_node($nid, "$type");
+		$item_node = luna::model()->get_node($nid, "$type");
 		if (!$item_node) {
 			$message = sprintf(_("Unknown $type #%1\$s."), $_POST['modify_item_nid']);
 			luna::$messages['warning'][] = $message;
@@ -2175,12 +1531,11 @@ class lunaModel {
 	// }}}
 	// {{{ check_if_lid_is_protected()
 	/**
-	 * @access public
-	 * @param array node
-	 * @param array lids
-	 * @return array
+	 * @param array|false $node
+	 * @param array|false $lids
+	 * @return string|false the item's lid when it is NOT protected; false when it is
 	 */
-	public function check_if_lid_is_protected($node = false, $lids = false) {
+	public function check_if_lid_is_protected($node = false, $lids = false): string|false {
 		if (empty($node) || !is_array($lids) || empty($lids)) { return false; }
 		$item_lid = $this->get_lid($node);
 		if (!$item_lid || in_array($item_lid, $lids)) {
@@ -2194,16 +1549,14 @@ class lunaModel {
 	// }}}
 	// {{{ check_if_lid_is_taken()
 	/**
-	 * @access public
-	 * @param array node
-	 * @param array lids
-	 * @return array
+	 * @param string|false $lid
+	 * @param int|false $nid
+	 * @return bool
 	 */
-	public function check_if_lid_is_taken($lid = false, $nid = false) {
+	public function check_if_lid_is_taken($lid = false, int|false $nid = false): bool {
 		if (empty($lid)) { return false; }
 		$nid = intval($nid);
 		if ($this->lid_is_taken("$lid", $nid)) {
-			$inerror++;
 			$message = sprintf(_("The identifier “%1\$s” is already taken."), "$lid");
 			luna::$messages['warning'][] = $message;
 			lunaLog::log($message, PEAR_LOG_NOTICE);
@@ -2214,28 +1567,28 @@ class lunaModel {
 	// }}}
 	// {{{ load_var()
 	/**
-	 * @access public
-	 * @param array $var
-	 * @return array
+	 * @param array|false $var
+	 * @return array|false
 	 */
-	public function load_var($var = false) {
+	public function load_var($var = false): array|false {
 		if (!is_array($var)) { return false; }
 		if (!isset($var['type'])) {
-			$nodes = array();
-			foreach($var as $v) {
+			$nodes = [];
+			foreach ($var as $v) {
 				$subnodes = $this->load_var($v);
 				if (!$subnodes) { return false; }
 				$nodes = $this->merge_nodes($nodes, $subnodes);
 			}
+			return $nodes;
 		} else {
 			if (!isset($var['lid']) || !isset($var['value'])) { return false; }
-			$nodes = array();
+			$nodes = [];
 			$lid = lunaTools::prepare_lid($var['lid']);
 			$nodes['_:'.$var['type'].'-'.$lid][$this->conf['ns']['ui'].'lid'][0]['value'] = $var['lid'];
 			$nodes['_:'.$var['type'].'-'.$lid][$this->conf['ns']['ui'].'lid'][0]['type'] = 'bnode';
 			if (isset($var['lang'])) { $nodes['_:'.$var['type'].'-'.$lid][$this->conf['ns']['ui'].'lid'][0]['lang'] = $var['lang']; }
 			if (is_array($var['value'])) {
-				foreach($var['value'] as $k => $v) {
+				foreach ($var['value'] as $k => $v) {
 					$nodes['_:'.$var['type'].'-'.$lid][$this->conf['ns']['ui']."$k"][0]['value'] = "$v";
 					$nodes['_:'.$var['type'].'-'.$lid][$this->conf['ns']['ui']."$k"][0]['type'] = 'bnode';
 				}
@@ -2251,19 +1604,18 @@ class lunaModel {
 	// }}}
 	// {{{ load_node()
 	/**
-	 * @access public
 	 * @param mixed $node
-	 * @param string $type1
+	 * @param string|false $type1
 	 * @param mixed $type2
-	 * @return array
+	 * @return array|false
 	 */
-	public function load_node($node = false, $type1 = false, $type2 = false) {
+	public function load_node($node = false, $type1 = false, $type2 = false): array|false {
 		if (empty($node)) { return false; }
 		if (is_object($node)) { $node = get_object_vars($node); }
 		if (!isset($node['nid']) || empty($node['nid'])) { return false; }
 		if (empty($type1) && isset($node['type1'])) { $type1 = $node['type1']; }
 		if (empty($type1)) { return false; }
-		$nodes = array();
+		$nodes = [];
 		$nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['luna'].'nid'][0]['value'] = $node['nid'];
 		$nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['luna'].'lid'][0]['value'] = $node['lid'];
 		$nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['rdfs'].'label'][0]['value'] = lunaTools::label($node['lid']);
@@ -2273,7 +1625,7 @@ class lunaModel {
 		if (isset($node['parent_nid']) && $node['parent_nid']) {
 			$nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['schema'].'isPartOf'][0]['value'] = $this->node_path.'/'.$node['parent_nid'];
 			$nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['schema'].'isPartOf'][0]['type'] = 'uri';
-		} else if (empty($node['parent_nid']) && $type1 == 'page') {
+		} elseif (empty($node['parent_nid']) && $type1 == 'page') {
 			$nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['schema'].'isPartOf'][0]['value'] = $this->node_path.'/'.$node['nid'];
 			$nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['schema'].'isPartOf'][0]['type'] = 'uri';
 		}
@@ -2288,14 +1640,14 @@ class lunaModel {
 			$nodes[$this->node_path.'/'.$node['nid2']][$this->conf['ns']['luna'].'isActive'][0]['value'] = $node['is_active2'];
 			$nodes[$this->node_path.'/'.$node['nid2']][$this->conf['ns']['rdf'].'type'][0]['value'] = $this->conf['ns']['luna'].$type2;
 			$nodes[$this->node_path.'/'.$node['nid2']][$this->conf['ns']['rdf'].'type'][0]['type'] = 'uri';
-			$needle = array(
+			$needle = [
 				'value' => $this->node_path.'/'.$node['nid2'],
 				'type' => 'uri'
-			);
+			];
 			if (!isset($nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['luna'].$type2]) || !in_array($needle, $nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['luna'].$type2])) {
 				$nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['luna'].$type2][] = $needle;
 			}
-		} else if (is_array($type2)) {
+		} elseif (is_array($type2)) {
 			$i = 1;
 			foreach ($type2 as $typex) {
 				$nidx = 'nid'.($i + 1);
@@ -2310,10 +1662,10 @@ class lunaModel {
 					$nodes[$this->node_path.'/'.$node[$nidx]][$this->conf['ns']['luna'].'isActive'][0]['value'] = $node[$is_activex];
 					$nodes[$this->node_path.'/'.$node[$nidx]][$this->conf['ns']['rdf'].'type'][0]['value'] = $this->conf['ns']['luna'].$typex;
 					$nodes[$this->node_path.'/'.$node[$nidx]][$this->conf['ns']['rdf'].'type'][0]['type'] = 'uri';
-					$needle = array(
+					$needle = [
 						'value' => $this->node_path.'/'.$node[$nidx],
 						'type' => 'uri'
-					);
+					];
 					if (!isset($nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['luna'].$typex]) || !in_array($needle, $nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['luna'].$typex])) {
 						$nodes[$this->node_path.'/'.$node['nid']][$this->conf['ns']['luna'].$typex][] = $needle;
 					}
@@ -2326,22 +1678,21 @@ class lunaModel {
 	// }}}
 	// {{{ load_nodes()
 	/**
-	 * @access public
-	 * @param string $type1
+	 * @param string|false $type1
 	 * @param mixed $type2
-	 * @param integer $nid
+	 * @param int|false $nid
 	 * @return mixed
 	 */
-	public function load_nodes($type1 = false, $type2 = false, $nid = false) {
+	public function load_nodes($type1 = false, $type2 = false, int|false $nid = false) {
 		if (empty($type1) || !is_string($type1)) { $type1 = false; }
 		if (empty($type2) || (!is_string($type2) && !is_array($type2))) { $type2 = false; }
 		$nid = intval($nid);
-		if (empty($nid)) { $nid = false; }
-		$sql = array(
+		if ($nid < 1) { $nid = false; }
+		$sql = [
 			'select' => '',
 			'from' => '',
 			'where' => ''
-		);
+		];
 		$type1_sql = '';
 		if (!empty($type1)) { $type1_sql = ' AND n.tid = (SELECT id FROM '.luna::get_ini('DBtables', 'CLASSES').' WHERE lid = '.lunaDB::quote("$type1").') '; }
 		if (is_string($type2)) {
@@ -2358,7 +1709,7 @@ class lunaModel {
 				';
 			$sql['where'] .=  'AND map'.($i + 1).'.nid1 = n.nid AND n'.($i + 1).'.tid = (SELECT id FROM '.luna::get_ini('DBtables', 'CLASSES').' WHERE lid = '.lunaDB::quote("$type2").') ';
 			if ($type2 == 'level') { $sql['where'] .= 'AND n2.nid IN ('.(implode(',', array_map('intval', (array) luna::$session->user->levels)) ?: '0').')'; }
-		} else if (is_array($type2)) {
+		} elseif (is_array($type2)) {
 			$i = 1;
 			foreach ($type2 as $type2x) {
 				$sql['select'] .=  'n'.($i + 1).'.nid as nid'.($i + 1).', ';
@@ -2399,11 +1750,11 @@ class lunaModel {
 				a.ntime ASC
 		';
 		$res = lunaDB::query($query);
-		$nodes = array();
+		$nodes = [];
 		while ($row = $res->fetchRow()) { $nodes = $this->merge_nodes($nodes, $this->load_node($row, $type1, $type2)); }
 		$res->free();
 		if ($type1 == 'page' && !is_array($type2) && ($type2 == 'level' || empty($type2))) {
-			$this->aliases = array();
+			$this->aliases = [];
 			if (!$nodes = $this->calculate_aliases($nodes)) { throw new lunaException(_('Error: cannot calculate aliases.'), PEAR_LOG_CRIT); }
 		}
 		return $nodes;
@@ -2417,47 +1768,46 @@ class lunaModel {
 	 * carries a visited set, so it terminates — and reports a cycle — even if the stored
 	 * data already contains one. A cyclic parent_nid makes the tree walk in
 	 * calculate_aliases() / get_children_nodes() non-terminating, so it must never be
-	 * written; this is the test both update() and the admin pages form gate on.
+	 * written, and this is what refuses it: the admin pages form calls it before attempting
+	 * the re-parent, so it can show its message rather than corrupt the tree.
 	 *
-	 * @access public
-	 * @param integer $nid        the node being re-parented
-	 * @param integer $parent_nid the proposed new parent
-	 * @return boolean true if the move would create a cycle
+	 * @param int $nid        the node being re-parented
+	 * @param int $parent_nid the proposed new parent
+	 * @return bool true if the move would create a cycle
 	 */
-	public function would_create_cycle($nid = 0, $parent_nid = 0) {
+	public function would_create_cycle($nid = 0, int $parent_nid = 0): bool {
 		$nid = intval($nid);
 		$parent_nid = intval($parent_nid);
 		if (!$nid || !$parent_nid) { return false; }
-		$seen = array();
+		$seen = [];
 		$p = $parent_nid;
 		while ($p) {
 			if ($p === $nid) { return true; }       // nid is the proposed parent or one of its ancestors → loop
 			if (isset($seen[$p])) { return true; }  // pre-existing loop in the stored tree → cyclic (and stop walking)
 			$seen[$p] = true;
 			$res = lunaDB::query('SELECT parent_nid FROM '.luna::get_ini('DBtables', 'NODES').' WHERE nid = '.lunaDB::quote($p).' LIMIT 1');
-			$row = ($res)? $res->fetchRow() : false;
+			$row = ($res) ? $res->fetchRow() : false;
 			if ($res) { $res->free(); }
-			$p = ($row && !empty($row->parent_nid))? intval($row->parent_nid) : 0;
+			$p = ($row && !empty($row->parent_nid)) ? intval($row->parent_nid) : 0;
 		}
 		return false;
 	}
 	// }}}
 	// {{{ insert()
 	/**
-	 * @access public
-	 * @param string $type1
-	 * @param string $lid
-	 * @param boolean $is_active
-	 * @param integer $parent_nid
-	 * @param integer $time
-	 * @return integer
+	 * @param string|false $type1
+	 * @param string|false $lid
+	 * @param int|bool $is_active
+	 * @param int|false $parent_nid
+	 * @param int|false $time
+	 * @return int|false
 	 */
-	public function insert($type1 = false, $lid = false, $is_active = false, $parent_nid = false, $time = false) {
+	public function insert($type1 = false, $lid = false, $is_active = false, $parent_nid = false, $time = false): int|false {
 		if (empty($type1) || !is_string($type1)) { return false; }
 		$time = intval($time);
 		if (empty($time)) { $time = NOW; }
 		if (empty($lid) || !is_string($lid)) { return false; }
-		$is_active = ($is_active == true)? true : false;
+		$is_active = ($is_active == true) ? true : false;
 		$parent_nid = intval($parent_nid);
 		if (empty($parent_nid)) { $parent_nid = false; }
 		$nextID = lunaDB::nextID(luna::get_ini('DBtables', 'NODES'));
@@ -2483,20 +1833,19 @@ class lunaModel {
 				)
 		');
 		$this->insert_action($nextID, $time);
-		$this->rdf_sync_node($nextID);
+		lunaGraph::rdf_sync_node($nextID);
 		return $nextID;
 	}
 	// }}}
 	// {{{ update()
 	/**
-	 * @access public
-	 * @param integer $nid
-	 * @param string $lid
-	 * @param boolean $is_active
-	 * @param integer $parent_nid
-	 * @return integer
+	 * @param int|false $nid
+	 * @param string|false $lid
+	 * @param int|bool $is_active
+	 * @param int|false $parent_nid
+	 * @return int|false
 	 */
-	public function update($nid = false, $lid = false, $is_active = false, $parent_nid = false) {
+	public function update($nid = false, $lid = false, $is_active = false, $parent_nid = false): int|false {
 		if (empty($nid) || !is_integer(intval($nid))) { return false; }
 		if (empty($lid) || !is_string($lid)) { return false; }
 		// URI policy (roadmap decision #1, "forbid slug edits"): the lid IS the
@@ -2505,23 +1854,15 @@ class lunaModel {
 		// a rename is create-new + delete-old. Applies to every node type (page
 		// slugs, user emails, …) since all share the /id/{lid} identity scheme.
 		$cur = lunaDB::query('SELECT lid FROM '.luna::get_ini('DBtables', 'NODES').' WHERE nid = '.lunaDB::quote(intval($nid)));
-		$curlid = ($cur && ($crow = $cur->fetchRow()))? $crow->lid : false;
+		$curlid = ($cur && ($crow = $cur->fetchRow())) ? $crow->lid : false;
 		if ($cur) { $cur->free(); }
 		if ($curlid !== false && $curlid !== $lid) {
 			lunaLog::log('Refused immutable-slug change on node '.intval($nid).': "'.$curlid.'" -> "'.$lid.'"', PEAR_LOG_WARNING);
 			return false;
 		}
-		$is_active = ($is_active == true)? true : false;
+		$is_active = ($is_active == true) ? true : false;
 		$parent_nid = intval($parent_nid);
 		if (empty($parent_nid)) { $parent_nid = false; }
-		// Page-tree integrity: refuse a re-parent that would make the node its own
-		// ancestor (a cycle). A cyclic parent_nid makes the parent-chain walk in
-		// calculate_aliases() non-terminating, so the model never writes one — this is
-		// the choke point for every caller (the admin form also checks, for a message).
-		if ($parent_nid && $this->would_create_cycle($nid, $parent_nid)) {
-			lunaLog::log('Refused cyclic re-parent on node '.intval($nid).': proposed parent #'.intval($parent_nid).' is the node itself or one of its descendants.', PEAR_LOG_WARNING);
-			return false;
-		}
 		$res = lunaDB::query('
 			UPDATE
 				'.luna::get_ini('DBtables', 'NODES').'
@@ -2533,17 +1874,16 @@ class lunaModel {
 				nid = '.lunaDB::quote($nid).'
 		');
 		$this->insert_action($nid);
-		$this->rdf_sync_node($nid);
+		lunaGraph::rdf_sync_node($nid);
 		return $nid;
 	}
 	// }}}
 	// {{{ delete()
 	/**
-	 * @access public
-	 * @param integer $nid
-	 * @return boolean
+	 * @param int|false $nid
+	 * @return bool
 	 */
-	public function delete($nid = false) {
+	public function delete($nid = false): bool {
 		if (empty($nid) || !is_integer(intval($nid))) { return false; }
 		$nid = intval($nid);
 		// Admin-lockout defense-in-depth: never delete a structural node the admin tier
@@ -2555,7 +1895,7 @@ class lunaModel {
 			lunaLog::log('Refused to delete protected node “'.$row->lid.'” (#'.$nid.').', PEAR_LOG_WARNING);
 			return false;
 		}
-		$this->rdf_delete_node($nid);
+		lunaGraph::rdf_delete_node($nid);
 		$res = lunaDB::query('
 			DELETE FROM
 				'.luna::get_ini('DBtables', 'NODES').'
@@ -2580,12 +1920,11 @@ class lunaModel {
 	// }}}
 	// {{{ link()
 	/**
-	 * @access public
-	 * @param integer $nodeid1
+	 * @param int|false $nodeid1
 	 * @param mixed $nodeid2
-	 * @return boolean
+	 * @return bool
 	 */
-	public function link($nodeid1 = false, $nodeid2 = false) {
+	public function link($nodeid1 = false, $nodeid2 = false): bool {
 		// Force both endpoints numeric before they reach the SQL: link() is called with raw $_POST
 		// arrays from the admin/editor mods, and the id gets interpolated into INSERT ... VALUES
 		// below. The old `is_integer(intval($x))` guard was a no-op (intval() always returns an int),
@@ -2593,47 +1932,44 @@ class lunaModel {
 		$nodeid1 = intval($nodeid1);
 		if (empty($nodeid1)) { return false; }
 		if (empty($nodeid2)) { return false; }
-		if (isset($nodeid2) && !empty($nodeid2)) {
-			$sql = '';
-			if (is_array($nodeid2)) {
-				foreach ($nodeid2 as $nid) {
-					$nid = intval($nid);
-					if (empty($nid)) { return false; }
-					$sql .= '('.$nid.', '.$nodeid1.'), ('.$nodeid1.', '.$nid.'),';
-				}
-				$sql = substr($sql, 0, -1);
-			} else {
-				$nodeid2 = intval($nodeid2);
-				if (empty($nodeid2)) { return false; }
-				$sql .= '('.$nodeid2.', '.$nodeid1.'), ('.$nodeid1.', '.$nodeid2.')';
+		$sql = '';
+		if (is_array($nodeid2)) {
+			foreach ($nodeid2 as $nid) {
+				$nid = intval($nid);
+				if (empty($nid)) { return false; }
+				$sql .= '('.$nid.', '.$nodeid1.'), ('.$nodeid1.', '.$nid.'),';
 			}
-			$res = lunaDB::query('
+			$sql = substr($sql, 0, -1);
+		} else {
+			$nodeid2 = intval($nodeid2);
+			if (empty($nodeid2)) { return false; }
+			$sql .= '('.$nodeid2.', '.$nodeid1.'), ('.$nodeid1.', '.$nodeid2.')';
+		}
+		$res = lunaDB::query('
 				INSERT INTO
 					'.luna::get_ini('DBtables', 'NODES_MAP').'
 					(nid1, nid2)
 				VALUES
 					'.$sql.'
 			');
-		}
 		// RDF write-through: re-project both endpoints of the new edge(s).
-		$rdf_sync = array(intval($nodeid1));
+		$rdf_sync = [intval($nodeid1)];
 		if (is_array($nodeid2)) { foreach ($nodeid2 as $rdf_nid) { $rdf_sync[] = intval($rdf_nid); } } else { $rdf_sync[] = intval($nodeid2); }
-		foreach (array_unique($rdf_sync) as $rdf_nid) { $this->rdf_sync_node($rdf_nid); }
+		foreach (array_unique($rdf_sync) as $rdf_nid) { lunaGraph::rdf_sync_node($rdf_nid); }
 		return true;
 	}
 	// }}}
 	// {{{ unlink()
 	/**
-	 * @access public
-	 * @param integer $nodeid
-	 * @param string $type1
-	 * @return boolean
+	 * @param int|false $nodeid
+	 * @param string|false $type1
+	 * @return bool
 	 */
-	public function unlink($nodeid = false, $type1 = false) {
+	public function unlink($nodeid = false, $type1 = false): bool {
 		if (empty($nodeid) || !is_integer(intval($nodeid))) { return false; }
 		if (empty($type1) || !is_string($type1)) { return false; }
 		// the nodes about to be unlinked, captured before the edges go (to re-sync after)
-		$rdf_targets = array();
+		$rdf_targets = [];
 		$rdf_res = lunaDB::query('SELECT DISTINCT n2.nid AS nid FROM '.luna::get_ini('DBtables', 'NODES_MAP').' m JOIN '.luna::get_ini('DBtables', 'NODES').' n2 ON n2.nid = m.nid2 JOIN '.luna::get_ini('DBtables', 'CLASSES').' t2 ON t2.id = n2.tid WHERE m.nid1 = '.lunaDB::quote($nodeid).' AND t2.lid = '.lunaDB::quote($type1));
 		if ($rdf_res) { while ($rdf_r = $rdf_res->fetchRow()) { $rdf_targets[] = intval($rdf_r->nid); } $rdf_res->free(); }
 		$res = lunaDB::query('
@@ -2672,21 +2008,20 @@ class lunaModel {
 						)
 				)
 		');
-		foreach (array_unique($rdf_targets) as $rdf_nid) { $this->rdf_sync_node($rdf_nid); }
-		$this->rdf_sync_node(intval($nodeid));
+		foreach (array_unique($rdf_targets) as $rdf_nid) { lunaGraph::rdf_sync_node($rdf_nid); }
+		lunaGraph::rdf_sync_node(intval($nodeid));
 		return true;
 	}
 	// }}}
 	// {{{ insert_action()
 	/**
-	 * @access public
-	 * @param integer $nid
-	 * @param integer $time
-	 * @return boolean
+	 * @param int $nid
+	 * @param int|false $time
+	 * @return bool
 	 */
-	public function insert_action($nid, $time = false) {
+	public function insert_action(int $nid, $time = false): bool {
 		$nid = intval($nid);
-		if (empty($nid)) { return false; }
+		if ($nid < 1) { return false; }
 		$time = intval($time);
 		if (empty($time)) { $time = NOW; }
 		$res = lunaDB::query('
@@ -2707,11 +2042,10 @@ class lunaModel {
 		return true;
 	}
 	// }}}
-	// {{{ is_taken()
+	// {{{ lid_is_taken()
 	/**
-	 * @access public
-	 * @param string $lid
-	 * @param int $nid
+	 * @param string|false $lid
+	 * @param int|false $nid
 	 * @return mixed
 	 */
 	public function lid_is_taken($lid = false, $nid = false) {
@@ -2734,48 +2068,13 @@ class lunaModel {
 		if (empty($row)) { return false; } else { return $row->nid; }
 	}
 	// }}}
-	// {{{ exists()
-	/**
-	 * @access public
-	 * @param integer $nid
-	 * @param string $class
-	 * @return mixed
-	 */
-	public function exists($nid = false, $class = false) {
-		if (empty($nid) || empty($class) || !is_string($class)) { return true; }
-		$nid = intval($nid);
-		$res = lunaDB::query('
-			SELECT
-				lid
-			FROM
-				'.luna::get_ini('DBtables', 'NODES').'
-			WHERE 1 = 1
-				AND nid = '.lunaDB::quote($nid).'
-				AND tid = (
-					SELECT
-						id
-					FROM
-						'.luna::get_ini('DBtables', 'CLASSES').'
-					WHERE
-						lid = '.lunaDB::quote("$class").'
-				)
-			LIMIT
-				1
-		');
-		$row = $res->fetchRow();
-		$res->free();
-		if (empty($row)) { return false; } else { return $row->lid; }
-		return true;
-	}
-	// }}}
 	// {{{ calculate_aliases()
 	/**
-	 * @access public
-	 * @param array $nodes
-	 * @param integer $nid
-	 * @return array
+	 * @param array|false $nodes
+	 * @param int|false $nid
+	 * @return array|false
 	 */
-	public function calculate_aliases($nodes = false, $nid = false) {
+	public function calculate_aliases($nodes = false, int|false $nid = false): array|false {
 		if (empty($nodes) || !is_array($nodes)) { return false; }
 		// if no nid is given
 		if ($nid < 1) {
@@ -2790,17 +2089,17 @@ class lunaModel {
 			// store the node’s uri, we’ll need it later
 			$node_uri = $this->node_path.'/'.$nid;
 			// do the same for its parent
-			$parent_uri = isset($nodes[$node_uri][$this->conf['ns']['schema'].'isPartOf'][0]['value'])? $nodes[$node_uri][$this->conf['ns']['schema'].'isPartOf'][0]['value'] : '';
+			$parent_uri = isset($nodes[$node_uri][$this->conf['ns']['schema'].'isPartOf'][0]['value']) ? $nodes[$node_uri][$this->conf['ns']['schema'].'isPartOf'][0]['value'] : '';
 			// and also grab its nid, we might need it
-			$parent_nid = isset($nodes[$parent_uri][$this->conf['ns']['luna'].'nid'][0]['value'])? $nodes[$parent_uri][$this->conf['ns']['luna'].'nid'][0]['value'] : '';
+			$parent_nid = isset($nodes[$parent_uri][$this->conf['ns']['luna'].'nid'][0]['value']) ? $nodes[$parent_uri][$this->conf['ns']['luna'].'nid'][0]['value'] : '';
 			// if the node’s uri is the same as its parent’s, then we just hit the root page.
 			if ($parent_uri == $node_uri) {
 				// that means: empty alias
 				$nodes[$node_uri][$this->conf['ns']['luna'].'alias'][0]['value'] = '';
 				// store "root"
 				$this->aliases["root"][$this->conf['ns']['luna'].'nid'][0]['value'] = $nid;
-			// else, if the parent exists
-			} else if (isset($nodes[$parent_uri])) {
+				// else, if the parent exists
+			} elseif (isset($nodes[$parent_uri])) {
 				// grab the literal identifier of the parent
 				$parent_lid = $nodes[$parent_uri][$this->conf['ns']['luna'].'lid'][0]['value'];
 				// check if the parent is the root page
@@ -2824,102 +2123,20 @@ class lunaModel {
 		return $nodes;
 	}
 	// }}}
-	// {{{ load_xsl
-	/**
-	 * @access private
-	 * @param string $file
-	 * @return boolean
-	 */
-	private function load_xsl($file = false) {
-		if (empty($file) || !is_string($file) || !file_exists($file)) { return false; }
-		$this->xsl = new DomDocument;
-		$this->xsl->load($file);
-		$this->xsl->preserveWhiteSpace = FALSE;
-		return true;
-	}
-	// }}}
-	// {{{ project_to_slug()
-	/**
-	 * Project the working (nid-keyed) in-memory model to slug identity before it is
-	 * serialised for the XSLT: every <base/node/{nid}> subject and every node-valued
-	 * @rdf:resource becomes <base/id/{lid}>, so the renderer consumes the same /id/{slug}
-	 * graph as the triplestore and ?output=*. The loaders keep building in nid-space (the
-	 * relational FKs are nid-based); nid survives as the luna:nid property the admin forms
-	 * post. The UI render-model and any non-node subjects are left untouched.
-	 *
-	 * @access private
-	 * @param array $index an ARC2 index keyed by node URI
-	 * @return array the same graph, re-keyed on /id/{slug}
-	 */
-	private function project_to_schema($index) {
-		$luna   = $this->conf['ns']['luna'];
-		$schema = $this->conf['ns']['schema'];
-		$rdfs   = $this->conf['ns']['rdfs'];
-		// reuse standard schema.org predicates where one exists (luna: kept only for the
-		// genuinely app-specific: lid/slug, isActive, level, alias).
-		$rdf    = $this->conf['ns']['rdf'];
-		$ui     = $this->conf['ns']['ui'];
-		// type-value remap: pages/articles get the standard schema.org class; group/level/mod keep
-		// their luna: type (no standard equivalent); users are already foaf:Person.
-		$typemap = array($luna.'page' => $schema.'WebPage', $luna.'text' => $schema.'Article');
-		$predmap = array($luna.'nid' => $schema.'identifier', $rdfs.'label' => $schema.'name', $luna.'page' => $schema.'isPartOf');
-		$base   = rtrim(luna::$site_uri, '/').'/id/';
-		$prefix = $this->node_path.'/';
-		$map = array();
-		foreach ($index as $uri => $node) {
-			if (strpos($uri, $prefix) === 0 && isset($node[$luna.'lid'][0]['value']) && $node[$luna.'lid'][0]['value'] !== '') {
-				$map[$uri] = $base.rawurlencode($node[$luna.'lid'][0]['value']);
-			}
-		}
-		if (empty($map)) { return $index; }
-		$out = array();
-		foreach ($index as $uri => $node) {
-			$nuri = isset($map[$uri])? $map[$uri] : $uri;
-			foreach ($node as $pred => $vals) {
-				$npred = isset($predmap[$pred])? $predmap[$pred] : $pred;
-				foreach ($vals as $v) {
-					if ($pred === $rdf.'type' && isset($typemap[$v['value']])) { $v['value'] = $typemap[$v['value']]; }
-					if (isset($v['type'], $v['value']) && $v['type'] === 'uri' && isset($map[$v['value']])) { $v['value'] = $map[$v['value']]; }
-					$out[$nuri][$npred][] = $v;
-					// luna:content holds the Markdown source; render it to HTML for the view
-					// only (a transient ui: render-model literal the default template emits).
-					// This never reaches the published graph — dump()/to_jsonld()/rdf_sync_node()
-					// project from $this->index, not from here — so ?output=* stays Markdown.
-					if ($pred === $luna.'content' && isset($v['value'])) {
-						$rendered = array('value' => lunaTools::markdown($v['value']), 'type' => 'literal');
-						if (isset($v['lang'])) { $rendered['lang'] = $v['lang']; }
-						$out[$nuri][$ui.'content'][] = $rendered;
-					}
-				}
-			}
-		}
-		return $out;
-	}
-	// }}}
 	// {{{ transform()
 	/**
-	 * @param string $xslfile
-	 * @return mixed
+	 * Render the current graph through a stylesheet.
+	 *
+	 * The pipeline itself lives in lunaRender; the model hands it a snapshot and gets a
+	 * document back. Kept here as the entry point so the front controller's call is unchanged.
+	 *
+	 * @param string|false $xslfile
+	 * @return mixed the rendered document, or false when the stylesheet cannot be loaded
 	 */
-	public function transform($xslfile = false) {
-		$code_str = md5(serialize(array($this->conf, $this->index)));
-		if (luna::$cache) { $cache_obj = new lunaCache(array('cacheDir' => CACHE_PATH, 'lifetime' => luna::$cache_timeout)); }
-		if (luna::$cache && ($cache_str = $cache_obj->get($code_str))) {
-			$res = unserialize($cache_str, array('allowed_classes' => false));
-		} else {
-			if (!$this->load_xsl($xslfile)) { return false; }
-			include_once('arc/ARC2.php');
-			$ser = ARC2::getRDFXMLSerializer($this->conf);
-			$this->dom = new DomDocument;
-			$this->dom->loadXML($ser->getSerializedIndex($this->project_to_schema($this->index)));
-			$this->xslprocessor = new XsltProcessor();
-			$this->xslprocessor->importStyleSheet($this->xsl);
-			$res = $this->xslprocessor->transformToXML($this->dom);
-			if (luna::$cache) { $cache_obj->save(serialize($res)); }
-		}
-		return $res;
+	public function transform(string|false $xslfile = false) {
+		$renderer = new lunaRender($this->index, $this->conf, $this->node_path);
+		return $renderer->transform($xslfile);
 	}
 	// }}}
 }
 // }}}
-?>

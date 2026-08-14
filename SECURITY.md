@@ -7,8 +7,10 @@ educational exploration of the Semantic Web. It reflects the security practices 
 era, with the major weaknesses since closed — bcrypt passwords with upgrade-on-login,
 CSRF tokens, session-fixation defence, SQLi and header fixes, a per-IP login throttle,
 per-target authorization across all admin modules, and HTTP basic auth on the SPARQL
-endpoint (via the `sparql-proxy` service). It is still **alpha-grade** and meant to be
-**studied and run on `localhost`**, not deployed.
+endpoint (via the `sparql-proxy` service). It is still **alpha-grade**. Two-tier posture: the **full
+Docker stack** (triplestore included) is meant to be **studied and run on `localhost`**, not deployed;
+the **publishing surface** (app + MySQL only, `SPARQL_ENABLED=0`) *is* intended for a public domain, but
+only by following the hardening runbook in **[docs/going-public.md](docs/going-public.md)**.
 
 - The Docker stack binds every published port to `127.0.0.1` (loopback). **Do not**
   change that or otherwise expose `8080` (app) / `3307` (MySQL) to a public or

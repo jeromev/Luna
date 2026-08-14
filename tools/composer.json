@@ -1,0 +1,12 @@
+{
+    "name": "lunarsystem/tools",
+    "require": {
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "phpstan/phpstan": "^2.2"
+    },
+    "config": {
+        "platform": {
+            "php": "8.3"
+        }
+    }
+}

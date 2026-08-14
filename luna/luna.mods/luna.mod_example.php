@@ -1,14 +1,15 @@
 <?php
+
 /**
  * lunar mod_example module
  *
- * PHP versions 5
+ * PHP 8.1+ (tested on 8.3)
  *
  * LICENSE: This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
  * For more details, see <http://www.gnu.org/copyleft/gpl.html>
  *
- * @author		Odradek
+ * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
  * @link		https://github.com/jeromev/LunarSystem
  * @package		lunarSystem
@@ -17,26 +18,23 @@
 class mod_example {
 	/**
 	 * instance
-	 * @var object
-	 * @access	private
+	 * @var self|null
 	 */
 	private static $instance;
 	// {{{ singleton()
 	/**
-	 * @access public
-	 * @return object
+	 * @return self
 	 */
-	public static function singleton() {
+	public static function singleton(): self {
 		if (!isset(self::$instance)) {
 			$c = __CLASS__;
-			self::$instance = new $c;
+			self::$instance = new $c();
 		}
 		return self::$instance;
 	}
 	// }}}
 	// {{{ __clone()
 	/**
-	 * @access public
 	 * @return void
 	 */
 	public function __clone() { trigger_error('Lunar clones are not allowed.', E_USER_ERROR); }
@@ -44,23 +42,20 @@ class mod_example {
 	// {{{ constructor
 	/**
 	 * Class constructor.
-	 * @access	private
-	 * @return boolean
+	 * @return void
 	 */
 	private function __construct() {
-		lunaTools::add_vocabulary(array(
+		lunaTools::add_vocabulary([
 			'example'
-		));
-		return true;
+		]);
 	}
 	// }}}
 	// {{{ submit()
 	/**
 	 * do things
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function submit() {
+	public function submit(): bool {
 		// do things
 		return true;
 	}
@@ -68,14 +63,12 @@ class mod_example {
 	// {{{ load()
 	/**
 	 * load things
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function load() {
+	public function load(): bool {
 		// load things
 		return true;
 	}
 	// }}}
 }
 // }}}
-?>

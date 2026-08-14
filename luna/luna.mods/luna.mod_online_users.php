@@ -1,14 +1,15 @@
 <?php
+
 /**
  * lunar mod_online_users module
  *
- * PHP versions 5
+ * PHP 8.1+ (tested on 8.3)
  *
  * LICENSE: This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
  * For more details, see <http://www.gnu.org/copyleft/gpl.html>
  *
- * @author		Odradek
+ * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
  * @link		https://github.com/jeromev/LunarSystem
  * @package		lunarSystem
@@ -17,26 +18,23 @@
 class mod_online_users {
 	/**
 	 * instance
-	 * @var object
-	 * @access	private
+	 * @var self|null
 	 */
 	private static $instance;
 	// {{{ singleton()
 	/**
-	 * @access public
-	 * @return object
+	 * @return self
 	 */
-	public static function singleton() {
+	public static function singleton(): self {
 		if (!isset(self::$instance)) {
 			$c = __CLASS__;
-			self::$instance = new $c;
+			self::$instance = new $c();
 		}
 		return self::$instance;
 	}
 	// }}}
 	// {{{ __clone()
 	/**
-	 * @access public
 	 * @return void
 	 */
 	public function __clone() { trigger_error('Lunar clones are not allowed.', E_USER_ERROR); }
@@ -44,11 +42,10 @@ class mod_online_users {
 	// {{{ constructor
 	/**
 	 * Class constructor.
-	 * @access	private
-	 * @return boolean
+	 * @return void
 	 */
 	private function __construct() {
-		lunaTools::add_vocabulary(array(
+		lunaTools::add_vocabulary([
 			'firstname',
 			'lastname',
 			'email',
@@ -56,17 +53,16 @@ class mod_online_users {
 			'IP',
 			'session_length',
 			'session_lang'
-		));
-		return true;
+		]);
 	}
-// }}}
+	// }}}
 	// {{{ load()
 	/**
 	 * load()
-	 * @return void
+	 * @return bool
 	 */
-	function load() {
-		$nodes = array();
+	public function load(): bool {
+		$nodes = [];
 		$res = lunaDB::query('
 			SELECT DISTINCT
 				u.nid,
@@ -115,7 +111,7 @@ class mod_online_users {
 			ORDER BY
 				s.session_time DESC
 		');
-		$users = array();
+		$users = [];
 		while ($row = $res->fetchRow()) {
 			$users[$row->nid]['nid'] = $row->nid;
 			$users[$row->nid]['is_active'] = $row->is_active;
@@ -128,7 +124,7 @@ class mod_online_users {
 			$users[$row->nid]['lang'] = $row->lang;
 			$users[$row->nid]['groups'][$row->group_nid] = $row->group_nid;
 			$users[$row->nid]['levels'][$row->level_nid] = $row->level_nid;
-			$users[$row->nid]['is_current'] = ($row->nid == luna::$session->user->nid)? 1 : 0;
+			$users[$row->nid]['is_current'] = ($row->nid == luna::$session->user->nid) ? 1 : 0;
 			$users[$row->nid]['session_id'] = $row->session_id;
 			$users[$row->nid]['session_start'] = $row->session_start;
 			$users[$row->nid]['session_time'] = $row->session_time;
@@ -138,11 +134,13 @@ class mod_online_users {
 			$users[$row->nid]['session_ip'] = lunaTools::decode_ip($row->session_ip);
 		}
 		$res->free();
-		luna::$model->merge_index(luna::$model->load_user($users));
-		luna::$model->merge_index(luna::$model->load_pager(($total ?? 0), ($start ?? 0), (luna::$data['limit'] ?? PERPAGE), __CLASS__));
+		luna::model()->merge_index(luna::model()->load_user($users));
+		// The query above has no LIMIT: every online user is listed, so there is nothing to page
+		// through. load_pager() returns false for a zero total and merge_index() drops it, so no
+		// pager node is emitted — and the widget's XSLT never calls the pager template either.
+		luna::model()->merge_index(luna::model()->load_pager(0, 0, (luna::$data['limit'] ?? PERPAGE), __CLASS__));
 		return true;
 	}
 	// }}}
 }
 // }}}
-?>

@@ -34,6 +34,12 @@ SPARQL endpoint is its own hardening project. Leave it local (or, if you ever wa
 query endpoint, put it on a small VPS). With `SPARQL_ENABLED=0` the public app never reaches
 for it. (The "Ontop endpoint is unauthenticated" caveat is therefore moot on a public deploy.)
 
+> **Note the tension with roadmap P2.** This MySQL-only profile *authors* content in MySQL. P2 (make
+> the triplestore the single source of truth) would move the write there — which this deploy shape
+> can't host. So the two are, as written, in conflict: doing P2 as specified makes this profile
+> read-only. See the "Tension with the public deploy" note under P2 in [roadmap.md](roadmap.md);
+> resolve it (VPS, or keep MySQL as the authoring store) before starting P2.
+
 ## Runbook (DreamHost shared, or any PHP 8 + MySQL host)
 
 1. **Preflight the host.** Over SSH on the target:

@@ -79,11 +79,11 @@ All hooks are optional except `singleton()`. `load_mods()` checks for each with
 
 On a submit the dispatcher calls the generic `submit()` **first** (if defined),
 *then* the mode-specific hook selected by the `$_POST['mode']` switch — they are
-not alternatives, both fire ([luna.php:498-514](../luna/luna.php#L498)).
+not alternatives, both fire (`load_mods()` in [luna.php](../luna/luna.php)).
 
 After **any** submit (when the request is not AJAX), `load_mods()` runs
 `lunaDB::optimise()` (an `OPTIMIZE TABLE`) on the nodes/map/actions tables —
-regardless of whether the submit actually succeeded ([luna.php:516-521](../luna/luna.php#L516)).
+regardless of whether the submit actually succeeded (`load_mods()` in [luna.php](../luna/luna.php)).
 
 ### Injecting data into the model
 

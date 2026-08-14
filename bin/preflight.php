@@ -1,4 +1,5 @@
 <?php
+
 /**
  * preflight — check a host can run the LunarSystem publishing surface before you deploy.
  *
@@ -28,14 +29,14 @@ echo "LunarSystem preflight\n=====================\n";
 check('PHP >= 8.1 (have '.PHP_VERSION.')', version_compare(PHP_VERSION, '8.1.0', '>='), $ok, 'select PHP 8.1+ in the host panel');
 
 // Required extensions.
-$required = array(
+$required = [
 	'xsl'       => 'XSLT HTML rendering (XSLTProcessor) — pages will not render without it',
 	'pdo_mysql' => 'MySQL access',
 	'mbstring'  => 'UTF-8 string handling',
 	'gettext'   => 'i18n catalogs',
 	'json'      => 'JSON-LD output',
 	'libxml'    => 'RDF/XML + sitemap serialisation',
-);
+];
 foreach ($required as $ext => $why) { check("ext: $ext", extension_loaded($ext), $ok, $why); }
 
 // Composer vendor tree (committed for clone-and-run).

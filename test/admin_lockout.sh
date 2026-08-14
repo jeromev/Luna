@@ -15,7 +15,8 @@
 #   T4  delete the last/own admin user       (mod_admin_users::submit_delete)
 # Controls (must SUCCEED — proves the guards don't over-block and the delete path works):
 #   P1  create an ordinary user
-#   P2  delete that ordinary user
+#   P2  delete that ordinary user       (mode=modify + submit=Delete)
+#   P4  create and delete another       (mode=delete — the switch's other delete arm)
 #   P3  the admin can still reach /admin after every attempt
 #
 #   BASE=http://localhost:8080 test/admin_lockout.sh
@@ -50,11 +51,14 @@ edge(){ sql "SELECT COUNT(*) FROM luna_nodes_map WHERE (nid1=$1 AND nid2=$2) OR 
 exists(){ sql "SELECT COUNT(*) FROM luna_nodes WHERE nid=$1;"; }
 
 teardown(){
-  sql "SET @u:=(SELECT nid FROM luna_nodes WHERE lid='throwaway@test.local');
-       DELETE FROM luna_nodes_map WHERE nid1=@u OR nid2=@u;
-       DELETE FROM luna_users WHERE nid=@u;
-       DELETE FROM luna_nodes WHERE nid=@u;" 2>/dev/null
+  for who in throwaway@test.local throwaway2@test.local; do
+    sql "SET @u:=(SELECT nid FROM luna_nodes WHERE lid='$who');
+         DELETE FROM luna_nodes_map WHERE nid1=@u OR nid2=@u;
+         DELETE FROM luna_users WHERE nid=@u;
+         DELETE FROM luna_nodes WHERE nid=@u;" 2>/dev/null
+  done
   rdf_purge "${BASE%/}/id/throwaway%40test.local"
+  rdf_purge "${BASE%/}/id/throwaway2%40test.local"
   # safety net: if a guard regressed and a test actually locked the admin out, put it back.
   if [ "$(edge "$UADMIN" "$GADMIN")" -lt 2 ]; then
     sql "INSERT INTO luna_nodes_map (nid1,nid2) VALUES ($UADMIN,$GADMIN),($GADMIN,$UADMIN);"
@@ -131,6 +135,27 @@ if [ -n "$TUID" ]; then
   [ -z "$(sql "SELECT nid FROM luna_nodes WHERE lid='throwaway@test.local';")" ] \
     && pass "P2 ordinary user deletion works (delete path intact)" \
     || fail "P2 ordinary user was NOT deleted (guards over-block)"
+fi
+
+# P4: the `mode=delete` branch of the dispatcher switch. P2 reaches submit_delete() the other
+#     way (mode=modify + submit=Delete), so without this the `case 'delete':` arm — a distinct
+#     branch, reachable from any mod that posts mode=delete — is exercised by nothing anywhere
+#     in the repository. It is the one write path no gate covered.
+post admin/admin_users --data-urlencode submit=Add --data-urlencode mode=add \
+  --data-urlencode add_user_email=throwaway2@test.local --data-urlencode add_user_firstname=Throw \
+  --data-urlencode add_user_lastname=Away2 --data-urlencode add_user_password="$TPASS" \
+  --data-urlencode "add_user_groups[]=$GDEF"
+TUID2=$(sql "SELECT nid FROM luna_nodes WHERE lid='throwaway2@test.local';")
+[ -n "$TUID2" ] && pass "P4a second ordinary user created" || fail "P4a could not create the second user"
+
+if [ -n "$TUID2" ]; then
+  post admin/admin_users --data-urlencode submit=Delete --data-urlencode mode=delete \
+    --data-urlencode "user_nid=$TUID2" --data-urlencode "modify_item_nid=$TUID2" \
+    --data-urlencode "modify_user_email=throwaway2@test.local" \
+    --data-urlencode modify_user_firstname=Throw --data-urlencode modify_user_lastname=Away2
+  [ -z "$(sql "SELECT nid FROM luna_nodes WHERE lid='throwaway2@test.local';")" ] \
+    && pass "P4b mode=delete reaches submit_delete and deletes" \
+    || fail "P4b mode=delete did NOT delete the user"
 fi
 
 # P3: admin can still administer the site

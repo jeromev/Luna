@@ -1,14 +1,15 @@
 <?php
+
 /**
  * lunar mod_admin_users module
  *
- * PHP versions 5
+ * PHP 8.1+ (tested on 8.3)
  *
  * LICENSE: This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
  * For more details, see <http://www.gnu.org/copyleft/gpl.html>
  *
- * @author		Odradek
+ * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
  * @link		https://github.com/jeromev/LunarSystem
  * @package		lunarSystem
@@ -17,37 +18,33 @@
 class mod_admin_users {
 	/**
 	 * instance
-	 * @var object
-	 * @access	private
+	 * @var self|null
 	 */
 	private static $instance;
 	// {{{ singleton()
 	/**
-	 * @access public
-	 * @return object
+	 * @return self
 	 */
-	public static function singleton() {
+	public static function singleton(): self {
 		if (!isset(self::$instance)) {
 			$c = __CLASS__;
-			self::$instance = new $c;
+			self::$instance = new $c();
 		}
 		return self::$instance;
 	}
 	// }}}
 	// {{{ __clone()
 	/**
-	 * @access public
 	 * @return void
 	 */
 	public function __clone() { trigger_error('Lunar clones are not allowed.', E_USER_ERROR); }
 	// }}}
 	// {{{ constructor
 	/**
-	 * @access	private
-	 * @return boolean
+	 * @return void
 	 */
 	private function __construct() {
-		lunaTools::add_vocabulary(array(
+		lunaTools::add_vocabulary([
 			'firstname',
 			'lastname',
 			'email',
@@ -75,16 +72,14 @@ class mod_admin_users {
 			'Literal id',
 			'Deactivate',
 			'Users'
-		));
-		return true;
+		]);
 	}
 	// }}}
 	// {{{ submit_add()
 	/**
-	 * @access public
-	 * @return void
+	 * @return bool
 	 */
-	public function submit_add() {
+	public function submit_add(): bool {
 		$inerror = 0;
 		// check emptyness
 		if (!lunaTools::check_emptyness('add_user_firstname', 'firstname')) { $inerror++; }
@@ -93,9 +88,9 @@ class mod_admin_users {
 		if (!lunaTools::check_emptyness('add_user_groups', 'groups')) { $inerror++; }
 		if ($inerror) { return false; }
 		$_POST['add_user_password'] = lunaTools::hash_password($_POST['add_user_password']);
-		$_POST['add_user_is_inactive'] = isset($_POST['add_user_is_inactive'])? ($_POST['add_user_is_inactive'] == 1? 1 : 0) : 0;
+		$_POST['add_user_is_inactive'] = isset($_POST['add_user_is_inactive']) ? ($_POST['add_user_is_inactive'] == 1 ? 1 : 0) : 0;
 		// load stuff
-		if (!luna::$model->merge_index(luna::$model->load_nodes('group', 'level'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
+		if (!luna::model()->merge_index(luna::model()->load_nodes('group', 'level'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
 		// check email
 		if (!lunaTools::check_email($_POST['add_user_email'])) {
 			$inerror++;
@@ -105,15 +100,15 @@ class mod_admin_users {
 		}
 		if ($inerror) { return false; }
 		// check if identifier is already used
-		if (!$is_not_taken = luna::$model->check_if_lid_is_taken($_POST['add_user_email'])) { return false; }
+		if (!$is_not_taken = luna::model()->check_if_lid_is_taken($_POST['add_user_email'])) { return false; }
 		if (isset($_POST['add_user_groups']) && !empty($_POST['add_user_groups'])) {
 			foreach ($_POST['add_user_groups'] as $postgroup_nid) {
-				if (!$postgroup_node = luna::$model->get_node($postgroup_nid, 'group')) {
+				if (!$postgroup_node = luna::model()->get_node($postgroup_nid, 'group')) {
 					$inerror++;
 					$message = _('Unknown group '.intval($postgroup_nid));
 					luna::$messages['warning'][] = $message;
 					lunaLog::log($message, PEAR_LOG_WARNING);
-				} else if (!lunaTools::user_can_access_group(luna::$session->user, intval($postgroup_nid))) {
+				} elseif (!lunaAuthz::user_can_access_group(luna::$session->user, intval($postgroup_nid))) {
 					$inerror++;
 					luna::$messages['warning'][] = _('Access denied: you cannot assign a group that grants levels above your own.');
 					lunaLog::log('admin_users: attempt to assign an inaccessible group '.intval($postgroup_nid), PEAR_LOG_WARNING);
@@ -121,8 +116,8 @@ class mod_admin_users {
 			}
 		}
 		if ($inerror) { return false; }
-		if ($node = luna::$model->insert('user', $_POST['add_user_email'], ($_POST['add_user_is_inactive']? 0 : 1))) {
-			luna::$model->link($node, $_POST['add_user_groups']);
+		if ($node = luna::model()->insert('user', $_POST['add_user_email'], ($_POST['add_user_is_inactive'] ? 0 : 1))) {
+			luna::model()->link($node, $_POST['add_user_groups']);
 			$res = lunaDB::query('
 				INSERT INTO
 					'.luna::get_ini('DBtables', 'USERS').'
@@ -137,12 +132,12 @@ class mod_admin_users {
 						'.lunaDB::quote(NOW).'
 					)
 			');
-			lunaTools::purge_cache(false);
-			luna::$model->purge_index();
+			lunaTools::purge_cache();
+			luna::model()->purge_index();
 			$message = sprintf(_("User “%1\$s” has been created."), ($_POST['add_user_firstname'].' '.$_POST['add_user_lastname']));
 			luna::$messages['okay'][] = $message;
 			lunaLog::log($message, PEAR_LOG_INFO);
-			lunaTools::unrequest(array('add_user_email', 'add_user_groups', 'add_user_firstname', 'add_user_lastname', 'add_item_nid', 'modify_item_nid', 'user_nid'));
+			lunaTools::unrequest(['add_user_email', 'add_user_groups', 'add_user_firstname', 'add_user_lastname', 'add_item_nid', 'modify_item_nid', 'user_nid']);
 		} else {
 			$message = sprintf(_("The modification of the item “%1\$s” has failed."), $_POST['add_mod_lid']);
 			luna::$messages['warning'][] = $message;
@@ -153,10 +148,9 @@ class mod_admin_users {
 	// }}}
 	// {{{ submit_modify()
 	/**
-	 * @access public
-	 * @return void
+	 * @return bool
 	 */
-	public function submit_modify() {
+	public function submit_modify(): bool {
 		$inerror = 0;
 		// check emptyness
 		if (!lunaTools::check_emptyness('modify_user_firstname', 'firstname')) { $inerror++; }
@@ -164,12 +158,12 @@ class mod_admin_users {
 		if (!lunaTools::check_emptyness('modify_user_groups', 'groups')) { $inerror++; }
 		if (isset($_POST['user_nid']) && !empty($_POST['user_nid'])) {
 			if ($inerror) { return false; }
-			$_POST['modify_user_is_inactive'] = isset($_POST['modify_user_is_inactive'])? ($_POST['modify_user_is_inactive'] == 1? 1 : 0) : 0;
+			$_POST['modify_user_is_inactive'] = isset($_POST['modify_user_is_inactive']) ? ($_POST['modify_user_is_inactive'] == 1 ? 1 : 0) : 0;
 			$_POST['user_nid'] = intval($_POST['user_nid']);
-			if (!luna::$model->merge_index(luna::$model->load_nodes('group', 'level'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
+			if (!luna::model()->merge_index(luna::model()->load_nodes('group', 'level'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
 			// check if the user exists
-			luna::$model->merge_index(luna::$model->load_users($_POST['user_nid']));
-			$user_nid = luna::$model->check_requested_node('user_nid', 'Person', 'foaf');
+			luna::model()->merge_index(luna::model()->load_users($_POST['user_nid']));
+			$user_nid = luna::model()->check_requested_node('user_nid', 'Person', 'foaf');
 			if (empty($user_nid)) {
 				$inerror++;
 				$message = sprintf(_("User #%1\$s does not exist."), $_POST['user_nid']);
@@ -177,8 +171,8 @@ class mod_admin_users {
 				lunaLog::log($message, PEAR_LOG_WARNING);
 			}
 			if ($inerror) { return false; }
-			$user_node = luna::$model->get_node($user_nid, 'Person', 'foaf');
-			$user_lid = luna::$model->get_lid($user_node);
+			$user_node = luna::model()->get_node($user_nid, 'Person', 'foaf');
+			$user_lid = luna::model()->get_lid($user_node);
 			// Are we trying to modify an innocent guest?
 			if ($_POST['modify_user_email'] == ANONYMOUS) {
 				$inerror++;
@@ -227,11 +221,11 @@ class mod_admin_users {
 				lunaLog::log($message, PEAR_LOG_NOTICE);
 			}
 			if ($inerror) { return false; }
-			if (!$group_default_nid = luna::$model->get_nid_from_lid('group_default')) { throw new lunaException(_('Error: cannot load “group_default”'), PEAR_LOG_CRIT); }
+			if (!$group_default_nid = luna::model()->get_nid_from_lid('group_default')) { throw new lunaException(_('Error: cannot load “group_default”'), PEAR_LOG_CRIT); }
 			$_POST['modify_user_groups'][$group_default_nid] = $group_default_nid;
 			// Per-target authz: refuse to assign a group that grants any level the actor lacks.
 			foreach ($_POST['modify_user_groups'] as $postgroup_nid) {
-				if (!lunaTools::user_can_access_group(luna::$session->user, intval($postgroup_nid))) {
+				if (!lunaAuthz::user_can_access_group(luna::$session->user, intval($postgroup_nid))) {
 					$inerror++;
 					luna::$messages['warning'][] = _('Access denied: you cannot assign a group that grants levels above your own.');
 					lunaLog::log('admin_users: attempt to assign an inaccessible group '.intval($postgroup_nid), PEAR_LOG_WARNING);
@@ -241,45 +235,44 @@ class mod_admin_users {
 			// --- admin-lockout guardrails: never let this edit strip the actor's own
 			// admin access, nor the site's last active administrator (mirrors the
 			// self-deactivation guard above). ---
-			$group_admin_nid = luna::$model->get_nid_from_lid('group_admin');
+			$group_admin_nid = luna::model()->get_nid_from_lid('group_admin');
 			if (!empty($group_admin_nid)) {
 				$submitted_groups = array_map('intval', (array) $_POST['modify_user_groups']);
 				$keeps_admin   = in_array(intval($group_admin_nid), $submitted_groups, true) && !$_POST['modify_user_is_inactive'];
-				$total_admins  = lunaTools::active_admin_count();
-				$other_admins  = lunaTools::active_admin_count($_POST['user_nid']);
+				$total_admins  = lunaAuthz::active_admin_count();
+				$other_admins  = lunaAuthz::active_admin_count($_POST['user_nid']);
 				$target_is_admin = ($total_admins > $other_admins); // target is an active member of group_admin
 				if ($target_is_admin && !$keeps_admin) {
 					if ($_POST['user_nid'] == luna::$session->user->nid) {
 						$message = _('You cannot remove your own administrator access.');
 						luna::$messages['warning'][] = $message; lunaLog::log($message, PEAR_LOG_WARNING);
 						return false;
-					} else if ($other_admins < 1) {
+					} elseif ($other_admins < 1) {
 						$message = _('You cannot remove the last administrator: the site would be left with no one able to administer it.');
 						luna::$messages['warning'][] = $message; lunaLog::log($message, PEAR_LOG_WARNING);
 						return false;
 					}
 				}
 			}
-			if ($node = luna::$model->update($_POST['user_nid'], $_POST['modify_user_email'], ($_POST['modify_user_is_inactive']? 0 : 1))) {
-				luna::$model->unlink($node, 'group');
-				luna::$model->link($node, $_POST['modify_user_groups']);
+			if ($node = luna::model()->update($_POST['user_nid'], $_POST['modify_user_email'], ($_POST['modify_user_is_inactive'] ? 0 : 1))) {
+				luna::model()->unlink($node, 'group');
+				luna::model()->link($node, $_POST['modify_user_groups']);
 				$res = lunaDB::query('
 					UPDATE
 						'.luna::get_ini('DBtables', 'USERS').'
 					SET
 						firstname = '.lunaDB::quote($_POST['modify_user_firstname']).',
 						lastname = '.lunaDB::quote($_POST['modify_user_lastname']).'
-						'.((isset($_POST['modify_user_password']) && !empty($_POST['modify_user_password']))? ', password = '.lunaDB::quote(lunaTools::hash_password($_POST['modify_user_password'])) : ' ').'
+						'.((isset($_POST['modify_user_password']) && !empty($_POST['modify_user_password'])) ? ', password = '.lunaDB::quote(lunaTools::hash_password($_POST['modify_user_password'])) : ' ').'
 					WHERE
 						nid = '.lunaDB::quote($node).'
 				');
-				lunaTools::purge_cache(false);
-				luna::$model->purge_index();
-				$this->requested_nid = NULL;
+				lunaTools::purge_cache();
+				luna::model()->purge_index();
 				$message = sprintf(_("User “%1\$s” has been modified."), ($_POST['modify_user_firstname'].' '.$_POST['modify_user_lastname']));
 				luna::$messages['okay'][] = $message;
 				lunaLog::log($message, PEAR_LOG_INFO);
-				lunaTools::unrequest(array('modify_user_email', 'modify_user_groups', 'modify_user_firstname', 'modify_user_lastname', 'modify_item_nid', 'user_nid'));
+				lunaTools::unrequest(['modify_user_email', 'modify_user_groups', 'modify_user_firstname', 'modify_user_lastname', 'modify_item_nid', 'user_nid']);
 			} else {
 				$message = sprintf(_("The modification of the item “%1\$s” has failed."), _($_POST['modify_user_email']));
 				luna::$messages['warning'][] = $message;
@@ -287,24 +280,24 @@ class mod_admin_users {
 			}
 			return true;
 		}
+		return false;
 	}
 	// }}}
 	// {{{ submit_delete()
 	/**
 	 * submit_delete()
 	 *
-	 * @access public
-	 * @return void
+	 * @return bool
 	 */
-	public function submit_delete() {
+	public function submit_delete(): bool {
 		if (isset($_POST['user_nid']) && !empty($_POST['user_nid'])) {
 			$inerror = 0;
-			if (!luna::$model->merge_index(luna::$model->load_nodes('group', 'level'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
-			$_POST['modify_user_is_inactive'] = isset($_POST['modify_user_is_inactive'])? ($_POST['modify_user_is_inactive'] == 1? 1 : 0) : 0;
+			if (!luna::model()->merge_index(luna::model()->load_nodes('group', 'level'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
+			$_POST['modify_user_is_inactive'] = isset($_POST['modify_user_is_inactive']) ? ($_POST['modify_user_is_inactive'] == 1 ? 1 : 0) : 0;
 			$_POST['user_nid'] = intval($_POST['user_nid']);
 			// check if the user exists
-			luna::$model->merge_index(luna::$model->load_users($_POST['user_nid']));
-			$user_nid = luna::$model->check_requested_node('user_nid', 'Person', 'foaf');
+			luna::model()->merge_index(luna::model()->load_users($_POST['user_nid']));
+			$user_nid = luna::model()->check_requested_node('user_nid', 'Person', 'foaf');
 			if (empty($user_nid)) {
 				$inerror++;
 				$message = sprintf(_("User #%1\$s does not exist."), $_POST['user_nid']);
@@ -312,8 +305,8 @@ class mod_admin_users {
 				lunaLog::log($message, PEAR_LOG_WARNING);
 			}
 			if ($inerror) { return false; }
-			$user_node = luna::$model->get_node($user_nid, 'Person', 'foaf');
-			$user_lid = luna::$model->get_lid($user_node);
+			$user_node = luna::model()->get_node($user_nid, 'Person', 'foaf');
+			$user_lid = luna::model()->get_lid($user_node);
 			// Are we trying to delete ourselve? (we cannot allow this to happen)
 			if ($_POST['user_nid'] == luna::$session->user->nid) {
 				$inerror++;
@@ -332,31 +325,31 @@ class mod_admin_users {
 			if ($inerror) { return false; }
 			// admin-lockout guardrail: never delete the last active administrator
 			// (self-deletion is already blocked above; this covers delegated admins).
-			$group_admin_nid = luna::$model->get_nid_from_lid('group_admin');
+			$group_admin_nid = luna::model()->get_nid_from_lid('group_admin');
 			if (!empty($group_admin_nid)) {
-				$total_admins = lunaTools::active_admin_count();
-				$other_admins = lunaTools::active_admin_count($_POST['user_nid']);
+				$total_admins = lunaAuthz::active_admin_count();
+				$other_admins = lunaAuthz::active_admin_count($_POST['user_nid']);
 				if (($total_admins > $other_admins) && $other_admins < 1) {
 					$message = _('You cannot delete the last administrator.');
 					luna::$messages['warning'][] = $message; lunaLog::log($message, PEAR_LOG_WARNING);
 					return false;
 				}
 			}
-			if (luna::$model->delete($_POST['user_nid'])) {
+			if (luna::model()->delete($_POST['user_nid'])) {
 				$res = lunaDB::query('
 					DELETE FROM
 						'.luna::get_ini('DBtables', 'USERS').'
 					WHERE
 						nid = '.lunaDB::quote($_POST['user_nid']).'
 				');
-				lunaTools::purge_cache(false);
-				luna::$model->purge_index();
+				lunaTools::purge_cache();
+				luna::model()->purge_index();
 				$message = sprintf(_("User “%1\$s” has been deleted."), ($_POST['modify_user_firstname'].' '.$_POST['modify_user_lastname']));
 				luna::$messages['okay'][] = $message;
 				lunaLog::log($message, PEAR_LOG_INFO);
-				lunaTools::unrequest(array('modify_user_email', 'modify_user_groups', 'modify_user_firstname', 'modify_user_lastname', 'modify_item_nid', 'user_nid'));
+				lunaTools::unrequest(['modify_user_email', 'modify_user_groups', 'modify_user_firstname', 'modify_user_lastname', 'modify_item_nid', 'user_nid']);
 			} else {
-				$message = sprintf(_("The modification of the item “%1\$s” has failed."), _($oldpagelid));
+				$message = sprintf(_("The deletion of the user “%1\$s” has failed."), ($_POST['modify_user_firstname'].' '.$_POST['modify_user_lastname']));
 				luna::$messages['warning'][] = $message;
 				lunaLog::log($message, PEAR_LOG_WARNING);
 			}
@@ -367,18 +360,16 @@ class mod_admin_users {
 	// {{{ load()
 	/**
 	 * load()
-	 * @access public
-	 * @return void
+	 * @return bool
 	 */
-	public function load() {
+	public function load(): bool {
 		$inerror = 0;
-		if (!luna::$model->merge_index(luna::$model->load_nodes('group', 'level'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
+		if (!luna::model()->merge_index(luna::model()->load_nodes('group', 'level'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
 		$user_nid = lunaTools::request('user_nid');
-		luna::$model->merge_index(luna::$model->load_users($user_nid));
-		$user_nid = luna::$model->check_requested_node('user_nid', 'Person', 'foaf');
+		luna::model()->merge_index(luna::model()->load_users($user_nid));
+		$user_nid = luna::model()->check_requested_node('user_nid', 'Person', 'foaf');
 		return true;
 	}
 	// }}}
 }
 // }}}
-?>

@@ -1,0 +1,41 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix schema: <https://schema.org/> .
+@prefix luna: <https://jeromev.github.io/LunarSystem/ontology#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://localhost:8080/id/root> rdf:type schema:WebPage ;
+                                schema:name "Home" ;
+                                schema:identifier "9"^^<http://www.w3.org/2001/XMLSchema#integer> ;
+                                luna:isActive "1"^^<http://www.w3.org/2001/XMLSchema#integer> ;
+                                luna:level <http://localhost:8080/id/level_public> ;
+                                schema:hasPart <http://localhost:8080/id/welcome> ;
+                                schema:sameAs <https://github.com/jeromev/LunarSystem> ;
+                                rdfs:seeAlso <https://github.com/jeromev/LunarSystem> .
+
+<http://localhost:8080/id/welcome> rdf:type schema:Article ;
+                                   schema:identifier "33"^^<http://www.w3.org/2001/XMLSchema#integer> ;
+                                   schema:headline "Welcome to LunarSystem" ;
+                                   schema:name "Welcome to LunarSystem" ;
+                                   schema:articleBody """LunarSystem is a compact, RDF-native CMS. Every page is modelled as RDF triples and rendered TIME
+A few things that make it unusual
+
+One graph for everything. Users, groups, pages, access levels—and this very text—are all nodes in a single RDF graph.
+Every page is also data. Append ?output=jsonld, ?output=xml, ?output=n3 or ?output=json to any URL to read the same page as machine-readable RDF.
+Written in Markdown. This block is authored in Markdown and rendered TIME
+
+Make it your own
+Sign in as an administrator, then open Edition → Edit texts to change this text or write your own. The full story lives in the project documentation."""@en-US ;
+                                   luna:content """**LunarSystem** is a compact, RDF-native CMS. Every page is modelled as RDF triples and rendered TIME
+
+### A few things that make it unusual
+
+- **One graph for everything.** Users, groups, pages, access levels—and this very text—are all nodes in a single RDF graph.
+- **Every page is also data.** Append `?output=jsonld`, `?output=xml`, `?output=n3` or `?output=json` to any URL to read the same page as machine-readable RDF.
+- **Written in Markdown.** This block is authored in Markdown and rendered TIME
+
+### Make it your own
+
+Sign in as an administrator, then open **Edition → Edit texts** to change this text or write your own. The full story lives in the [project documentation](https://github.com/jeromev/LunarSystem)."""@en-US ;
+                                   schema:inLanguage "en-US" ;
+                                   schema:isPartOf <http://localhost:8080/id/root> ;
+                                   schema:about <https://github.com/jeromev/LunarSystem> .

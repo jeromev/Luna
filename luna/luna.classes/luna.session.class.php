@@ -1,14 +1,15 @@
 <?php
+
 /**
  * lunar Session class
  *
- * PHP versions 5
+ * PHP 8.1+ (tested on 8.3)
  *
  * LICENSE: This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
  * For more details, see <http://www.gnu.org/copyleft/gpl.html>
  *
- * @author		Odradek
+ * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html	GPL
  * @link		https://github.com/jeromev/LunarSystem
  * @package		lunarSystem
@@ -17,51 +18,43 @@
 class lunaSession implements \SessionHandlerInterface, \SessionUpdateTimestampHandlerInterface {
 	/**
 	 * instance
-	 * @var object
-	 * @access	private
+	 * @var self|null
 	 */
 	private static $instance;
 	/**
-	 * time_out
-	 * @access	public
-	 * @var		array
+	 * Session lifetime in seconds.
+	 * @var		int
 	 */
 	public static $time_out = 604800; // 604800 = 7 days
 	/**
-	 * time_out
-	 * @access	public
-	 * @var		array
+	 * Session lifetime in seconds when the SID arrived in the request.
+	 * @var		int
 	 */
 	public static $min_time_out = 300; // 300 = 5 minutes
 	/**
-	 * User object
-	 * @access	public
-	 * @var		array
+	 * The signed-in user, assembled by get_user_data(); null before a session is read.
+	 * @var		\stdClass|null
 	 */
 	public $user = null;
 	/**
 	 * save_path
-	 * @access	public
 	 * @var		string
 	 */
 	public static $save_path = '';
 	/**
 	 * sess_name
-	 * @access	public
-	 * @var		array
+	 * @var		string
 	 */
 	public static $sess_name = '';
 	/**
-	 * new
-	 * @access	public
-	 * @var boolean
+	 * Whether this request created the session rather than resuming one. Assigned 0/1.
+	 * @var bool|int
 	 */
 	public static $new = true;
 	// {{{ constructor
 	/**
 	 * Constructor.
-	 * @access	public
-	 * @return boolean
+	 * @return void
 	 */
 	private function __construct() {
 		if (isset($_GET[session_name()]) || isset($_POST[session_name()])) {
@@ -77,34 +70,31 @@ class lunaSession implements \SessionHandlerInterface, \SessionUpdateTimestampHa
 		// session_write_close() on shutdown.
 		session_set_save_handler($this, true);
 		self::$time_out = intval(luna::get_ini('config', 'session_length'));
-		session_set_cookie_params(array(
+		session_set_cookie_params([
 			'lifetime' => self::$time_out,
 			'path'     => luna::$site_relative_url ?: '/',
 			'httponly' => true,
 			'samesite' => 'Lax',
 			'secure'   => (function_exists('luna_is_https') && luna_is_https()),
-		));
-		ini_set('session.gc_maxlifetime', SID_IN? self::$time_out : self::$min_time_out);
+		]);
+		ini_set('session.gc_maxlifetime', SID_IN ? self::$time_out : self::$min_time_out);
 		define('SESSION_READY_TO_START', true);
-		return true;
 	}
 	// }}}
 	// {{{ singleton()
 	/**
-	 * @access public
-	 * @return object
+	 * @return self
 	 */
-	public static function singleton() {
+	public static function singleton(): self {
 		if (!isset(self::$instance)) {
 			$c = __CLASS__;
-			self::$instance = new $c;
+			self::$instance = new $c();
 		}
 		return self::$instance;
 	}
 	// }}}
 	// {{{ __clone()
 	/**
-	 * @access public
 	 * @return void
 	 */
 	public function __clone() { trigger_error('Clone is not allowed.', E_USER_ERROR); }
@@ -113,10 +103,9 @@ class lunaSession implements \SessionHandlerInterface, \SessionUpdateTimestampHa
 	/**
 	 * Start session
 	 *
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function start() {
+	public function start(): bool {
 		if (defined('SESSION_READY_TO_START') && SESSION_READY_TO_START == true) {
 			session_start();
 			return true;
@@ -129,7 +118,6 @@ class lunaSession implements \SessionHandlerInterface, \SessionUpdateTimestampHa
 	 * PHP 8 needs an object handler to expose validateId() to use_strict_mode.
 	 * These wrappers delegate to the existing session* methods; validateId() is
 	 * the new strict-mode gate that refuses unknown (client-forged) session ids.
-	 * @access public
 	 */
 	#[\ReturnTypeWillChange] public function open($save_path, $session_name) { return $this->sessionOpen($save_path, $session_name); }
 	#[\ReturnTypeWillChange] public function close() { return $this->sessionClose(); }
@@ -152,10 +140,9 @@ class lunaSession implements \SessionHandlerInterface, \SessionUpdateTimestampHa
 	/**
 	 * create an empty user object & return true
 	 *
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function sessionOpen($save_path, $session_name) {
+	public function sessionOpen($save_path, $session_name): bool {
 		$this->user = new stdclass();
 		self::$save_path = $save_path;
 		self::$sess_name = $session_name;
@@ -167,20 +154,18 @@ class lunaSession implements \SessionHandlerInterface, \SessionUpdateTimestampHa
 	/**
 	 * do nothing here, return true
 	 *
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function sessionClose() { return true; }
+	public function sessionClose(): bool { return true; }
 	// }}}
 	// {{{ sessionRead()
 	/**
 	 * session read function
 	 *
-	 * @access public
 	 * @param string $sid
 	 * @return mixed
 	 */
-	public function sessionRead($sid) {
+	public function sessionRead(string $sid) {
 		$this->user = $this->get_user_data($sid);
 		if (!isset($this->user->nid)) {
 			$this->sessionDestroy($sid);
@@ -235,10 +220,9 @@ class lunaSession implements \SessionHandlerInterface, \SessionUpdateTimestampHa
 	/**
 	 * session function
 	 *
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function sessionWrite($sid, $data) {
+	public function sessionWrite($sid, $data): bool {
 		$res = lunaDB::query('
 			UPDATE
 				'.luna::get_ini('DBtables', 'SESSIONS').'
@@ -271,21 +255,20 @@ class lunaSession implements \SessionHandlerInterface, \SessionUpdateTimestampHa
 	/**
 	 * session function
 	 *
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function sessionDestroy($sid) {
+	public function sessionDestroy($sid): bool {
 		$res = lunaDB::query('
 			DELETE FROM
 				'.luna::get_ini('DBtables', 'SESSIONS').'
 			WHERE
 				session_id = '.lunaDB::quote($sid).'
 		');
-		$_SESSION = array();
+		$_SESSION = [];
 		if (isset($_COOKIE[session_name()])) { lunaTools::set_cookie(session_name(), '', time() - 42000); }
-		if (isset($_POST['PHPSESSID'])) { unset ($_POST['PHPSESSID']); }
-		if (isset($_GET['PHPSESSID'])) { unset ($_GET['PHPSESSID']); }
-		lunaDB::optimise(array(luna::get_ini('DBtables', 'SESSIONS')));
+		if (isset($_POST['PHPSESSID'])) { unset($_POST['PHPSESSID']); }
+		if (isset($_GET['PHPSESSID'])) { unset($_GET['PHPSESSID']); }
+		lunaDB::optimise([luna::get_ini('DBtables', 'SESSIONS')]);
 		return true;
 	}
 	// }}}
@@ -293,32 +276,34 @@ class lunaSession implements \SessionHandlerInterface, \SessionUpdateTimestampHa
 	/**
 	 * session function
 	 *
-	 * @access public
-	 * @return boolean
+	 * SessionHandlerInterface::gc() is specified to return the number of sessions deleted, or
+	 * false on failure — not a bool. Returning true here was an interface violation that the
+	 * #[\ReturnTypeWillChange] attribute on gc() was hiding.
+	 *
+	 * @return int|false
 	 */
-	public function sessionGc($sLifeTime) {
+	public function sessionGc($sLifeTime): int|false {
 		$res = lunaDB::query('
 			DELETE FROM
 				'.luna::get_ini('DBtables', 'SESSIONS').'
 			WHERE
 				session_time < '.lunaDB::quote(NOW - $sLifeTime).'
 		');
-		lunaDB::optimise(array(luna::get_ini('DBtables', 'SESSIONS')));
-		return true;
+		lunaDB::optimise([luna::get_ini('DBtables', 'SESSIONS')]);
+		return ($res instanceof lunaResult) ? $res->rowCount() : false;
 	}
 	// }}}
 	// {{{ get_user_data()
 	/**
 	 * get_user_data
 	 *
-	 * @access public
 	 * @param string $sid
-	 * @return object
+	 * @return \stdClass|false
 	 */
-	public function get_user_data($sid = '') {
+	public function get_user_data($sid = ''): \stdClass|bool {
 		if (!is_string($sid) || empty($sid)) { return false; }
 		$sid = substr($sid, 0, 32);
-		$sLifeTime = SID_IN? self::$time_out : self::$min_time_out;
+		$sLifeTime = SID_IN ? self::$time_out : self::$min_time_out;
 		$user = new stdclass();
 		$res = lunaDB::query('
 			SELECT DISTINCT
@@ -398,4 +383,3 @@ class lunaSession implements \SessionHandlerInterface, \SessionUpdateTimestampHa
 	// }}}
 }
 // }}}
-?>

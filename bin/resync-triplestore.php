@@ -1,8 +1,9 @@
 <?php
+
 /**
  * resync-triplestore — rebuild the Oxigraph triplestore from MySQL.
  *
- * The runnable form of lunaModel::rdf_resync_all($prune = true): clears the graph,
+ * The runnable form of lunaGraph::rdf_resync_all($prune = true): clears the graph,
  * then re-projects every relational node through the same write-through the app's CRUD
  * uses, bringing Oxigraph to exact parity with MySQL (graph-only orphans dropped). This
  * is the pure-PHP "rebuild the store" path the docs reference. Invoke it with:
@@ -42,7 +43,7 @@ ini_set('include_path', LUNAPATH.'luna.lib'.PATH_SEPARATOR.ini_get('include_path
 // and the [Paths]/[Constantes] defines the model relies on are present.
 $ini = @parse_ini_file(INI_PATH.'luna.ini', true);
 if (!$ini || empty($ini['DBtables'])) { fwrite(STDERR, 'Error: cannot load '.INI_PATH."luna.ini\n"); exit(1); }
-foreach ($ini['Paths']      as $k => $v) { if (!defined($k)) { define($k, LUNAPATH.$v); } }
+foreach ($ini['Paths'] as $k => $v) { if (!defined($k)) { define($k, LUNAPATH.$v); } }
 foreach ($ini['Constantes'] as $k => $v) { if (!defined($k)) { define($k, $v); } }
 if (!defined('ANONYMOUS')) { define('ANONYMOUS', 'guest'); }
 luna::$ini = $ini;
@@ -50,6 +51,7 @@ luna::$ini = $ini;
 require_once LUNAPATH.'luna.classes/luna.log.class.php';
 require_once LUNAPATH.'luna.classes/luna.tools.class.php';
 require_once LUNAPATH.'luna.classes/luna.db.class.php';
+require_once LUNAPATH.'luna.classes/luna.graph.class.php';
 require_once LUNAPATH.'luna.classes/luna.model.class.php';
 
 if (!lunaDB::prepare() || !lunaDB::connect()) { fwrite(STDERR, "Error: cannot connect to the database.\n"); exit(1); }
@@ -59,6 +61,6 @@ if (!defined('SPARQL_UPDATE_ENDPOINT') || !SPARQL_UPDATE_ENDPOINT) {
 
 $model = lunaModel::singleton();
 fwrite(STDOUT, 'Rebuilding the triplestore at '.SPARQL_UPDATE_ENDPOINT.' (base '.luna::$site_uri.") from MySQL …\n");
-$n = $model->rdf_resync_all(true);
+$n = lunaGraph::rdf_resync_all($model->outbound_index(), true);
 fwrite(STDOUT, "Re-projected $n node(s) from MySQL into the triplestore.\n");
 exit($n > 0 ? 0 : 1);

@@ -8,7 +8,8 @@ INI files per domain (`luna.ini`, `db.ini`) and the runtime `luna_config` table.
 ## Domain resolution
 
 At bootstrap, `luna::set_site_path()`
-([luna.php:349](../luna/luna.php#L349)) — logic adapted from **Drupal 5.1's
+(the Drupal-derived block inside `luna::set_site_path()`, [luna.php](../luna/luna.php))
+— logic adapted from **Drupal 5.1's
 `conf_path()`** — walks `$_SERVER['HTTP_HOST']` from most- to least-specific,
 looking for a directory under `luna.domains/` that contains `ini/luna.ini`. The
 first match wins; if none matches it falls back to
@@ -42,7 +43,7 @@ One domain ships in the repo:
 
 ## `luna.ini`
 
-Parsed by `luna::load_ini()` ([luna.php:672](../luna/luna.php#L672)). Every
+Parsed by `luna::load_ini()` ([luna.php](../luna/luna.php)). Every
 `[Paths]` value becomes a constant prefixed with the luna root path; every
 `[Constantes]` value becomes a bare constant. Example
 (`luna.default/ini/luna.ini`):

@@ -1,14 +1,15 @@
 <?php
+
 /**
  * lunar mod_journal module
  *
- * PHP versions 5
+ * PHP 8.1+ (tested on 8.3)
  *
  * LICENSE: This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
  * For more details, see <http://www.gnu.org/copyleft/gpl.html>
  *
- * @author		Odradek
+ * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
  * @link		https://github.com/jeromev/LunarSystem
  * @package		lunarSystem
@@ -17,26 +18,23 @@
 class mod_journal {
 	/**
 	 * instance
-	 * @var object
-	 * @access	private
+	 * @var self|null
 	 */
 	private static $instance;
 	// {{{ singleton()
 	/**
-	 * @access public
-	 * @return object
+	 * @return self
 	 */
-	public static function singleton() {
+	public static function singleton(): self {
 		if (!isset(self::$instance)) {
 			$c = __CLASS__;
-			self::$instance = new $c;
+			self::$instance = new $c();
 		}
 		return self::$instance;
 	}
 	// }}}
 	// {{{ __clone()
 	/**
-	 * @access public
 	 * @return void
 	 */
 	public function __clone() { trigger_error('Lunar clones are not allowed.', E_USER_ERROR); }
@@ -44,11 +42,10 @@ class mod_journal {
 	// {{{ constructor
 	/**
 	 * Constructor.
-	 * @access	private
-	 * @return boolean
+	 * @return void
 	 */
 	private function __construct() {
-		lunaTools::add_vocabulary(array(
+		lunaTools::add_vocabulary([
 			'List of the log entries',
 			'id',
 			'message',
@@ -65,16 +62,14 @@ class mod_journal {
 			'date',
 			'user-name',
 			'Server'
-		));
-		return true;
+		]);
 	}
 	// }}}
 	// {{{ load()
 	/**
-	 * @access	public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function load() {
+	public function load(): bool {
 		$inerror = 0;
 		// POST-only: request() also reads GET, so a forged link/img could wipe the
 		// whole log with a single request. Require a real form POST.
@@ -98,38 +93,38 @@ class mod_journal {
 			');
 			while ($row = $res->fetchRow()) {
 				$msg = self::decode_message($row->message);
-				$message = lunaTools::display_string(isset($msg->message)? $msg->message : '');
-				$var = array(
+				$message = lunaTools::display_string(isset($msg->message) ? $msg->message : '');
+				$var = [
 					'type' => 'log',
 					'lid' => $row->id,
-					'value' => array(
+					'value' => [
 						'message' => $message,
 						'code' => _(lunaLog::priorityToString($row->priority)),
 						'date' => $row->logtime,
-						'content' => print_r($msg, 1)
-					),
-				);
-				if (!luna::$model->merge_index(luna::$model->load_var($var))) { throw new lunaException(_('Error: cannot load log entry.'), PEAR_LOG_CRIT); }
+						'content' => print_r($msg, true)
+					],
+				];
+				if (!luna::model()->merge_index(luna::model()->load_var($var))) { throw new lunaException(_('Error: cannot load log entry.'), PEAR_LOG_CRIT); }
 			}
 			$res->free();
 		} else {
-			$cookie = array();
+			$cookie = [];
 			if (isset($_COOKIE[luna::$data['lid'].'_sort'])) {
 				// json_decode (not unserialize) to avoid PHP object injection from a crafted cookie.
 				$cookie = json_decode($_COOKIE[luna::$data['lid'].'_sort'], true);
-				$cookie = is_array($cookie)? lunaTools::sanitize($cookie) : array();
-				if (!is_array($cookie)) { $cookie = array(); }
+				$cookie = is_array($cookie) ? lunaTools::sanitize($cookie) : [];
+				if (!is_array($cookie)) { $cookie = []; }
 				foreach ($cookie as $k => $v) { $_COOKIE[$k] = $v; }
 			}
 			// Whitelist the sort column: it is interpolated as a SQL identifier into
 			// COUNT()/ORDER BY below, so it must never come straight from request input.
 			$order_by = lunaTools::request('order_by', 0, 'logtime');
-			$allowed_order_by = array('logtime', 'id', 'priority', 'ident');
+			$allowed_order_by = ['logtime', 'id', 'priority', 'ident'];
 			if (!in_array($order_by, $allowed_order_by, true)) { $order_by = 'logtime'; }
 			luna::$data['order_by'] = $order_by;
 			$cookie['order_by'] = luna::$data['order_by'];
 			$order_by_ok = 'l.'.$order_by;
-			$order_dir = (lunaTools::request('order_dir', 0, 'DESC') == 'ASC')? 'ASC' : 'DESC';
+			$order_dir = (lunaTools::request('order_dir', 0, 'DESC') == 'ASC') ? 'ASC' : 'DESC';
 			luna::$data['order_dir'] = $order_dir;
 			$cookie['order_dir'] = luna::$data['order_dir'];
 			if (!defined('PERPAGE')) { define('PERPAGE', 20); }
@@ -167,49 +162,46 @@ class mod_journal {
 			');
 			while ($row = $res->fetchRow()) {
 				$msg = self::decode_message($row->message);
-				$message = lunaTools::display_string(isset($msg->message)? $msg->message : '');
-				$var = array(
+				$message = lunaTools::display_string(isset($msg->message) ? $msg->message : '');
+				$var = [
 					'type' => 'log',
 					'lid' => $row->id,
-					'value' => array(
+					'value' => [
 						'message' => $message,
 						'code' => _(lunaLog::priorityToString($row->priority)),
 						'date' => $row->logtime,
-						'user-name' => isset($msg->session->user->firstname)? $msg->session->user->firstname.' '.$msg->session->user->lastname : _(ANONYMOUS)
-					),
-				);
-				if (!luna::$model->merge_index(luna::$model->load_var($var))) { throw new lunaException(_('Error: cannot load log entry.'), PEAR_LOG_CRIT); }
+						'user-name' => isset($msg->session->user->firstname) ? $msg->session->user->firstname.' '.$msg->session->user->lastname : _(ANONYMOUS)
+					],
+				];
+				if (!luna::model()->merge_index(luna::model()->load_var($var))) { throw new lunaException(_('Error: cannot load log entry.'), PEAR_LOG_CRIT); }
 			}
 			$res->free();
-			luna::$model->merge_index(luna::$model->load_pager($total, $start, luna::$data['limit'], __CLASS__));
+			luna::model()->merge_index(luna::model()->load_pager($total, $start, luna::$data['limit'], __CLASS__));
 		}
-		// luna::$model->dump();
 		return true;
 	}
-
+	// }}}
 	// {{{ decode_message()
 	/**
 	 * Decode a luna_logs.message to an object with at least ->message. New rows are
 	 * JSON (no object sink); pre-0.8.14 rows were PHP-serialized -> decode those with
 	 * a strict class allowlist (transitional).
-	 * @access private
 	 */
 	private static function decode_message($raw) {
 		$m = json_decode((string) $raw);
 		if (is_object($m)) { return $m; }
-		$legacy = @unserialize((string) $raw, array('allowed_classes' => array('lunaException', 'stdClass')));
+		$legacy = @unserialize((string) $raw, ['allowed_classes' => ['lunaException', 'stdClass']]);
 		if ($legacy instanceof lunaException) {
-			return (object) array(
+			return (object) [
 				'message' => $legacy->getMessage(),
 				'session' => isset($legacy->session) ? $legacy->session : null,
 				'server'  => isset($legacy->server) ? $legacy->server : null,
-			);
+			];
 		}
 		if (is_object($legacy)) { return $legacy; }
-		return (object) array('message' => '');
+		return (object) ['message' => ''];
 	}
 
 	// }}}
 }
 // }}}
-?>

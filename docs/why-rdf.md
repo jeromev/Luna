@@ -124,16 +124,17 @@ The RDF substrate turns these from "rewrite" into "wire it up":
   "no page points at a missing parent" — expressible as SPARQL `ASK` / `SELECT` that
   run from anything, rather than as MySQL constraints locked inside the engine. (The
   `ASK` pre-checks the roadmap schedules for P2.)
-- **A public read-only SPARQL endpoint + `/data/{slug}` · roadmap (P4).** The engine
-  already speaks the protocol and the identity URIs already exist; this is exposing
-  them, not building them — a real open-data API with no REST layer to hand-write.
+- **Dereferenceable URIs + `owl:sameAs` links · live.** `/id/{slug}` resolves (303s to the
+  negotiated document), `/data/{slug}` serves the RDF, and resources carry outbound
+  `owl:sameAs`/`schema:sameAs` links — shipped in 0.8.54–0.8.55. Five-star Linked Data, joining
+  the content to the global web of data.
+- **A public read-only SPARQL *endpoint* · roadmap.** Content negotiation and the per-resource
+  `/data` documents already ship; what remains is exposing a queryable SPARQL endpoint publicly —
+  the engine already speaks the protocol, so this is exposing it, not building it.
 - **RDFS/OWL inference and SHACL validation · roadmap (P3).** Deriving facts and
   validating content against shapes — concepts that *don't exist* in SQL — become an
   endpoint/tooling choice here, because the content is already typed with
   formal-semantics vocabularies.
-- **Dereferenceable URIs + `owl:sameAs` links · roadmap.** Make `/id/{slug}` resolve
-  in a browser and link resources to Wikidata/DBpedia — five-star Linked Data, joining
-  the content to the global web of data.
 
 ## 5. The honest flip side
 
@@ -144,8 +145,9 @@ So none of the above is over-read:
   `rdf_resync_all()` if it drifts. Making the triplestore the *single* source of truth
   is **P2** (not done — see [roadmap.md](roadmap.md)).
 - It now runs on **PHP 8.3 / MySQL 8.0** (PDO) and is still **XSLT-rendered** server-side.
-- The inference, validation, public-API and dereferenceable-URI items in §4 are **not
-  built yet** — they are within reach, not done.
+- The inference, validation, and public SPARQL-endpoint items in §4 are **not built yet** — they are
+  within reach, not done. (Dereferenceable URIs, `/data`, and `owl:sameAs` links *are* built, as of
+  0.8.54–0.8.55.)
 
 What changed is the **foundation and the ceiling**: the content is now a real,
 standards-described, queryable graph that the application runs on — which is exactly

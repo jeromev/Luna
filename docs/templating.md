@@ -24,9 +24,9 @@ serialised directly by ARC2 rather than via XSLT — see below).
 
 ## Stylesheet selection (the cascade)
 
-`luna::transform()` ([luna.php:546](../luna/luna.php#L546)) picks a stylesheet by
+`luna::transform()` ([luna.php](../luna/luna.php)) picks a stylesheet by
 trying paths in order, first hit wins (the cascade itself is
-[luna.php:615-650](../luna/luna.php#L615)). Roughly, for output format `html` and a
+`transform()` in [luna.php](../luna/luna.php)). Roughly, for output format `html` and a
 page whose `lid` is `$lid`:
 
 1. `SITEPATH/xsl/html.xsl/<lid>.html.xsl` — domain, page-specific
@@ -61,7 +61,7 @@ that mod merges into the model.
 ## The input XML
 
 Templates consume the RDF/XML serialisation of the model. The serialiser is fed
-`lunaModel::project_to_schema($this->index)` ([luna.model.class.php:2619](../luna/luna.classes/luna.model.class.php#L2619)),
+`lunaModel::project_to_schema($this->index)` ([luna.model.class.php](../luna/luna.classes/luna.model.class.php)),
 so the XSLT renders from the **schema.org + `/id/{slug}`** graph: content nodes are
 `<schema:WebPage>` (pages) / `<schema:Article>` (text blocks) / `<foaf:Person>` (users),
 the app-specific UI render-model is in the `ui:` namespace
@@ -130,7 +130,7 @@ machine-readable RDF endpoint over the same clean graph. See [rdf-model.md](rdf-
 > `lunaModel::to_jsonld()` (a schema.org JSON-LD projection), *not* by ARC2. The
 > same JSON-LD is also embedded in every HTML page: after the XSLT transform,
 > `luna::transform()` injects a `<script type="application/ld+json">` block before
-> `</head>` ([luna.php:656](../luna/luna.php#L656)) — done in PHP post-processing,
+> `</head>` (`luna::transform()`, [luna.php](../luna/luna.php)) — done in PHP post-processing,
 > not in the stylesheets, so `luna.header.html.xsl` is unchanged. See
 > [linked-data.md](linked-data.md).
 

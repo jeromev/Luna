@@ -12,5 +12,7 @@
 
   $right-side-optical-adjustment: 1,
 
-	$debug: 1
+	// Baseline-grid debug overlay. MUST stay 0 for any shipped/deployed CSS — 1 paints visible grid
+	// stripes on <html> site-wide (a dev-only aid). Turn on locally for typography work; off before commit.
+	$debug: 0
 );

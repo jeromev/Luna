@@ -59,6 +59,13 @@ norm(){ sed -E \
 # split by level so the pair is not redundant: /node/9 (root, level_public) is readable by a
 # guest, /node/10 (admin, level_admin) only by an admin — which exercises mod_node's access gate.
 # The Markdown render path is covered by home/home_admin, which carry the seeded welcome text.
+#
+# sitemap/robots/data_root cover the publishing surface — the crawler-discovery endpoints and
+# the /data/{slug} RDF document. They were added when the emitters moved out of the model: all
+# three emitted their body and exited from inside the data layer, and nothing here rendered
+# them, so a refactor of that code had no gate. /id/{slug} is deliberately absent: it 303s with
+# no body by design (httpRange-14), and this harness does not follow redirects, so it would trip
+# the zero-byte guard below rather than assert anything.
 PAGES="
 admin|admin|/admin
 home|guest|/
@@ -69,6 +76,9 @@ out_xml|guest|/?output=xml
 out_n3|guest|/?output=n3
 out_json|guest|/?output=json
 out_jsonld|guest|/?output=jsonld
+sitemap|guest|/sitemap.xml
+robots|guest|/robots.txt
+data_root|guest|/data/root
 admin_users|admin|/admin/admin_users
 admin_groups|admin|/admin/admin_groups
 admin_levels|admin|/admin/admin_levels

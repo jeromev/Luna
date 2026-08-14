@@ -32,17 +32,27 @@ disappears. The large piece: it touches every admin mod's direct SQL, and there 
   `lid_is_taken` becomes an `ASK` over the graph; keep `nid` only as a graph-side
   `schema:identifier` and the loaders' internal key.
 - **Re-express lost relational invariants** (unique lid, required level/type, single
-  parent) as `ASK` pre-checks (full SHACL comes in P3).
+  parent) as `ASK` pre-checks (full validation — SHACL or the constructive integrity
+  surface — comes in P3).
 
 **Risks:** slug-as-identity makes renames a URI change (tension with "freeze the URIs" —
 see decisions); no 2PC means a crash mid-write diverges the stores (the outbox is
 mandatory); without ASK/SHACL the graph will accept duplicate slugs / dangling parents /
 untyped nodes.
 
-## P3 — Semantics: named graphs, inference, SHACL
+> **Tension with the public deploy — resolve before starting P2.** [going-public.md](going-public.md)
+> defines the *only* deployable public profile as **MySQL-only** (`SPARQL_ENABLED=0`), with the
+> triplestore explicitly Docker-only (a shared host can't run it). If P2 makes the triplestore the
+> **single** source of truth for content, that public profile can no longer *author* content — writes
+> would target a triplestore the shared host doesn't have. So P2 is really **conditional on a
+> VPS-shaped deployment**, or on resolving decision 3 by keeping MySQL as the authoring store and the
+> triplestore as a derived/queryable view. Until that's decided, treat P2 as "conditional," not
+> "next": the shippable public artifact today is the MySQL-backed publishing surface.
+
+## P3 — Semantics: named graphs, inference, validation
 
 Unlock what a triplestore is *for*. Oxigraph ships none of these natively (2025–26), so
-they're done by materialisation / external tooling.
+they're done by materialisation / external tooling — or engine-side.
 
 - **Named graphs** for drafts/versions: write drafts to `<base/graph/draft/{slug}>`,
   promote on publish; pairs with the PROV-O audit trail.

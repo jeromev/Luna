@@ -131,4 +131,5 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-GPL v2 — see [LICENSE](LICENSE).
+GPL-2.0-or-later — see [LICENSE](LICENSE). The `LICENSE` file is the GPL v2 text; the per-file source
+headers grant version 2 "or (at your option) any later version," so the effective license is v2-or-later.

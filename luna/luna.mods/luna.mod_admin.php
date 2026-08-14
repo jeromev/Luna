@@ -1,14 +1,15 @@
 <?php
+
 /**
  * lunar mod_admin module
  *
- * PHP versions 5
+ * PHP 8.1+ (tested on 8.3)
  *
  * LICENSE: This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
  * For more details, see <http://www.gnu.org/copyleft/gpl.html>
  *
- * @author		Odradek
+ * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
  * @link		https://github.com/jeromev/LunarSystem
  * @package		lunarSystem
@@ -17,26 +18,23 @@
 class mod_admin {
 	/**
 	 * instance
-	 * @var object
-	 * @access	private
+	 * @var self|null
 	 */
 	private static $instance;
 	// {{{ singleton()
 	/**
-	 * @access public
-	 * @return object
+	 * @return self
 	 */
-	public static function singleton() {
+	public static function singleton(): self {
 		if (!isset(self::$instance)) {
 			$c = __CLASS__;
-			self::$instance = new $c;
+			self::$instance = new $c();
 		}
 		return self::$instance;
 	}
 	// }}}
 	// {{{ __clone()
 	/**
-	 * @access public
 	 * @return void
 	 */
 	public function __clone() { trigger_error('Lunar clones are not allowed.', E_USER_ERROR); }
@@ -44,11 +42,10 @@ class mod_admin {
 	// {{{ constructor
 	/**
 	 * Constructor.
-	 * @access	private
-	 * @return boolean
+	 * @return void
 	 */
 	private function __construct() {
-		lunaTools::add_vocabulary(array(
+		lunaTools::add_vocabulary([
 			'Configuration form',
 			'Configuration',
 			'Yes',
@@ -70,25 +67,24 @@ class mod_admin {
 			'general_email',
 			'site_desc',
 			'timezone'
-		));
-		return true;
+		]);
 	}
 	// }}}
 	// {{{ submit()
 	/**
 	 * submit()
-	 * @return boolean
+	 * @return bool
 	 */
-	public function submit() {
-		$submits = array();
+	public function submit(): bool {
+		$submits = [];
 		foreach (luna::$ini['config'] as $key => $value) {
 			$submitvalue = false;
-			if ($submitvalue = lunaTools::request($key, array($_POST))) {
+			if ($submitvalue = lunaTools::request($key, [$_POST])) {
 				if ($submitvalue != $value) { $submits[$key] = $submitvalue; }
 			}
 		}
 		if (luna::get_ini('config', 'disable')) {
-			if (!$disable = lunaTools::request('disable', array($_POST))) { $submits['disable'] = 0; }
+			if (!$disable = lunaTools::request('disable', [$_POST])) { $submits['disable'] = 0; }
 		}
 		if (!empty($submits)) {
 			$sql_delete = '';
@@ -114,7 +110,7 @@ class mod_admin {
 					'.$sql_insert.'
 			');
 			lunaTools::purge_cache();
-			luna::$model->purge_index();
+			luna::model()->purge_index();
 			$message = _("The website configuration has been updated.");
 			luna::$messages['okay'][] = $message;
 			lunaLog::log($message, PEAR_LOG_INFO);
@@ -129,14 +125,13 @@ class mod_admin {
 	// {{{ load()
 	/**
 	 * load()
-	 * @return boolean
+	 * @return bool
 	 */
-	public function load() {
-		luna::$model->merge_index(luna::$model->load_data(luna::$ini['config'], 'config'));
+	public function load(): bool {
+		luna::model()->merge_index(luna::model()->load_data(luna::$ini['config'], 'config'));
 		return true;
 	}
 
 	// }}}
 }
 // }}}
-?>

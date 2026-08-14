@@ -1,14 +1,15 @@
 <?php
+
 /**
  * luna DB class
  *
- * PHP versions 5.6 – 8.x
+ * PHP 8.1+ (tested on 8.3)
  *
  * LICENSE: This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
  * For more details, see <http://www.gnu.org/copyleft/gpl.html>
  *
- * @author		Odradek
+ * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
  * @link		https://github.com/jeromev/LunarSystem
  * @package		lunarSystem
@@ -23,15 +24,8 @@
 // {{{
 class lunaDB {
 	/**
-	 * queries — the per-request query log (for the admin debug panel)
-	 * @var		array
-	 * @access	private
-	 */
-	private static $queries = array();
-	/**
 	 * pdo — the singleton PDO connection
 	 * @var		PDO
-	 * @access	private
 	 */
 	private static $pdo = null;
 	private static $user = '';
@@ -45,19 +39,18 @@ class lunaDB {
 	 * otherwise fall back to the environment (`DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASS`), so
 	 * the Docker stack — and any clone-and-run — connects with no `db.ini` to provision,
 	 * mirroring the `SPARQL_*` env defaults in luna.php. Only fail if neither is present.
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public static function prepare() {
+	public static function prepare(): bool {
 		if (file_exists(INI_PATH.'db.ini')) {
 			$c = parse_ini_file(INI_PATH.'db.ini');
 		} else {
-			$c = array(
+			$c = [
 				'host'     => getenv('DB_HOST') ?: '',
 				'database' => getenv('DB_NAME') ?: '',
 				'username' => getenv('DB_USER') ?: '',
 				'password' => getenv('DB_PASS') ?: '',
-			);
+			];
 			if ($c['database'] === '' && $c['username'] === '') { throw new lunaException(_('Error: no database configuration — create db.ini or set DB_HOST/DB_NAME/DB_USER/DB_PASS.'), PEAR_LOG_CRIT); }
 		}
 		$host = (isset($c['host']) && $c['host'] !== '') ? $c['host'] : 'localhost';
@@ -71,10 +64,9 @@ class lunaDB {
 	// {{{ connect()
 	/**
 	 * Open the PDO connection (idempotent — get() builds it on demand).
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public static function connect() {
+	public static function connect(): bool {
 		if (!defined('DSN')) { return false; }
 		self::get();
 		return true;
@@ -84,47 +76,34 @@ class lunaDB {
 	/**
 	 * The singleton PDO handle. Throws lunaException on connect failure, matching
 	 * the original throw-on-PEAR::isError contract.
-	 * @access public
 	 * @return mixed PDO|false
 	 */
 	public static function get() {
 		if (!defined('DSN')) { return false; }
 		if (self::$pdo instanceof PDO) { return self::$pdo; }
 		try {
-			self::$pdo = new PDO(DSN, self::$user, self::$pass, array(
+			self::$pdo = new PDO(DSN, self::$user, self::$pass, [
 				PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
 				PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
 				PDO::ATTR_EMULATE_PREPARES   => true,
 				PDO::ATTR_STRINGIFY_FETCHES  => true,
-			));
+			]);
 		} catch (PDOException $e) {
 			throw new lunaException($e->getMessage(), PEAR_LOG_CRIT);
 		}
 		return self::$pdo;
 	}
 	// }}}
-	// {{{ get_queries()
-	/**
-	 * @access public
-	 * @return mixed
-	 */
-	public static function get_queries() {
-		if (!defined('IS_ADMIN') || !IS_ADMIN) { return false; }
-		return (self::$queries);
-	}
-	// }}}
 	// {{{ query()
 	/**
 	 * Run a SQL statement. Returns a lunaResult (->fetchRow()/->free()) on success,
 	 * false on no-DSN/empty-sql, and throws lunaException on a DB error.
-	 * @param string $sql
-	 * @access public
+	 * @param string|false $sql
 	 * @return mixed lunaResult|false
 	 */
 	public static function query($sql = false) {
 		if (!defined('DSN')) { return false; }
 		if (!empty($sql) && is_string($sql)) {
-			self::save_query($sql);
 			try {
 				$stmt = self::get()->query($sql);
 			} catch (PDOException $e) {
@@ -135,34 +114,18 @@ class lunaDB {
 		return false;
 	}
 	// }}}
-	// {{{ save_query()
-	/**
-	 * @access	private
-	 * @param	string $sql
-	 * @return	boolean
-	 */
-	private static function save_query($sql = false) {
-		if (empty($sql)) { return false; }
-		self::$queries[] = array(
-			'microtime' => luna::set_microtime(),
-			'query' => $sql
-		);
-		return true;
-	}
-	// }}}
 	// {{{ optimise()
 	/**
-	 * @access public
-	 * @param array $tables
-	 * @return boolean
+	 * @param array|false $tables
+	 * @return bool
 	 */
-	public static function optimise($tables = false) {
+	public static function optimise($tables = false): bool {
 		if (!defined('DSN')) { return false; }
 		try {
 			if (!is_array($tables) || empty($tables)) { $tables = luna::$ini['DBtables']; }
 			$sql = '';
 			foreach ($tables as $t) { $sql .= $t.','; }
-			$sql = substr($sql, 0 ,-1);
+			$sql = substr($sql, 0, -1);
 			lunaDB::query('OPTIMIZE TABLE '.$sql);
 		} catch (lunaException $e) {
 			lunaLog::log($e);
@@ -176,8 +139,7 @@ class lunaDB {
 	 * Allocate the next id from a sequence table, reproducing MDB2's on-demand
 	 * sequence emulation exactly: INSERT a row into `<name>_seq`, read its
 	 * AUTO_INCREMENT via lastInsertId(), and prune older rows. Returns an int.
-	 * @access public
-	 * @param string $seq the base table name (e.g. luna_nodes -> luna_nodes_seq)
+	 * @param string|false $seq the base table name (e.g. luna_nodes -> luna_nodes_seq)
 	 * @return mixed int|false
 	 */
 	public static function nextID($seq = false) {
@@ -200,7 +162,6 @@ class lunaDB {
 	 * against the live MDB2 stack): null/'' -> NULL (unquoted), bool -> 0/1,
 	 * int -> bare integer, float/string -> driver-escaped quoted string. A raw
 	 * PDO::quote() would mis-handle ints/bools/null, so the type dispatch matters.
-	 * @access public
 	 * @param mixed $str
 	 * @return mixed string|false
 	 */
@@ -221,10 +182,11 @@ class lunaDB {
  */
 class lunaResult {
 	private $stmt;
+	// {{{ constructor
 	public function __construct($stmt) { $this->stmt = $stmt; }
+	// }}}
 	// {{{ fetchRow()
 	/**
-	 * @access public
 	 * @return mixed stdClass|false
 	 */
 	public function fetchRow() {
@@ -232,12 +194,21 @@ class lunaResult {
 		return $this->stmt->fetch(PDO::FETCH_OBJ);
 	}
 	// }}}
+	// {{{ rowCount()
+	/**
+	 * Rows affected by the last INSERT/UPDATE/DELETE on this statement.
+	 * @return int
+	 */
+	public function rowCount(): int {
+		if (!($this->stmt instanceof PDOStatement)) { return 0; }
+		return $this->stmt->rowCount();
+	}
+	// }}}
 	// {{{ free()
 	/**
-	 * @access public
-	 * @return boolean
+	 * @return bool
 	 */
-	public function free() {
+	public function free(): bool {
 		if ($this->stmt instanceof PDOStatement) { $this->stmt->closeCursor(); }
 		return true;
 	}

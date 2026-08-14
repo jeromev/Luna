@@ -1,14 +1,15 @@
 <?php
+
 /**
  * Welcome to the lunarSystem. This is the main class.
  *
- * PHP versions 5
+ * PHP 8.1+ (tested on 8.3)
  *
  * LICENSE: This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
  * For more details, see <http://www.gnu.org/copyleft/gpl.html>
  *
- * @author		Odradek
+ * @author		Jérôme Vogel
  * @license		http://www.gnu.org/copyleft/gpl.html  GPL
  * @link		https://github.com/jeromev/LunarSystem
  * @package		lunarSystem
@@ -25,19 +26,18 @@ if (function_exists('date_default_timezone_set')) {
 	$tz = @date_default_timezone_get();
 	date_default_timezone_set($tz ? $tz : 'UTC');
 }
-// Disable register_globals
-ini_set('register_globals', 0);
 // Turn OFF/ON public error display
 ini_set('display_errors', 0);
 // Cookie-only sessions: no SID in the URL, and reject attacker-supplied SIDs.
 ini_set('session.use_trans_sid', 0);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.use_strict_mode', 1);
-ini_set('arg_separator.output','&amp;');
-// Set error reporting. E_DEPRECATED/E_STRICT are masked because this 2010-era
-// code targets PHP 5.2/5.3 idioms (`=& new`, static-call style) that PHP 5.6
-// flags but which are harmless here.
-error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT);
+ini_set('arg_separator.output', '&amp;');
+// Report everything. The PHP 5.2/5.3 idioms this mask was once justified by (`=& new`,
+// each(), create_function, ereg*, mysql_*) are all gone from the tree, and masking
+// E_DEPRECATED hid a dynamic-property write that is fatal on PHP 9. Display stays off
+// (see display_errors above); this governs what is *reported*, not what is shown.
+error_reporting(E_ALL);
 // --- deployment config helpers -------------------------------------------------------------
 // Read a setting from the real environment OR an Apache `SetEnv` ($_SERVER), so a shared host
 // with no Docker / shell env control can still configure the app from .htaccess.
@@ -104,153 +104,124 @@ require_once DIRNAME(__FILE__).'/../vendor/autoload.php';
 class luna {
 	/**
 	 * lunaVersion
-	 * @access	public
 	 * @var		string
 	 */
-	public static $lunaVersion = '0.8.63-alpha';
+	public static $lunaVersion = '0.8.64-alpha';
 	/**
 	 * instance
-	 * @var object
-	 * @access	private
+	 * @var self|null
 	 */
 	private static $instance;
 	/**
 	 * messages
 	 * @var		array
-	 * @access	public
 	 */
-	public static $messages = array();
+	public static $messages = [];
 	/**
 	 * protected_lids — structural nodes the admin tier depends on. Deleting or
 	 * repurposing any of them can lock every administrator out of the site, so
 	 * lid_is_protected() and the central guard in lunaModel::delete() refuse to
 	 * touch these whichever handler asks.
 	 * @var		array
-	 * @access	private
 	 */
-	private static $protected_lids = array(
+	private static $protected_lids = [
 		'admin', 'admin_groups', 'admin_levels', 'admin_users', 'admin_mods', 'admin_pages', 'journal', 'login', 'logout',
 		'group_admin', 'group_default', 'level_admin', 'level_public',
 		'mod_admin', 'mod_admin_groups', 'mod_admin_levels', 'mod_admin_mods', 'mod_admin_pages', 'mod_admin_users', 'mod_journal',
-	);
-	/**
-	 * requested_nid
-	 * @var		integer
-	 * @access	public
-	 */
-	public static $requested_nid = 0;
+	];
 	/**
 	 * SitePath
-	 * @access	public
 	 * @var		string
 	 */
 	public static $site_path = '';
 	/**
 	 * lunaSession
-	 * @access	public
-	 * @var		string
+	 * @var		lunaSession|null
 	 */
 	public static $session = null;
 	/**
 	 * language
-	 * @access	public
 	 * @var		string
 	 */
 	public static $lang = 'en-US';
 	/**
 	 * data model
-	 * @access	public
-	 * @var		object
+	 * @var		lunaModel|null
 	 */
-	public static $model = NULL;
+	public static $model = null;
 	/**
 	 * ini vars
-	 * @access	public
 	 * @var		array
 	 */
-	public static $ini = array();
+	public static $ini = [];
 	/**
 	 * page_node
-	 * @access	public
-	 * @var		object
+	 * @var		array|false|null
 	 */
 	public static $page_node = null;
 	/**
 	 * Data
-	 * @access	public
 	 * @var		array
 	 */
-	public static $data = array();
+	public static $data = [];
 	/**
 	 * vocabulary
-	 * @access	public
 	 * @var		array
 	 */
-	public static $vocabulary = array();
+	public static $vocabulary = [];
 	/**
 	 * site_uri
-	 * @access	public
 	 * @var		string
 	 */
 	public static $site_uri = '';
 	/**
 	 * site_relative_url
-	 * @access	public
 	 * @var		string
 	 */
 	public static $site_relative_url = '';
 	/**
 	 * cache
-	 * @access	public
-	 * @var		boolean
+	 * @var		bool
 	 */
 	public static $cache = false;
 	/**
-	 * start
-	 * @access	public
-	 * @var		array
+	 * Request start time, from microtime().
+	 * @var		float|int
 	 */
 	public static $start = 0;
 	/**
-	 * lunaPath
-	 * @access	public
-	 * @var		string
+	 * Absolute path to luna/, with a trailing slash; false until the constructor sets it.
+	 * @var		string|false
 	 */
 	public static $lunaPath = false;
 	/**
 	 * cache_timeout.
-	 * @access	public
-	 * @var		integer
+	 * @var		int
 	 */
 	public static $cache_timeout = 604800; // 604800 = 7 days
 	/**
 	 * URL Path: where we are
-	 * @access	public
 	 * @var		string
 	 */
 	public static $path = '';
 	/**
 	 * outPutFormat
-	 * @access	public
 	 * @var		string
 	 */
 	public static $output_format = 'html';
 	/**
 	 * output_formats
-	 * @access	public
 	 * @var		array
 	 */
-	public static $output_formats = array('html', 'xml', 'turtle', 'json', 'n3', 'jsonld');
+	public static $output_formats = ['html', 'xml', 'turtle', 'json', 'n3', 'jsonld'];
 	/**
 	 * mods
-	 * @access	public
 	 * @var		array
 	 */
-	public static $mods = array();
+	public static $mods = [];
 	// {{{ constructor
 	/**
 	 * Constructor.
-	 * @access	private
 	 * @return void
 	 */
 	private function __construct() {
@@ -272,12 +243,15 @@ class luna {
 			// add the include path if needed.
 			if (self::get_ini('Constantes', 'INCLUDEPATH')) { ini_set('include_path', ini_get('include_path').':'.self::get_ini('Constantes', 'INCLUDEPATH').':'); }
 			// require lunar Classes
-			if (!require_once 'luna.classes/luna.log.class.php') { trigger_error(_('Error: cannot find lib: ').'luna.exception.class', E_USER_ERROR); }
-			if (!require_once 'luna.classes/luna.tools.class.php') { throw new lunaException(_('Error: cannot find lib: ').'luna.tools.class', PEAR_LOG_CRIT); }
-			if (!require_once 'luna.classes/luna.cache.class.php') { throw new lunaException(_('Error: cannot find lib: ').'luna.cache.class', PEAR_LOG_CRIT); }
-			if (!require_once 'luna.classes/luna.db.class.php') { throw new lunaException(_('Error: cannot find lib: ').'luna.db.class', PEAR_LOG_CRIT); }
-			if (!require_once 'luna.classes/luna.session.class.php') { throw new lunaException(_('Error: cannot find lib: ').'luna.session.class', PEAR_LOG_CRIT); }
-			if (!require_once 'luna.classes/luna.model.class.php') { throw new lunaException(_('Error: cannot find lib: ').'luna.model.class', PEAR_LOG_CRIT); }
+			require_once LUNAPATH.'luna.classes/luna.log.class.php';
+			require_once LUNAPATH.'luna.classes/luna.tools.class.php';
+			require_once LUNAPATH.'luna.classes/luna.authz.class.php';
+			require_once LUNAPATH.'luna.classes/luna.cache.class.php';
+			require_once LUNAPATH.'luna.classes/luna.db.class.php';
+			require_once LUNAPATH.'luna.classes/luna.session.class.php';
+			require_once LUNAPATH.'luna.classes/luna.graph.class.php';
+			require_once LUNAPATH.'luna.classes/luna.model.class.php';
+			require_once LUNAPATH.'luna.classes/luna.render.class.php';
 			// clean $_GET, $_POST, $_COOKIE, $_SESSION & $_REQUEST
 			lunaTools::sanitize_inputs();
 			// send baseline security headers before any output
@@ -287,7 +261,7 @@ class luna {
 			// check cache
 			if (!lunaTools::check_cache()) { throw new lunaException(_('Error: cannot set cache.'), PEAR_LOG_CRIT); }
 			// turn on/off Ajax
-			define('AJAX', (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest')? true : false);
+			define('AJAX', (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') ? true : false);
 			// connect to the database
 			if (!lunaDB::prepare()) { throw new lunaException(_('Error: cannot prepare the database.'), PEAR_LOG_CRIT); }
 			if (!lunaDB::connect()) { throw new lunaException(_('Error: cannot connect to the database.'), PEAR_LOG_CRIT); }
@@ -313,36 +287,36 @@ class luna {
 			// Crawler-discovery endpoints (publishing surface): /sitemap.xml lists the
 			// public page tree (as the requester sees it — anonymous for a crawler) and
 			// /robots.txt points at it. Both emit and exit.
-			if (self::$path === 'sitemap.xml') { self::$model->emit_sitemap(); }
-			if (self::$path === 'robots.txt')  { self::$model->emit_robots(); }
+			if (self::$path === 'sitemap.xml') { lunaTools::emit(self::model()->build_sitemap(), 'application/xml; charset=utf-8'); }
+			if (self::$path === 'robots.txt')  { lunaTools::emit(self::model()->build_robots(), 'text/plain; charset=utf-8'); }
 			// if user is admin, disable cache
-			if (lunaTools::user_can_access_level(self::$session->user, 'level_admin')) {
+			if (lunaAuthz::user_can_access_level(self::$session->user, 'level_admin')) {
 				self::$cache = false;
 				define('IS_ADMIN', true);
 			} else {
 				define('IS_ADMIN', false);
 			}
 			// load Page data. If the page does not exist, output a 404.
-			if (!self::$page_node = self::$model->get_page_node_from_alias(self::$path, 'page')) { lunaTools::raise_error_page('404', self::$path); }
+			if (!self::$page_node = self::model()->get_page_node_from_alias(self::$path)) { lunaTools::raise_error_page('404', self::$path); }
 			// Define current page NID
-			if (!$page_nid = self::$model->get_nid(self::$page_node)) { throw new lunaException(_('Error: cannot find page nid.'), PEAR_LOG_CRIT); }
+			if (!$page_nid = self::model()->get_nid(self::$page_node)) { throw new lunaException(_('Error: cannot find page nid.'), PEAR_LOG_CRIT); }
 			define('PAGENID', $page_nid);
 			// Define current page LID
-			if (!$page_lid = self::$model->get_lid(self::$page_node)) { throw new lunaException(_('Error: cannot find page lid.'), PEAR_LOG_CRIT); }
+			if (!$page_lid = self::model()->get_lid(self::$page_node)) { throw new lunaException(_('Error: cannot find page lid.'), PEAR_LOG_CRIT); }
 			define('PAGELID', $page_lid);
 			// Check privileges. If user is unauthorized, send him to login
-			if (!lunaTools::check_privileges()) { lunaTools::go('login'); }
-			if (!in_array(self::$output_format, self::$output_formats)) { self::$output_format = isset(self::$output_formats[0])? self::$output_formats[0] : 'html'; }
+			if (!lunaAuthz::check_privileges()) { lunaTools::go('login'); }
+			if (!in_array(self::$output_format, self::$output_formats)) { self::$output_format = isset(self::$output_formats[0]) ? self::$output_formats[0] : 'html'; }
 			// Advertise the resource's identity + alternate representations (Linked Data trail).
 			lunaTools::send_alternate_links();
 			// Load texts associated with the page — from the graph by default,
 			// falling back to SQL if the SPARQL path is off or yields nothing.
 			$texts = false;
-			if (lunaModel::sparql_reads()) { $texts = self::$model->load_texts_sparql(PAGENID); }
-			if (empty($texts)) { $texts = self::$model->load_texts(0, PAGENID); }
-			self::$model->merge_index($texts);
+			if (lunaGraph::sparql_reads()) { $texts = self::model()->load_texts_sparql(PAGENID); }
+			if (empty($texts)) { $texts = self::model()->load_texts(0, PAGENID); }
+			self::model()->merge_index($texts);
 			// Collect Data
-			if (!self::$data['lid'] = self::$model->get_lid(self::$page_node)) { throw new lunaException(_('Error: cannot find page lid.'), PEAR_LOG_CRIT); }
+			if (!self::$data['lid'] = self::model()->get_lid(self::$page_node)) { throw new lunaException(_('Error: cannot find page lid.'), PEAR_LOG_CRIT); }
 			self::$data['lunaversion'] = self::$lunaVersion;
 			self::$data['site_uri'] = self::$site_uri;
 			self::$data['site_relative_url'] = self::$site_relative_url;
@@ -354,39 +328,58 @@ class luna {
 			self::$data['general_email'] = self::get_ini('config', 'general_email');
 			self::$data['lang'] = self::$lang;
 			self::$data['csrf_token'] = self::$session->user->csrf_token ?? '';
-			return true;
+			return;
 		} catch (lunaException $e) {
 			lunaLog::log($e);
 			die();
 		}
 	}
 	// }}}
+	// {{{ model()
+	/**
+	 * The data model, guaranteed present.
+	 *
+	 * The static property this wraps is `lunaModel|null` — null before the constructor builds
+	 * it — and that nullability made every one of the 246 calls through it unanalysable: a
+	 * static analyser will not check argument types on a method call whose receiver it cannot
+	 * resolve. A parameter type on lunaModel was therefore a hypothesis nothing could confirm,
+	 * which is how merge_index(array $nodes) came to be handed a false. See docs/coding-style.md.
+	 *
+	 * Reaching the model before it exists is a bug, not a state to be handled politely, so this
+	 * throws rather than returning null.
+	 *
+	 * @return lunaModel
+	 */
+	public static function model(): lunaModel {
+		if (!self::$model instanceof lunaModel) {
+			throw new lunaException(_('Error: the model was read before it was built.'), PEAR_LOG_CRIT);
+		}
+		return self::$model;
+	}
+	// }}}
 	// {{{ singleton()
 	/**
-	 * @access public
-	 * @return object
+	 * @return self
 	 */
-	public static function singleton() {
+	public static function singleton(): self {
 		if (!isset(self::$instance)) {
 			$c = __CLASS__;
-			self::$instance = new $c;
+			self::$instance = new $c();
 		}
 		return self::$instance;
 	}
 	// }}}
 	// {{{ __clone()
 	/**
-	 * @access public
 	 * @return void
 	 */
 	public function __clone() { trigger_error('Lunar clones are not allowed.', E_USER_ERROR); }
 	// }}}
-	// {{{ set_site_paths()
+	// {{{ set_requested_path()
 	/**
-	 * @access private
-	 * @return boolean
+	 * @return bool
 	 */
-	private function set_requested_path() {
+	private function set_requested_path(): bool {
 		// set requested path
 		self::$path = preg_replace('@^\/*(.*?)\/*$@', '$1', lunaTools::request('path'));
 		return true;
@@ -409,23 +402,22 @@ class luna {
 	 * The slug resolves against the ACL-filtered graph the model just built, so a
 	 * resource the current user can't see 404s here exactly as the HTML view does.
 	 *
-	 * @access private
 	 * @return void
 	 */
-	private function route_linked_data() {
+	private function route_linked_data(): void {
 		$path  = self::$path;
 		$is_id = (strpos($path, 'id/') === 0);
 		$is_dt = (strpos($path, 'data/') === 0);
 		if (!$is_id && !$is_dt) { return; }
-		$slug = $is_id? substr($path, 3) : substr($path, 5);
+		$slug = $is_id ? substr($path, 3) : substr($path, 5);
 		// a single path segment names the resource; anything deeper is not an /id|/data URI
 		if ($slug === '' || strpos($slug, '/') !== false) { lunaTools::raise_error_page('404', $path); }
-		if (!$node = self::$model->get_node_from_slug($slug, 'page')) { lunaTools::raise_error_page('404', $path); }
+		if (!$node = self::model()->get_node_from_slug($slug, 'page')) { lunaTools::raise_error_page('404', $path); }
 		$base = rtrim(self::$site_uri, '/');
 		if ($is_id) {
 			// 303 to the concrete document chosen by the already-negotiated format.
 			if (self::$output_format === 'html') {
-				$target = lunaTools::link((string) self::$model->get_alias($node), true);
+				$target = lunaTools::link((string) self::model()->get_alias($node), true);
 			} else {
 				$target = $base.'/data/'.rawurlencode($slug);
 				$req = lunaTools::request('output');
@@ -438,67 +430,66 @@ class luna {
 		if (self::$output_format === 'html') { self::$output_format = 'turtle'; }
 		// Re-enter the normal pipeline against the resource's canonical alias, so texts
 		// load and the page node resolves exactly as for the HTML view.
-		self::$path = (string) self::$model->get_alias($node);
+		self::$path = (string) self::model()->get_alias($node);
 	}
 	// }}}
 	// {{{ set_site_path()
 	/**
-	 * @access private
-	 * @return boolean
+	 * @return bool
 	 */
-	private function set_site_path() {
+	private function set_site_path(): bool {
 		$site_path = LUNAPATH.'luna.domains';
 		$sitefound = false;
 		// {{{ Copied from Drupal 5.1 function conf_path() (file: bootstrap.inc, line: 195, license: GPL 2)
-			/**
-			 * Find the appropriate configuration directory.
-			 *
-			 * Try finding a matching configuration directory by stripping the website's
-			 * hostname from left to right and pathname from right to left. The first
-			 * configuration file found will be used; the remaining will ignored. If no
-			 * configuration file is found, return a default value '$site_path/luna.Default/'.
-			 *
-			 * Example for a fictitious site installed at
-			 * http://www.mywebsite.org:8080/mysite/test/ the 'luna.ini' is searched in
-			 * the following directories:
-			 *
-			 *  1. $site_path/8080.www.mywebsite.org.mysite.test/
-			 *  2. $site_path/www.mywebsite.org.mysite.test/
-			 *  3. $site_path/mywebsite.org.mysite.test/
-			 *  4. $site_path/org.mysite.test/
-			 *  5. $site_path/8080.www.mywebsite.org.mysite/
-			 *  6. $site_path/www.mywebsite.org.mysite/
-			 *  7. $site_path/mywebsite.org.mysite/
-			 *  8. $site_path/org.mysite/
-			 *  9. $site_path/8080.www.mywebsite.org/
-			 * 10. $site_path/www.mywebsite.org/
-			 * 11. $site_path/mywebsite.org/
-			 * 12. $site_path/org/
-			 * 13. $site_path/luna.Default/
-			 */
-			$uri = explode('/', $_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME']);
-			$server = explode('.', implode('.', array_reverse(explode(':', rtrim($_SERVER['HTTP_HOST'], '.')))));
-			for ($i = count($uri) - 1; $i > 0; $i--) {
-				for ($j = count($server); $j > 0; $j--) {
-					$dir = implode('.', array_slice($server, -$j)).implode('.', array_slice($uri, 0, $i));
-					if (file_exists("$site_path/$dir/ini/luna.ini")) {
-						$site_path = "$site_path/$dir/";
-						$sitefound = true;
-						break;
-					}
+		/**
+		 * Find the appropriate configuration directory.
+		 *
+		 * Try finding a matching configuration directory by stripping the website's
+		 * hostname from left to right and pathname from right to left. The first
+		 * configuration file found will be used; the remaining will ignored. If no
+		 * configuration file is found, return a default value '$site_path/luna.Default/'.
+		 *
+		 * Example for a fictitious site installed at
+		 * http://www.mywebsite.org:8080/mysite/test/ the 'luna.ini' is searched in
+		 * the following directories:
+		 *
+		 *  1. $site_path/8080.www.mywebsite.org.mysite.test/
+		 *  2. $site_path/www.mywebsite.org.mysite.test/
+		 *  3. $site_path/mywebsite.org.mysite.test/
+		 *  4. $site_path/org.mysite.test/
+		 *  5. $site_path/8080.www.mywebsite.org.mysite/
+		 *  6. $site_path/www.mywebsite.org.mysite/
+		 *  7. $site_path/mywebsite.org.mysite/
+		 *  8. $site_path/org.mysite/
+		 *  9. $site_path/8080.www.mywebsite.org/
+		 * 10. $site_path/www.mywebsite.org/
+		 * 11. $site_path/mywebsite.org/
+		 * 12. $site_path/org/
+		 * 13. $site_path/luna.Default/
+		 */
+		$uri = explode('/', $_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME']);
+		$server = explode('.', implode('.', array_reverse(explode(':', rtrim($_SERVER['HTTP_HOST'], '.')))));
+		for ($i = count($uri) - 1; $i > 0; $i--) {
+			for ($j = count($server); $j > 0; $j--) {
+				$dir = implode('.', array_slice($server, -$j)).implode('.', array_slice($uri, 0, $i));
+				if (file_exists("$site_path/$dir/ini/luna.ini")) {
+					$site_path = "$site_path/$dir/";
+					$sitefound = true;
+					break;
 				}
 			}
+		}
 		// }}} end drupal
 		if ($sitefound == false) { $site_path = "$site_path/luna.default/"; }
 		self::$site_path = $site_path;
 		//  {{{ Copied from Drupal 5.1 function conf_init() (file: bootstrap.inc, line: 235, license: GPL 2)
-			$base_root = luna_is_https() ? 'https' : 'http';
-			$base_url = $base_root.'://'.$_SERVER['HTTP_HOST'];
-			if ($dir = trim(dirname($_SERVER['PHP_SELF']), '\,/')) {
-				$base_path = "/$dir";
-			} else {
-				$base_path = '';
-			}
+		$base_root = luna_is_https() ? 'https' : 'http';
+		$base_url = $base_root.'://'.$_SERVER['HTTP_HOST'];
+		if ($dir = trim(dirname($_SERVER['PHP_SELF']), '\,/')) {
+			$base_path = "/$dir";
+		} else {
+			$base_path = '';
+		}
 		// }}} end drupal
 		// Absolute identity base. A configured SITE_URI wins over the Host-derived value (see the
 		// SITE_URI define near the top of this file and the "freeze the URIs" rule) so RDF IRIs /
@@ -514,14 +505,13 @@ class luna {
 	/**
 	 * Load all the modules from the database into the xml
 	 *
-	 * @access	public
-	 * @return	boolean
+	 * @return	bool
 	 */
-	public function load_mods() {
+	public function load_mods(): bool {
 		try {
-			if (self::$cache) { $cache_obj = new lunaCache(array('cacheDir' => CACHE_PATH, 'lifetime' => self::$cache_timeout)); }
+			if (self::$cache) { $cache_obj = new lunaCache(['cacheDir' => CACHE_PATH, 'lifetime' => self::$cache_timeout]); }
 			if (self::$cache && ($cache_str = $cache_obj->get('node-'.PAGENID.'.mods'))) {
-				$nodes = unserialize($cache_str, array('allowed_classes' => false));
+				$nodes = unserialize($cache_str, ['allowed_classes' => false]);
 			} else {
 				// load mods from db
 				$res = lunaDB::query('
@@ -550,20 +540,20 @@ class luna {
 					ORDER BY
 						m.lid
 				');
-				$nodes = array();
-				while ($row = $res->fetchRow()) { $nodes = array_merge($nodes, self::$model->load_node($row, 'mod', 'level')); }
+				$nodes = [];
+				while ($row = $res->fetchRow()) { $nodes = array_merge($nodes, self::model()->load_node($row, 'mod', 'level')); }
 				$res->free();
 				if (self::$cache) { $cache_obj->save(serialize($nodes)); }
 			}
-			// self::$model->merge_index($nodes);
+			// self::model()->merge_index($nodes);
 			foreach ($nodes as $mod_uri => $mod_node) {
 				$file = '';
 				$ok = false;
-				$type = self::$model->get_type($mod_node);
-				if ($type != self::$model->lunaNameSpace.'mod') { continue; }
-				$nid = self::$model->get_nid($mod_node);
-				$lid = self::$model->get_lid($mod_node);
-				$level_nid = self::$model->get_nid(self::$model->get_level_node($mod_node));
+				$type = self::model()->get_type($mod_node);
+				if ($type != self::model()->lunaNameSpace.'mod') { continue; }
+				$nid = self::model()->get_nid($mod_node);
+				$lid = self::model()->get_lid($mod_node);
+				$level_nid = self::model()->get_nid(self::model()->get_level_node($mod_node));
 				if (isset(self::$session->user->levels[$level_nid])) {
 					$file = SITEPATH.'mods/'.$lid.'/'.$lid.'.php';
 					if (file_exists($file)) {
@@ -599,40 +589,39 @@ class luna {
 						luna::$messages['warning'][] = _('Security check failed. Please reload the page and try again.');
 						lunaLog::log('CSRF/POST check failed for mod '.$lid, PEAR_LOG_WARNING);
 					} else {
-					if (method_exists($lid, 'submit')) { self::$mods[$nid]->submit(); }
-					if (isset($_POST['mode'])) {
-						switch($_POST['mode']) {
-							case 'add':
-								if (method_exists($lid, 'submit_add')) { self::$mods[$nid]->submit_add(); }
-								break;
-							case 'modify':
-								if (lunaTools::request('submit') == _('Delete')) {
+						if (method_exists($lid, 'submit')) { self::$mods[$nid]->submit(); }
+						if (isset($_POST['mode'])) {
+							switch ($_POST['mode']) {
+								case 'add':
+									if (method_exists($lid, 'submit_add')) { self::$mods[$nid]->submit_add(); }
+									break;
+								case 'modify':
+									if (lunaTools::request('submit') == _('Delete')) {
+										if (method_exists($lid, 'submit_delete')) { self::$mods[$nid]->submit_delete(); }
+									} else {
+										if (method_exists($lid, 'submit_modify')) { self::$mods[$nid]->submit_modify(); }
+									}
+									break;
+								case 'delete':
 									if (method_exists($lid, 'submit_delete')) { self::$mods[$nid]->submit_delete(); }
-								} else {
-									if (method_exists($lid, 'submit_modify')) { self::$mods[$nid]->submit_modify(); }
-								}
-								break;
-							case 'delete':
-								if (method_exists($lid, 'submit_delete')) { self::$mods[$nid]->submit_delete(); }
-								break;
+									break;
+							}
 						}
-					}
-					if (!defined('AJAX') || !AJAX) {
-						lunaDB::optimise(array(
-							self::get_ini('DBtables', 'NODES'),
-							self::get_ini('DBtables', 'NODES_MAP'),
-							self::get_ini('DBtables', 'ACTIONS')
-						));
-					}
+						if (!defined('AJAX') || !AJAX) {
+							lunaDB::optimise([
+								self::get_ini('DBtables', 'NODES'),
+								self::get_ini('DBtables', 'NODES_MAP'),
+								self::get_ini('DBtables', 'ACTIONS')
+							]);
+						}
 					}
 				}
 				if (method_exists($lid, 'load')) { self::$mods[$nid]->load(); }
-				$mod_node = self::$model->set_property($mod_node, 'is_loaded', '1');
-				self::$model->merge_index(array($mod_uri => $mod_node));
+				$mod_node = self::model()->set_property($mod_node, 'is_loaded', '1');
+				self::model()->merge_index([$mod_uri => $mod_node]);
 			}
 			// load messages
-			self::$model->merge_index(self::$model->load_messages(self::$messages));
-			// self::$model->dump();
+			self::model()->merge_index(self::model()->load_messages(self::$messages));
 			return true;
 		} catch (lunaException $e) {
 			lunaLog::log($e);
@@ -644,12 +633,11 @@ class luna {
 	/**
 	 * Transform the page.
 	 *
-	 * @access	public
 	 * @return	string
 	 */
-	public function transform() {
+	public function transform(): string {
 		try {
-			lunaTools::add_vocabulary(array(
+			lunaTools::add_vocabulary([
 				'You are here: ',
 				'Sitemap',
 				'Jump to page',
@@ -670,51 +658,56 @@ class luna {
 				'You are logged in as',
 				ANONYMOUS,
 				'node'
-			));
+			]);
 			// Data outputs (xml/json/n3/jsonld) carry the content graph only — emit here,
 			// before the HTML-only chrome (current user, language/format switchers, site
 			// config + sort cookies, i18n vocabulary, request params) is merged into the model.
-			if (self::$output_format != 'html') { self::$model->dump(self::$output_format); }
+			if (self::$output_format != 'html') {
+				lunaTools::emit(
+					self::model()->serialize(self::$output_format),
+					lunaModel::content_type(self::$output_format),
+					lunaModel::data_response_csp()
+				);
+			}
 			// Insert user
-			if (!self::$model->merge_index(self::$model->load_user(self::$session->user, 1))) { throw new lunaException(_('Error: cannot load user.'), PEAR_LOG_CRIT); }
+			if (!self::model()->merge_index(self::model()->load_user(self::$session->user, 1))) { throw new lunaException(_('Error: cannot load user.'), PEAR_LOG_CRIT); }
 			// Insert langs
-			$langs = array();
-			foreach(self::get_ini('config', 'site_langs') as $lang) {
-				$var_node = self::$model->load_var(array(
+			$langs = [];
+			foreach (self::get_ini('config', 'site_langs') as $lang) {
+				$var_node = self::model()->load_var([
 					'type' => 'lang',
 					'lid' => $lang,
 					'lang' => $lang,
-					'value' => array(
+					'value' => [
 						'value' => _($lang),
 						'link' => lunaTools::append_to_link('lang', $lang),
-						'selected' => ($lang == self::$lang)? 1 : 0
-					)
-				));
-				$langs = self::$model->merge_nodes($langs, $var_node);
+						'selected' => ($lang == self::$lang) ? 1 : 0
+					]
+				]);
+				$langs = self::model()->merge_nodes($langs, $var_node);
 			}
-			self::$model->merge_index($langs);
+			self::model()->merge_index($langs);
 			// Insert output formats
-			$output_formats = array();
-			foreach(self::$output_formats as $output_format) {
-				$var_node = self::$model->load_var(array(
+			$output_formats = [];
+			foreach (self::$output_formats as $output_format) {
+				$var_node = self::model()->load_var([
 					'type' => 'output-format',
 					'lid' => $output_format,
-					'value' => array(
+					'value' => [
 						'value' => _($output_format),
 						'link' => lunaTools::append_to_link('output', $output_format),
-						'selected' => ($output_format == self::$output_format)? 1 : 0
-					)
-				));
-				$output_formats = self::$model->merge_nodes($output_formats, $var_node);
+						'selected' => ($output_format == self::$output_format) ? 1 : 0
+					]
+				]);
+				$output_formats = self::model()->merge_nodes($output_formats, $var_node);
 			}
-			self::$model->merge_index($output_formats);
+			self::model()->merge_index($output_formats);
 			// Insert Data
-			self::$model->merge_index(self::$model->load_data(self::$data));
-			self::$model->merge_index(self::$model->load_vocabulary(self::$vocabulary));
-			self::$model->merge_index(self::$model->load_request($_REQUEST, 'request'));
+			self::model()->merge_index(self::model()->load_data(self::$data));
+			self::model()->merge_index(self::model()->load_vocabulary(self::$vocabulary));
+			self::model()->merge_index(self::model()->load_request($_REQUEST, 'request'));
 			// If ajax is on, no need to go further
 			if (defined('AJAX') && AJAX) { die(); }
-			// if (lunaTools::request('submit')) { self::$model->dump(); }
 			$output = false;
 			$xslok = false;
 			$XSLpath = XSL_PATH.self::$output_format.'.xsl/';
@@ -753,10 +746,10 @@ class luna {
 				}
 			}
 			if (!$xslok) { throw new lunaException(_('Error: cannot load XSL.'), PEAR_LOG_CRIT); }
-			if (!$output = self::$model->transform($XSLfile)) { throw new lunaException(_('Error: cannot transform XSL.'), PEAR_LOG_CRIT); }
+			if (!$output = self::model()->transform($XSLfile)) { throw new lunaException(_('Error: cannot transform XSL.'), PEAR_LOG_CRIT); }
 			// $output = str_replace('{LOADINGTIME}', (round(self::set_microtime() - luna::$start, 4).'s. '), $output);
 			// Embed schema.org JSON-LD structured data in the <head> (Linked Data, Phase 0 — see docs/linked-data.md).
-			if (stripos($output, '</head>') !== false && ($ld = self::$model->to_jsonld(true))) {
+			if (stripos($output, '</head>') !== false && ($ld = self::model()->to_jsonld())) {
 				$output = preg_replace('#</head>#i', "<script type=\"application/ld+json\">\n".$ld."\n</script>\n</head>", $output, 1);
 			}
 			return $output;
@@ -770,15 +763,14 @@ class luna {
 	/**
 	 * Parse luna ini file
 	 *
-	 * @access private
-	 * @return array
+	 * @return array|false
 	 */
-	private function load_ini() {
+	private function load_ini(): array|false {
 		// load ini file
 		if (!file_exists(SITEPATH.'ini/luna.ini')) { return false; }
 		define('INI_PATH', SITEPATH.'ini/');
 		if (!$ini = parse_ini_file(INI_PATH.'luna.ini', true)) { return false; }
-		if (empty($ini) || empty($ini['Paths']) || empty($ini['DBtables']) || empty($ini['Constantes'])) { return false; }
+		if (empty($ini['Paths']) || empty($ini['DBtables']) || empty($ini['Constantes'])) { return false; }
 		foreach ($ini['Paths'] as $k => $v) { define($k, LUNAPATH.$v); }
 		foreach ($ini['Constantes'] as $k => $v) { define($k, $v); }
 		if (!defined('ANONYMOUS')) { define('ANONYMOUS', 'guest'); }
@@ -787,11 +779,10 @@ class luna {
 	// }}}
 	// {{{ set_microtime()
 	/**
-	 * @param int set_microtime
-	 * @access public
+	 * @param int|false $microtime
 	 * @return float
 	 */
-	public static function set_microtime($microtime = false) {
+	public static function set_microtime(int|false $microtime = false): float {
 		$microtime = intval($microtime);
 		if (empty($microtime)) { $microtime = microtime(); }
 		list($usec, $sec) = explode(' ', $microtime);
@@ -800,11 +791,10 @@ class luna {
 	// }}}
 	// {{{ lid_is_protected()
 	/**
-	 * @param string lid_is_protected
-	 * @access public
-	 * @return float
+	 * @param string|false $lid
+	 * @return bool
 	 */
-	public static function lid_is_protected($lid = false) {
+	public static function lid_is_protected(string|false $lid = false): bool {
 		if (empty($lid)) { return false; }
 		if (in_array("$lid", self::$protected_lids)) { return true; }
 		return false;
@@ -812,13 +802,12 @@ class luna {
 	// }}}
 	// {{{ get_ini()
 	/**
-	 * @access	public
-	 * @param	string $domain
-	 * @param	string $var
-	 * @param	string $subvar
-	 * @return	bolean
+	 * @param	string|false $domain
+	 * @param	string|false $var
+	 * @param	string|false $subvar
+	 * @return	string|array|false
 	 */
-	public static function get_ini($domain = false, $var = false, $subvar = false) {
+	public static function get_ini(string|false $domain = false, $var = false, string|false $subvar = false): string|array|false {
 		if (empty($domain) || empty($var)) { return false; }
 		if (is_array($var)) {
 			if (!isset(luna::$ini["$domain"]["$var"][$subvar])) { return false; }
@@ -831,4 +820,3 @@ class luna {
 	// }}}
 }
 // }}}
-?>

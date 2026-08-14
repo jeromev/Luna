@@ -28,6 +28,26 @@ safer to run locally, or better as a learning tool.
 - Adding bulk — e.g. a WYSIWYG editor. The editor is intentionally a plain Markdown
   `<textarea>`; keep the project tiny and readable.
 
+## Coding standard
+
+The house standard is **PSR-12 with seven named deviations** — most visibly, indentation is
+a **tab**, and braces stay on the same line. All of it, with the reasoning, is in
+[docs/coding-style.md](docs/coding-style.md).
+
+You do not have to memorise it:
+
+```bash
+make tools    # once — installs php-cs-fixer + PHPStan under tools/ (never the root composer.json)
+make check    # lint + style + static analysis + the project's own invariants
+```
+
+`make fmt` applies the layout rules. Two optional one-time setup steps:
+
+```bash
+sh tools/install-hooks.sh                                   # check the style before each commit
+git config blame.ignoreRevsFile .git-blame-ignore-revs      # let git blame see through reformats
+```
+
 ## Development setup
 
 ```bash
@@ -39,10 +59,9 @@ See the top-level [README](README.md) and [docs/](docs/) — start with
 
 ## Before you open a PR
 
-- **Lint the PHP** (the project runs on PHP 8.3):
+- **Lint the PHP** (8.1 is the supported floor, 8.3 the tested stack):
   ```bash
-  docker run --rm -v "$PWD":/app -w /app php:8.3-cli sh -c \
-    'find index.php luna/luna.php luna/luna.classes luna/luna.mods -name "*.php" -print0 | xargs -0 -n1 php -l'
+  make lint-php
   ```
   (CI runs the same check plus `docker compose config`.)
 - **Smoke-test on Docker** — the site should render and `?output=jsonld` should

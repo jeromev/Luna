@@ -35,3 +35,18 @@ luna/luna.domains/*/locale/*/LC_MESSAGES/local.mo
 # Internal working records (analysis reports, plans, session notes) — kept LOCAL and
 # uncommitted on purpose. Not project documentation; not for the committed/public repo.
 docs/internal/
+
+# Developer tooling. tools/composer.json + tools/composer.lock ARE committed, so the
+# tool versions are pinned and reproducible; only the installed tree is ignored
+# (`make tools` restores it). This is deliberately a SEPARATE manifest from the root
+# composer.json: the committed vendor/ tree IS the deployment (docs/going-public.md),
+# and .github/workflows/deps-audit.yml audits the root lock file without --no-dev, so a
+# dev dependency there would enlarge the weekly advisory surface of the shipped
+# artifact. See docs/coding-style.md.
+tools/vendor/
+
+# Scratch dir used by `make token-diff` (created and removed within the target)
+.token-baseline/
+
+# php-cs-fixer result cache (machine-local)
+.php-cs-fixer.cache

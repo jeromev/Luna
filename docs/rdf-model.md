@@ -110,16 +110,15 @@ The trick that makes a single edge table work as RDF: `load_nodes()` reconstruct
 - `get_node($nid, $type, $ns)`, `get_node_from_alias($alias, …)`,
   `get_page_node_from_alias($path)` — fetch nodes.
 - `get_nid($node)`, `get_lid($node)`, `get_type($node)` — extract identity.
-- `get_parent_node()`, `get_children_nodes()`, `get_children_nids()` — traverse
-  the page hierarchy (via `schema:isPartOf`).
+- `get_parent_node()`, `get_children_nodes()` — traverse the page hierarchy
+  (via `schema:isPartOf`).
 - `get_level_node($node)` — the access level a node requires.
 - `get_nid_from_lid($lid)` — direct DB lookup, slug → id.
 
 ### Mutators (write the graph + DB)
 - `set_property($node, $lid, $value, $ns)` — add/update a property on a node.
 - `insert()`, `update()`, `delete()`, `link()`, `unlink()` — node and edge CRUD
-  that writes through to `luna_nodes` / `luna_nodes_map` (used by the admin mods);
-  `exists()` tests whether a node is present.
+  that writes through to `luna_nodes` / `luna_nodes_map` (used by the admin mods).
 
 ### Loaders (project SQL/PHP data into the model)
 - `load_node()` / `load_nodes()` — DB rows → typed nodes + relationships.

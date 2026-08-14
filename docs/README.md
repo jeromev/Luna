@@ -25,6 +25,7 @@ This `docs/` folder is the canonical technical reference. The top-level
 | [templating.md](templating.md) | XSLT rendering, stylesheet lookup, and output formats |
 | [configuration.md](configuration.md) | Domains, `luna.ini`, `db.ini`, and constants |
 | [installation.md](installation.md) | Docker and manual setup, requirements |
+| [coding-style.md](coding-style.md) | The house standard: PSR-12 with seven named deviations, the house rules, and the gates that hold them |
 | [security.md](security.md) | Known issues and hardening notes |
 | [linked-data.md](linked-data.md) | The semantic-web layer: URI policy, vocabulary mapping, JSON-LD, and the SPARQL read path (Ontop → Oxigraph) |
 | [why-rdf.md](why-rdf.md) | The payoff in plain English: what you can do now that a vanilla PHP/MySQL app can't — queries, interop, engine-swap — and what's still roadmap |
@@ -48,7 +49,7 @@ If you are new to the codebase, read in this order:
 
 ## Status
 
-This is an RDF-native Semantic Web CMS on `main` (`0.8.63-alpha`) — see
+This is an RDF-native Semantic Web CMS on `main` (`0.8.64-alpha`) — see
 [linked-data.md](linked-data.md). The original, preserved on the `legacy` branch
 as `v0.2.14-alpha`, is the unmodified starting point. It runs on **PHP 8.3 /
 MySQL 8.0** via PDO; see [security.md](security.md) before exposing it publicly.

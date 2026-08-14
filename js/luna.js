@@ -48,14 +48,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	// Collapsible box handles: the bottom-bar hamburger sitemap, the search box, …
 	// Instant open/close — flip the +/- class and the adjacent .box-content display.
+	// These are <h2>s, not <button>s, so they are made keyboard-operable here: expose the
+	// button role + expanded state and respond to Enter/Space, not just a mouse click. Without
+	// this the site navigation (the hamburger sitemap) is unreachable for keyboard users.
+	var toggleHandle = function (handle) {
+		var opening = handle.classList.contains('collapsed');
+		handle.classList.toggle('collapsed', !opening);
+		handle.classList.toggle('expanded', opening);
+		handle.setAttribute('aria-expanded', opening ? 'true' : 'false');
+		var content = handle.nextElementSibling;
+		if (content) { content.style.display = opening ? 'block' : 'none'; }
+	};
 	var handles = document.querySelectorAll('.box-handle');
 	for (var j = 0; j < handles.length; j++) {
-		handles[j].addEventListener('click', function () {
-			var opening = this.classList.contains('collapsed');
-			this.classList.toggle('collapsed', !opening);
-			this.classList.toggle('expanded', opening);
-			var content = this.nextElementSibling;
-			if (content) { content.style.display = opening ? 'block' : 'none'; }
+		var handle = handles[j];
+		if (!handle.hasAttribute('role')) { handle.setAttribute('role', 'button'); }
+		if (!handle.hasAttribute('tabindex')) { handle.setAttribute('tabindex', '0'); }
+		handle.setAttribute('aria-expanded', handle.classList.contains('expanded') ? 'true' : 'false');
+		handle.addEventListener('click', function () { toggleHandle(this); });
+		handle.addEventListener('keydown', function (e) {
+			if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+				e.preventDefault(); // Space would otherwise scroll the page
+				toggleHandle(this);
+			}
 		});
 	}
 });
