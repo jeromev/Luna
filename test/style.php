@@ -280,7 +280,13 @@ $readMo = static function (string $f): ?array {
 	return $out;
 };
 
-/** The pairs a .po claims — i.e. exactly what msgfmt would put in the .mo, and nothing else. */
+/**
+ * The pairs a .po claims — i.e. what msgfmt would put in the .mo, for the singular, contextless
+ * forms these catalogues use. `msgid_plural` and `msgctxt` are NOT understood: msgfmt keys those
+ * as "id\0plural" and "ctx\x04id", which this would read as a key the .po never claimed and
+ * report as staleness. Neither form appears in any catalogue here; if one is ever added, extend
+ * this before trusting the result — do not relax the comparison to make the failure go away.
+ */
 $readPo = static function (string $f): array {
 	$unescape = static fn (string $s): string
 		=> strtr($s, ['\\n' => "\n", '\\t' => "\t", '\\r' => "\r", '\\"' => '"', '\\\\' => '\\']);
@@ -298,10 +304,19 @@ $readPo = static function (string $f): array {
 		// Obsolete entries are commented out with #~ and msgfmt drops them, so they are not
 		// part of the claim. This must be tested before the general comment case.
 		if (str_starts_with($t, '#~')) { $field = null; continue; }
-		if (str_starts_with($t, '#')) {
-			if (str_contains($t, 'fuzzy')) { $cur['fuzzy'] = true; }
+		// Only the flag line `#,` carries fuzzy, and it carries a comma-separated LIST, so the
+		// flag has to be matched as a whole item — `#, c-format, fuzzy` is fuzzy and `#, no-fuzzy`
+		// is not. Reading the word out of any comment was the earlier mistake: a translator note
+		// such as "# not sure, this is fuzzy" silently dropped a perfectly good entry from the
+		// expectation, and the rule then reported the .mo as carrying a message the .po had lost.
+		// A gate that fails on correct input is worse than no gate, because the way to make it
+		// pass is to weaken it.
+		if (str_starts_with($t, '#,')) {
+			$flags = array_map('trim', explode(',', substr($t, 2)));
+			if (in_array('fuzzy', $flags, true)) { $cur['fuzzy'] = true; }
 			continue;
 		}
+		if (str_starts_with($t, '#')) { continue; }
 		if (preg_match('/^msgid\s+"(.*)"$/', $t, $m)) { $cur['id'] = $unescape($m[1]); $field = 'id'; continue; }
 		if (preg_match('/^msgstr\s+"(.*)"$/', $t, $m)) { $cur['str'] = $unescape($m[1]); $field = 'str'; continue; }
 		// A long message is split across continuation lines; they belong to whichever of the
