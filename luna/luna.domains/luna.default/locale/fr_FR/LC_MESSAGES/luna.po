@@ -35,9 +35,6 @@ msgstr "Accueil"
 msgid "code"
 msgstr "code"
 
-msgid "root_mod"
-msgstr "Module racine"
-
 msgid "Page loaded in"
 msgstr "Page chargée en"
 

@@ -238,6 +238,133 @@ if ($destructive === 0) {
 foreach ($confirmProblems as $p) { note($p); }
 ok($confirmProblems === [], sprintf('all %d destructive controls confirm, and only those do', $destructive));
 
+echo "--- house rule 13: the compiled catalogue matches its source ---\n";
+// gettext ships every message twice. luna.po is the source a translator edits; luna.mo is the
+// binary the runtime actually loads, and it is the only one it loads — lunaTools::set_lang binds
+// the domain and every lookup goes through gettext itself, which never reads the .po. Nothing in
+// this repository regenerates one from the other, so an edit to a .po that is never recompiled
+// changes nothing a visitor sees, and says so nowhere.
+//
+// That is not hypothetical. 0.8.34-alpha cleaned a dead domain out of both .po headers and left
+// it sitting in both .mo, where it went on shipping to every visitor for thirty-three releases.
+//
+// It survived because the .mo is BINARY, and the acceptance check that would have caught it was
+// a text search: `git grep -I` skips binary files silently — as does BSD grep without -a — so it
+// reported the tree clean while the artifact still carried the string. A search that cannot read
+// the file it is searching returns "clean" and "absent" as the same answer.
+//
+// mtime is deliberately NOT the test. git does not record it, so on a fresh clone or in CI every
+// file carries checkout time and an "is the .mo newer than its .po" check passes vacuously in
+// the one place it most needs to hold. This compares content.
+//
+// It compares the header too, which is the point: the 0.8.34 drift lived ENTIRELY in the header.
+// Every msgid/msgstr pair was identical in both directions, so a check over pairs alone would
+// have passed on the stale file and found nothing.
+
+/** Every msgid => msgstr pair a .mo actually carries, read straight out of the binary. */
+$readMo = static function (string $f): ?array {
+	$d = (string) file_get_contents($f);
+	if (strlen($d) < 20) { return null; }
+	// The format tags its own byte order with the magic number; both orders occur in the wild.
+	$magic = (int) unpack('V', substr($d, 0, 4))[1];
+	if ($magic === 0x950412de) { $u = 'V'; } elseif ($magic === 0xde120495) { $u = 'N'; } else { return null; }
+	$long = static fn (int $at): int => (int) unpack($u, substr($d, $at, 4))[1];
+	$n = $long(8);
+	$ids = $long(12);
+	$strs = $long(16);
+	$out = [];
+	for ($i = 0; $i < $n; $i++) {
+		$out[substr($d, $long($ids + $i * 8 + 4), $long($ids + $i * 8))]
+			= substr($d, $long($strs + $i * 8 + 4), $long($strs + $i * 8));
+	}
+	return $out;
+};
+
+/** The pairs a .po claims — i.e. exactly what msgfmt would put in the .mo, and nothing else. */
+$readPo = static function (string $f): array {
+	$unescape = static fn (string $s): string
+		=> strtr($s, ['\\n' => "\n", '\\t' => "\t", '\\r' => "\r", '\\"' => '"', '\\\\' => '\\']);
+	$entries = [];
+	$cur = ['id' => null, 'str' => null, 'fuzzy' => false];
+	$field = null;
+	foreach (file($f, FILE_IGNORE_NEW_LINES) as $line) {
+		$t = trim($line);
+		if ($t === '') {
+			if ($cur['id'] !== null) { $entries[] = $cur; }
+			$cur = ['id' => null, 'str' => null, 'fuzzy' => false];
+			$field = null;
+			continue;
+		}
+		// Obsolete entries are commented out with #~ and msgfmt drops them, so they are not
+		// part of the claim. This must be tested before the general comment case.
+		if (str_starts_with($t, '#~')) { $field = null; continue; }
+		if (str_starts_with($t, '#')) {
+			if (str_contains($t, 'fuzzy')) { $cur['fuzzy'] = true; }
+			continue;
+		}
+		if (preg_match('/^msgid\s+"(.*)"$/', $t, $m)) { $cur['id'] = $unescape($m[1]); $field = 'id'; continue; }
+		if (preg_match('/^msgstr\s+"(.*)"$/', $t, $m)) { $cur['str'] = $unescape($m[1]); $field = 'str'; continue; }
+		// A long message is split across continuation lines; they belong to whichever of the
+		// two fields opened last.
+		if ($field !== null && preg_match('/^"(.*)"$/', $t, $m)) { $cur[$field] .= $unescape($m[1]); }
+	}
+	if ($cur['id'] !== null) { $entries[] = $cur; }
+	$out = [];
+	foreach ($entries as $e) {
+		// msgfmt omits fuzzy and untranslated entries, so neither belongs in the expectation.
+		// The header (msgid "") is not untranslated — its msgstr IS the header block.
+		if ($e['fuzzy'] || (string) $e['str'] === '') { continue; }
+		$out[(string) $e['id']] = (string) $e['str'];
+	}
+	return $out;
+};
+
+// msgfmt canonicalises the charset spelling on its way into the binary (utf-8 becomes UTF-8),
+// so comparing the header verbatim would fail on a catalogue that is perfectly fresh. Fold that
+// one value and nothing else: the rest of the header is compared exactly.
+$foldCharset = static fn (string $s): string => (string) preg_replace_callback(
+	'/charset=([\w-]+)/i',
+	static fn (array $m): string => 'charset='.strtoupper($m[1]),
+	$s
+);
+
+$catalogueProblems = [];
+$catalogues = 0;
+foreach (glob('luna/luna.domains/*/locale/*/LC_MESSAGES/*.po') as $po) {
+	$label = implode('/', array_slice(explode('/', $po), -3));
+	$mo = substr($po, 0, -3).'.mo';
+	if (!is_file($mo)) { $catalogueProblems[] = "{$label}: no compiled .mo beside it"; continue; }
+	$have = $readMo($mo);
+	if ($have === null) { $catalogueProblems[] = "{$label}: the .mo is not a gettext catalogue"; continue; }
+	$want = $readPo($po);
+	$catalogues++;
+	if (isset($want[''])) { $want[''] = $foldCharset($want['']); }
+	if (isset($have[''])) { $have[''] = $foldCharset($have['']); }
+	$name = static fn (string $id): string => $id === '' ? 'the header' : sprintf('"%s"', $id);
+	foreach ($want as $id => $str) {
+		if (!array_key_exists($id, $have)) {
+			$catalogueProblems[] = sprintf('%s: .mo is missing %s', $label, $name($id));
+		} elseif ($have[$id] !== $str) {
+			$catalogueProblems[] = sprintf('%s: .mo disagrees with the .po on %s', $label, $name($id));
+		}
+	}
+	foreach ($have as $id => $str) {
+		if (!array_key_exists($id, $want)) {
+			$catalogueProblems[] = sprintf('%s: .mo still carries %s, dropped from the .po', $label, $name($id));
+		}
+	}
+}
+// A rule that finds nothing passes for the wrong reason: moving the catalogues would leave this
+// check satisfied over an empty set, which is the state it exists to make impossible.
+if ($catalogues === 0) {
+	$catalogueProblems[] = 'no .po/.mo pair found under luna/luna.domains/*/locale/ — has the layout moved?';
+}
+foreach (array_slice($catalogueProblems, 0, 12) as $p) { note($p); }
+if (count($catalogueProblems) > 12) {
+	note(sprintf('… and %d more — recompile with msgfmt', count($catalogueProblems) - 12));
+}
+ok($catalogueProblems === [], sprintf('all %d compiled catalogues carry exactly their source', $catalogues));
+
 echo "--- house rule 8: prose cites symbols, never line numbers ---\n";
 // Line numbers in prose rot silently: 19 of the 20 that used to be in docs/ pointed at the
 // wrong construct, one at the wrong file entirely.

@@ -35,9 +35,6 @@ msgstr "Home"
 msgid "code"
 msgstr "code"
 
-msgid "rootMod"
-msgstr "Root module"
-
 msgid "Page loaded in"
 msgstr "Page loaded in"
 
@@ -80,20 +77,20 @@ msgstr "Elements per page: "
 msgid "Page: "
 msgstr "Page: "
 
-msgid "Field 'identifier' cannot be empty."
-msgstr "Field 'identifier' cannot be empty."
+msgid "Field “identifier” cannot be empty."
+msgstr "Field “identifier” cannot be empty."
 
-msgid "Field 'password' cannot be empty."
-msgstr "Field 'password' cannot be empty."
+msgid "Field “password” cannot be empty."
+msgstr "Field “password” cannot be empty."
 
 msgid "Unknown user %1$s."
 msgstr "Unknown user %1$s."
 
-msgid "Wrong password for user '%1$s'."
-msgstr "Wrong password for user '%1$s'."
+msgid "Wrong password for user “%1$s”."
+msgstr "Wrong password for user “%1$s”."
 
-msgid "User '%1$s' is deactivated."
-msgstr "User '%1$s' is deactivated."
+msgid "User “%1$s” is deactivated."
+msgstr "User “%1$s” is deactivated."
 
 msgid "You are now disconnected."
 msgstr "You are now disconnected."
@@ -251,6 +248,9 @@ msgstr "Level"
 msgid "level"
 msgstr "level"
 
+msgid "levels"
+msgstr "levels"
+
 msgid "Levels"
 msgstr "Levels"
 
@@ -275,14 +275,14 @@ msgstr "Edition level"
 msgid "Page access level"
 msgstr "Page access level"
 
-msgid "Field '%1$s' cannot be empty."
-msgstr "Field '%1$s' cannot be empty."
+msgid "Field “%1$s” cannot be empty."
+msgstr "Field “%1$s” cannot be empty."
 
 msgid "Unknown parent page."
 msgstr "Unknown parent page."
 
-msgid "The identifier '%1$s' is already taken."
-msgstr "The identifier '%1$s' is already taken."
+msgid "The identifier “%1$s” is already taken."
+msgstr "The identifier “%1$s” is already taken."
 
 msgid "It must be unique."
 msgstr "It must be unique."
@@ -377,8 +377,8 @@ msgstr "Are you sure you want to delete this page?"
 msgid "Are you sure you want to delete this module?"
 msgstr "Are you sure you want to delete this module?"
 
-msgid "The module '%1$s' has been created."
-msgstr "The module '%1$s' has been created."
+msgid "The module “%1$s” has been created."
+msgstr "The module “%1$s” has been created."
 
 msgid "Unknown module."
 msgstr "Unknown module."
@@ -386,14 +386,14 @@ msgstr "Unknown module."
 msgid "Unknown module #%1$s."
 msgstr "Unknown module #%1$s."
 
-msgid "The module '%1$s' is locked."
-msgstr "The module '%1$s' is locked."
+msgid "The module “%1$s” is locked."
+msgstr "The module “%1$s” is locked."
 
-msgid "The module '%1$s' has been modified."
-msgstr "The module '%1$s' has been modified."
+msgid "The module “%1$s” has been modified."
+msgstr "The module “%1$s” has been modified."
 
-msgid "The module '%1$s' has been deleted."
-msgstr "The module '%1$s' has been deleted."
+msgid "The module “%1$s” has been deleted."
+msgstr "The module “%1$s” has been deleted."
 
 msgid "List of the modules"
 msgstr "List of the modules"
@@ -443,14 +443,14 @@ msgstr "Texts edition"
 msgid "regis_time"
 msgstr "Registration"
 
-msgid "You cannot modify the item labeled '%1$s'."
-msgstr "You cannot modify the item labeled '%1$s'."
+msgid "You cannot modify the item labeled “%1$s”."
+msgstr "You cannot modify the item labeled “%1$s”."
 
-msgid "You cannot modify the literal identifier of the item labeled '%1$s'."
-msgstr "You cannot modify the literal identifier of the item labeled '%1$s'."
+msgid "You cannot modify the literal identifier of the item labeled “%1$s”."
+msgstr "You cannot modify the literal identifier of the item labeled “%1$s”."
 
-msgid "You cannot delete the item labeled '%1$s'."
-msgstr "You cannot delete the item labeled '%1$s'."
+msgid "You cannot delete the item labeled “%1$s”."
+msgstr "You cannot delete the item labeled “%1$s”."
 
 msgid "last_time"
 msgstr "Last visit"
@@ -506,14 +506,14 @@ msgstr "password"
 msgid "startdate"
 msgstr "Start date"
 
-msgid "User '%1$s' has been created."
-msgstr "User '%1$s' has been created."
+msgid "User “%1$s” has been created."
+msgstr "User “%1$s” has been created."
 
-msgid "User '%1$s' has been modified."
-msgstr "User '%1$s' has been modified."
+msgid "User “%1$s” has been modified."
+msgstr "User “%1$s” has been modified."
 
-msgid "User '%1$s' has been deleted."
-msgstr "User '%1$s' has been deleted."
+msgid "User “%1$s” has been deleted."
+msgstr "User “%1$s” has been deleted."
 
 msgid "The user has been modified."
 msgstr "The user has been modified."
@@ -605,8 +605,8 @@ msgstr "Are you sure you want to delete this level?"
 msgid "Modify the level"
 msgstr "Modify the level"
 
-msgid "The modification of the item '%1$s' has failed."
-msgstr "The modification of the item '%1$s' has failed."
+msgid "The modification of the item “%1$s” has failed."
+msgstr "The modification of the item “%1$s” has failed."
 
 msgid "Level to modify"
 msgstr "Level to modify"
@@ -617,11 +617,11 @@ msgstr "List of the levels"
 msgid "You are now connected as %1$s."
 msgstr "You are now connected as %1$s."
 
-msgid "Group '%1$s' has been added."
-msgstr "Group '%1$s' has been added."
+msgid "Group “%1$s” has been added."
+msgstr "Group “%1$s” has been added."
 
-msgid "Level '%1$s' has been added."
-msgstr "Level '%1$s' has been added."
+msgid "Level “%1$s” has been added."
+msgstr "Level “%1$s” has been added."
 
 msgid "Pages on this level"
 msgstr "Pages on this level"
@@ -632,20 +632,20 @@ msgstr "Log viewer"
 msgid "List of the log entries"
 msgstr "List of the log entries"
 
-msgid "The page '%1$s' has been added."
-msgstr "The page '%1$s' has been added."
+msgid "The page “%1$s” has been added."
+msgstr "The page “%1$s” has been added."
 
-msgid "The page '%1$s' is locked."
-msgstr "The page '%1$s' is locked."
+msgid "The page “%1$s” is locked."
+msgstr "The page “%1$s” is locked."
 
-msgid "The page '%1$s' has been modified."
-msgstr "The page '%1$s' has been modified."
+msgid "The page “%1$s” has been modified."
+msgstr "The page “%1$s” has been modified."
 
-msgid "The page '%1$s' has been deleted."
-msgstr "The page '%1$s' has been deleted."
+msgid "The page “%1$s” has been deleted."
+msgstr "The page “%1$s” has been deleted."
 
-msgid "The email address '%1$s' is invalid."
-msgstr "The email address '%1$s' is invalid."
+msgid "The email address “%1$s” is invalid."
+msgstr "The email address “%1$s” is invalid."
 
 msgid "User #%1$s does not exist."
 msgstr "User #%1$s does not exist."
@@ -653,20 +653,20 @@ msgstr "User #%1$s does not exist."
 msgid "Unknown group #%1$s."
 msgstr "Unknown group #%1$s."
 
-msgid "The group '%1$s' has been modified."
-msgstr "The group '%1$s' has been modified."
+msgid "The group “%1$s” has been modified."
+msgstr "The group “%1$s” has been modified."
 
-msgid "The group '%1$s' has been deleted."
-msgstr "The group '%1$s' has been deleted."
+msgid "The group “%1$s” has been deleted."
+msgstr "The group “%1$s” has been deleted."
 
 msgid "Unknown level #%1$s."
 msgstr "Unknown level #%1$s."
 
-msgid "The level '%1$s' has been modified."
-msgstr "The level '%1$s' has been modified."
+msgid "The level “%1$s” has been modified."
+msgstr "The level “%1$s” has been modified."
 
-msgid "The level '%1$s' has been deleted."
-msgstr "The level '%1$s' has been deleted."
+msgid "The level “%1$s” has been deleted."
+msgstr "The level “%1$s” has been deleted."
 
 msgid "Users who belong to this group"
 msgstr "Users who belong to this group"
@@ -680,8 +680,8 @@ msgstr "Choose an action"
 msgid "Delete from the group"
 msgstr "Delete from the group"
 
-msgid "The following users have been deleted from the group '%1$s': "
-msgstr "The following users have been deleted from the group '%1$s': "
+msgid "The following users have been deleted from the group “%1$s”: "
+msgstr "The following users have been deleted from the group “%1$s”: "
 
 msgid "admin_levels"
 msgstr "Levels administration"
@@ -767,14 +767,14 @@ msgstr "Filter"
 msgid "A text (#%1$s) with the same literal identifier (%2$s) already exists in this language (%3$s)."
 msgstr "A text (#%1$s) with the same literal identifier (%2$s) already exists in this language (%3$s)."
 
-msgid "The text '%1$s' has been created."
-msgstr "The text '%1$s' has been created."
+msgid "The text “%1$s” has been created."
+msgstr "The text “%1$s” has been created."
 
-msgid "The text '%1$s' has been modified."
-msgstr "The text '%1$s' has been modified."
+msgid "The text “%1$s” has been modified."
+msgstr "The text “%1$s” has been modified."
 
-msgid "The text '%1$s' has been deleted."
-msgstr "The text '%1$s' has been deleted."
+msgid "The text “%1$s” has been deleted."
+msgstr "The text “%1$s” has been deleted."
 
 msgid "Previous page"
 msgstr "Previous page"
