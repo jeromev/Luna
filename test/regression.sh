@@ -48,6 +48,34 @@ for p in / /node/9 /login; do
 done
 body / | grep -q "Luna" && pass "home shows the site footer" || fail "home missing expected content"
 
+echo "== hostile request keys: a parameter NAME cannot blank the page =="
+# lunaModel::load_request() walks $_REQUEST and hands every parameter NAME to
+# lunaTools::prepare_var_key(), whose result is interpolated into rdf:nodeID="..." when the render
+# model is serialised for the transform. Before 0.9.8-alpha '"', '<' and '&' passed through
+# unaltered: a double quote closed the attribute, '<' and '&' were illegal outright, the document
+# stopped being well-formed, the transform yielded nothing, and the response was 200 with a
+# zero-byte body. Every XSLT-rendered page, logged in or not, no credentials, one character.
+#
+# Two things make this suite the right place for it and status codes the wrong check. The failure
+# IS a 200 — so a status-only assertion passes vacuously, exactly as the /node case above warns.
+# And the access log records the header size (200 1110) for a zero-byte body, so byte-count
+# monitoring reads healthy too. Assert the footer marker instead: it only appears if the transform
+# actually ran, which is the single thing the bug destroys.
+#
+# '>' and "'" are here as the negative half. They never broke — '>' is legal unescaped in an XML
+# attribute value, and squash_to_key() already maps "'" to '-'. Keeping them pins the boundary, so
+# a later "simplification" of the allowlist that also drops legitimate characters is visible.
+for p in / /login; do
+  for k in 'a%22b' 'a%3Cb' 'a%26b' 'x%22y%22z' 'a%3Eb' 'a%27b'; do
+    c=$(code "$p?$k=1")
+    if [ "$c" = 200 ] && body "$p?$k=1" | grep -q "Luna"; then
+      pass "GET $p?$k=1 -> 200 and the transform ran"
+    else
+      fail "GET $p?$k=1 -> $c and no rendered body (page blanked)"
+    fi
+  done
+done
+
 echo "== source/secret disclosure: sensitive paths denied (case-insensitive) =="
 for p in /.git/HEAD /.GIT/HEAD /Dockerfile /DOCKERFILE /docker-compose.yml /DOCKER-COMPOSE.YML \
          /semantic/ontop/ontop.properties /luna/luna.domains/luna.default/ini/db.ini; do

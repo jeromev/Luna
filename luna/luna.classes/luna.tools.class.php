@@ -176,13 +176,37 @@ class lunaTools {
 	 * render model is serialised for the transform, and lids like 'Are you sure you want to delete
 	 * this level?' would not otherwise be valid there.
 	 *
+	 * That promise is the whole job of this method, and until 0.9.8-alpha it was not kept. Some of
+	 * these keys are not authored: lunaModel::load_request() walks $_REQUEST and hands every
+	 * parameter NAME through here, so the key is attacker-controlled. squash_to_key() maps spaces
+	 * and apostrophes but passes '"', '<' and '&' through untouched, and the key is then
+	 * interpolated into rdf:nodeID="..." — where a double quote closes the attribute and '<' and
+	 * '&' are illegal outright. The document stops being well-formed, the XSLT transform yields
+	 * nothing, and the response is HTTP 200 with a zero-byte body. Every XSLT-rendered page,
+	 * logged in or not, from one character in a parameter name and no credentials.
+	 *
+	 * So the output is now restricted to a set that is safe by construction rather than by
+	 * enumeration. An allowlist and not a blocklist, deliberately: blocking the three characters
+	 * known to break XML today leaves the next serialisation context to be discovered the same
+	 * way. It is applied HERE and not in squash_to_key(), because that helper is shared with
+	 * prepare_lid() — which feeds luna_nodes.lid, and slugs are frozen resource identity. This
+	 * narrows what a render key may contain; it changes nothing a slug may contain.
+	 *
+	 * Legitimate keys already survive the squashing as [A-Za-z0-9_-], so this is a no-op on every
+	 * key the application itself registers — asserted by the render baselines staying
+	 * byte-identical. Hostile keys collide onto '_', which is acceptable: two attacker-chosen
+	 * parameters sharing a render bnode costs nothing, and rejecting the key outright is worse,
+	 * since load_var() returning false propagates through merge_nodes() and drops the whole
+	 * request node set.
+	 *
 	 * @param string|false $str
 	 * @return string|false
 	 */
 	public static function prepare_var_key($str = false): string|false {
 		if (!defined('INPUT_SANITIZED') || INPUT_SANITIZED != true) { self::sanitize_inputs(); }
 		if (empty($str) || !is_string($str)) { return false; }
-		return self::squash_to_key(trim(self::remove_accents($str)));
+		$key = self::squash_to_key(trim(self::remove_accents($str)));
+		return preg_replace('@[^A-Za-z0-9_-]@', '_', $key);
 	}
 	// }}}
 	// {{{ squash_to_key()
