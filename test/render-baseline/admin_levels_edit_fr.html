@@ -47,38 +47,40 @@
       <main id="Content">
         <div id="Content-main">
           <div class="box">
-            <form method="post" id="Addlevel" action="/admin/admin_levels">
+            <form method="post" id="Modifylevel" action="/admin/admin_levels">
               <fieldset>
-                <h2 class="box-handle collapsed">Ajouter un niveau</h2>
-                <div class="box-content off">
+                <h2 class="box-handle expanded">Modifier le niveau <em>Niveau édition</em></h2>
+                <div class="box-content">
                   <div class="fields">
                     <div class="onecol">
-                      <label for="add_level_is_inactive" class=""><input name="add_level_is_inactive" id="add_level_is_inactive" type="checkbox" class="autowidth" value="1" /> Désactiver</label>
+                      <label for="modify_level_is_inactive" class=""><input name="modify_level_is_inactive" id="modify_level_is_inactive" type="checkbox" class="autowidth" value="1" /> Désactiver</label>
                       <br />
                     </div>
                     <div class="col">
-                      <label for="add_level_lid" class="">
+                      <label for="modify_level_lid" class="">
                         <span class="label">identifiant littéral</span>
-                        <input name="add_level_lid" id="add_level_lid" type="text" value="" />
+                        <input name="modify_level_lid" id="modify_level_lid" type="text" value="level_edition" />
                       </label>
                       <br />
-                      <br />
                     </div>
                     <div class="col">
-                      <label for="add_level_groups" class="">
+                      <label for="modify_level_groups" class="">
                         <span class="label">Groupes admis à ce niveau</span>
-                        <select size="4" id="add_level_groups" name="add_level_groups[]" multiple="multiple">
+                        <select size="4" id="modify_level_groups" name="modify_level_groups[]" multiple="multiple">
                           <option label="Administrateurs" value="group_admin" selected="selected">Administrateurs</option>
                           <option label="Passants" value="group_default">Passants</option>
-                          <option label="Éditeurs" value="group_edition">Éditeurs</option>
+                          <option label="Éditeurs" value="group_edition" selected="selected">Éditeurs</option>
                         </select>
                       </label>
                       <br />
                     </div>
                   </div>
                   <div class="submit">
-                    <input type="hidden" name="mode" value="add" />
-                    <input type="submit" class="submit" name="submit" value="Ajouter" />
+                    <input type="hidden" name="mode" value="modify" />
+                    <input type="hidden" name="modify_item_lid" value="level_edition" />
+                    <input type="hidden" name="level_lid" value="level_edition" />
+                    <input type="submit" class="submit" name="submit" value="Modifier" />
+                    <input type="submit" class="submit warning" name="submit" value="Supprimer" data-confirm="Êtes-vous sûr de vouloir supprimer ce niveau?" />
                   </div>
                 </div>
               </fieldset>
@@ -86,8 +88,8 @@
             </form>
           </div>
           <div id="LevelsList" class="box">
-            <h2 class="box-handle expanded">Niveaux</h2>
-            <div class="box-content boxtable">
+            <h2 class="box-handle collapsed">Niveaux</h2>
+            <div class="box-content boxtable off">
               <table class="zebra">
                 <caption class="off">Niveaux</caption>
                 <thead>

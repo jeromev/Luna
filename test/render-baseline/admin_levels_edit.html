@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:luna="https://jeromev.github.io/Luna/ontology#" xmlns:schema="https://schema.org/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:dc="http://purl.org/dc/elements/1.1/" lang="fr-FR" xml:lang="fr-FR">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:luna="https://jeromev.github.io/Luna/ontology#" xmlns:schema="https://schema.org/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:dc="http://purl.org/dc/elements/1.1/" lang="en-US" xml:lang="en-US">
   <head profile="http://ns.inria.fr/grddl/rdfa/">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Administration des niveaux · My lunar Website</title>
-    <meta http-equiv="Content-Language" content="fr-FR" />
+    <title>Levels administration · My lunar Website</title>
+    <meta http-equiv="Content-Language" content="en-US" />
     <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
-    <meta name="DC.Title" content="Administration des niveaux · My lunar Website" lang="fr-FR" xml:lang="fr-FR" />
+    <meta name="DC.Title" content="Levels administration · My lunar Website" lang="en-US" xml:lang="en-US" />
     <meta name="DC.Type" content="text" />
     <meta name="DC.Format" content="text/html" />
     <meta name="DC.Identifier" content="http://localhost:8080" />
-    <meta name="DC.Language" scheme="RFC3066" content="fr-FR" />
+    <meta name="DC.Language" scheme="RFC3066" content="en-US" />
     <meta name="DC.Date" scheme="W3CDTF" content="" />
     <link rel="stylesheet" type="text/css" media="all" href="/css/styles.css" />
     <link rel="alternate" type="application/rdf+xml" href="/admin/admin_levels?output=xml" />
@@ -21,10 +21,10 @@
     "@context": "https://schema.org/",
     "@type": "WebPage",
     "@id": "http://localhost:8080/id/admin_levels",
-    "name": "Administration des niveaux",
+    "name": "Levels administration",
     "https://jeromev.github.io/Luna/ontology#lid": "admin_levels",
     "url": "http://localhost:8080/admin/admin_levels",
-    "inLanguage": "fr-FR",
+    "inLanguage": "en-US",
     "isPartOf": {
         "@id": "http://localhost:8080/id/admin"
     }
@@ -40,45 +40,47 @@
           </a>
         </h1>
         <h1>
-          <a href="/admin/admin_levels">Administration des niveaux</a>
+          <a href="/admin/admin_levels">Levels administration</a>
         </h1>
       </header>
       <hr />
       <main id="Content">
         <div id="Content-main">
           <div class="box">
-            <form method="post" id="Addlevel" action="/admin/admin_levels">
+            <form method="post" id="Modifylevel" action="/admin/admin_levels">
               <fieldset>
-                <h2 class="box-handle collapsed">Ajouter un niveau</h2>
-                <div class="box-content off">
+                <h2 class="box-handle expanded">Modify the level <em>Edition level</em></h2>
+                <div class="box-content">
                   <div class="fields">
                     <div class="onecol">
-                      <label for="add_level_is_inactive" class=""><input name="add_level_is_inactive" id="add_level_is_inactive" type="checkbox" class="autowidth" value="1" /> Désactiver</label>
+                      <label for="modify_level_is_inactive" class=""><input name="modify_level_is_inactive" id="modify_level_is_inactive" type="checkbox" class="autowidth" value="1" /> Deactivate</label>
                       <br />
                     </div>
                     <div class="col">
-                      <label for="add_level_lid" class="">
-                        <span class="label">identifiant littéral</span>
-                        <input name="add_level_lid" id="add_level_lid" type="text" value="" />
+                      <label for="modify_level_lid" class="">
+                        <span class="label">Literal identifier</span>
+                        <input name="modify_level_lid" id="modify_level_lid" type="text" value="level_edition" />
                       </label>
                       <br />
-                      <br />
                     </div>
                     <div class="col">
-                      <label for="add_level_groups" class="">
-                        <span class="label">Groupes admis à ce niveau</span>
-                        <select size="4" id="add_level_groups" name="add_level_groups[]" multiple="multiple">
-                          <option label="Administrateurs" value="group_admin" selected="selected">Administrateurs</option>
-                          <option label="Passants" value="group_default">Passants</option>
-                          <option label="Éditeurs" value="group_edition">Éditeurs</option>
+                      <label for="modify_level_groups" class="">
+                        <span class="label">Groups admitted to this level</span>
+                        <select size="4" id="modify_level_groups" name="modify_level_groups[]" multiple="multiple">
+                          <option label="Administrators" value="group_admin" selected="selected">Administrators</option>
+                          <option label="Anonymous" value="group_default">Anonymous</option>
+                          <option label="Editors" value="group_edition" selected="selected">Editors</option>
                         </select>
                       </label>
                       <br />
                     </div>
                   </div>
                   <div class="submit">
-                    <input type="hidden" name="mode" value="add" />
-                    <input type="submit" class="submit" name="submit" value="Ajouter" />
+                    <input type="hidden" name="mode" value="modify" />
+                    <input type="hidden" name="modify_item_lid" value="level_edition" />
+                    <input type="hidden" name="level_lid" value="level_edition" />
+                    <input type="submit" class="submit" name="submit" value="Modify" />
+                    <input type="submit" class="submit warning" name="submit" value="Delete" data-confirm="Are you sure you want to delete this level?" />
                   </div>
                 </div>
               </fieldset>
@@ -86,34 +88,34 @@
             </form>
           </div>
           <div id="LevelsList" class="box">
-            <h2 class="box-handle expanded">Niveaux</h2>
-            <div class="box-content boxtable">
+            <h2 class="box-handle collapsed">Levels</h2>
+            <div class="box-content boxtable off">
               <table class="zebra">
-                <caption class="off">Niveaux</caption>
+                <caption class="off">Levels</caption>
                 <thead>
                   <tr>
-                    <th>nom</th>
-                    <th>Groupes admis à ce niveau</th>
+                    <th>name</th>
+                    <th>Groups admitted to this level</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr class="active" data-href="/admin/admin_levels?level_lid=level_admin">
                     <td class="nowrap">
-                      <a href="/admin/admin_levels?level_lid=level_admin">Niveau administration</a>
+                      <a href="/admin/admin_levels?level_lid=level_admin">Administration level</a>
                     </td>
-                    <td>Administrateurs</td>
-                  </tr>
-                  <tr class="active" data-href="/admin/admin_levels?level_lid=level_public">
-                    <td class="nowrap">
-                      <a href="/admin/admin_levels?level_lid=level_public">Niveau public</a>
-                    </td>
-                    <td>Passants, Administrateurs, Éditeurs</td>
+                    <td>Administrators</td>
                   </tr>
                   <tr class="active" data-href="/admin/admin_levels?level_lid=level_edition">
                     <td class="nowrap">
-                      <a href="/admin/admin_levels?level_lid=level_edition">Niveau édition</a>
+                      <a href="/admin/admin_levels?level_lid=level_edition">Edition level</a>
                     </td>
-                    <td>Éditeurs, Administrateurs</td>
+                    <td>Editors, Administrators</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_levels?level_lid=level_public">
+                    <td class="nowrap">
+                      <a href="/admin/admin_levels?level_lid=level_public">Public level</a>
+                    </td>
+                    <td>Anonymous, Administrators, Editors</td>
                   </tr>
                 </tbody>
               </table>
@@ -122,7 +124,7 @@
         </div>
         <div id="Bottom" class="box">
           <div class="box-content">
-            <p>Vous êtes ici: <a href="/admin/admin_levels">/admin/admin_levels</a><br />Vous êtes connecté(e) en tant que <strong>Admin Luna</strong> [<form method="post" class="logout-form" action="/logout"><input type="hidden" name="csrf_token" value="CSRF" /><button type="submit" class="linkbutton">Déconnexion</button></form>] <br />Site propulsé par <a href="https://github.com/jeromev/Luna">Luna</a> VER</p>
+            <p>You are here: <a href="/admin/admin_levels">/admin/admin_levels</a><br />You are logged in as <strong>Admin Luna</strong> [<form method="post" class="logout-form" action="/logout"><input type="hidden" name="csrf_token" value="CSRF" /><button type="submit" class="linkbutton">Logout</button></form>] <br />Site powered by <a href="https://github.com/jeromev/Luna">Luna</a> VER</p>
           </div>
         </div>
       </main>
@@ -130,45 +132,45 @@
       <nav id="Nav">
         <h1 class="off">Navigation</h1>
         <div id="SiteMap">
-          <h2 class="box-handle collapsed">Structure du site</h2>
+          <h2 class="box-handle collapsed">Site map</h2>
           <div class="box-content">
             <ul class="tv">
               <li>
-                <a href="/">Accueil</a>
+                <a href="/">Home</a>
                 <ul class="tv">
                   <li>
                     <a href="/admin">Administration</a>
                     <ul class="tv">
                       <li>
-                        <a href="/admin/admin_groups">Administration des groupes</a>
-                      </li>
-                      <li>
-                        <a href="/admin/admin_mods">Administration des modules</a>
-                      </li>
-                      <li>
-                        <a href="/admin/admin_levels">Administration des niveaux</a>
-                      </li>
-                      <li>
-                        <a href="/admin/admin_pages">Administration des pages</a>
-                      </li>
-                      <li>
-                        <a href="/admin/admin_users">Administration des usagers</a>
+                        <a href="/admin/admin_groups">Groups administration</a>
                       </li>
                       <li>
                         <a href="/admin/journal">Journal</a>
                       </li>
-                    </ul>
-                  </li>
-                  <li>
-                    <a href="/logout">Déconnexion</a>
-                  </li>
-                  <li>
-                    <a href="/edition">Édition</a>
-                    <ul class="tv">
                       <li>
-                        <a href="/edition/edit_texts">Édition des textes</a>
+                        <a href="/admin/admin_levels">Levels administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_mods">Modules administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_pages">Pages administration</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_users">Users administration</a>
                       </li>
                     </ul>
+                  </li>
+                  <li>
+                    <a href="/edition">Edition</a>
+                    <ul class="tv">
+                      <li>
+                        <a href="/edition/edit_texts">Texts edition</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="/logout">Logout</a>
                   </li>
                 </ul>
               </li>
@@ -176,16 +178,16 @@
           </div>
         </div>
         <div id="Options">
-          <h2 class="off">Langues</h2>
+          <h2 class="off">Languages</h2>
           <ul class="langs">
             <li>
-              <a href="/admin/admin_levels/?lang=en-US" title="English">English</a>
+              <a class="on" href="/admin/admin_levels/?lang=en-US" title="English">English</a>
             </li>
             <li>
-              <a class="on" href="/admin/admin_levels/?lang=fr-FR" title="Français">Français</a>
+              <a href="/admin/admin_levels/?lang=fr-FR" title="Français">Français</a>
             </li>
           </ul>
-          <h2 class="off">Formats de sortie</h2>
+          <h2 class="off">Output formats</h2>
           <ul class="outputs">
             <li>
               <a class="on" href="/admin/admin_levels/?output=html" title="html">html</a>

@@ -97,6 +97,10 @@ class mod_admin_levels {
 		if (!luna::model()->merge_index(luna::model()->load_nodes('group'))) { throw new lunaException(_('Error: cannot load levels.'), PEAR_LOG_CRIT); }
 		// check if identifier is already used
 		if (!$is_not_taken = luna::model()->check_if_lid_is_taken($_POST['add_level_lid'])) { return false; }
+		// the groups multi-select posts lids; resolve against the loaded index, then re-assert
+		// emptiness so a list that resolved to nothing is refused rather than saved as "no groups"
+		$_POST['add_level_groups'] = luna::model()->nids_from_lids($_POST['add_level_groups'] ?? [], 'group');
+		if (!lunaTools::check_emptyness('add_level_groups', 'Groups admitted to this level')) { return false; }
 		// any level must be accessible to administrators
 		if (!$group_admin_nid = luna::model()->get_nid_from_lid('group_admin')) { throw new lunaException(_('Error: cannot load “group_admin”'), PEAR_LOG_CRIT); }
 		$_POST['add_level_groups'][$group_admin_nid] = $group_admin_nid;
@@ -120,7 +124,7 @@ class mod_admin_levels {
 			$message = sprintf(_("Level “%1\$s” has been added."), $_POST['add_level_lid']);
 			luna::$messages['okay'][] = $message;
 			lunaLog::log($message, PEAR_LOG_INFO);
-			lunaTools::unrequest(['level_id', 'level_nid', 'add_item_nid']);
+			lunaTools::unrequest(['level_id', 'level_lid', 'add_item_lid']);
 		} else {
 			$message = sprintf(_("The modification of the item “%1\$s” has failed."), _($_POST['add_level_lid']));
 			luna::$messages['warning'][] = $message;
@@ -139,7 +143,7 @@ class mod_admin_levels {
 		// clean things
 		$_POST['modify_level_lid'] = lunaTools::prepare_lid($_POST['modify_level_lid']);
 		// check emptyness
-		if (!lunaTools::check_emptyness('modify_item_nid', 'Level to modify')) { $inerror++; }
+		if (!lunaTools::check_emptyness('modify_item_lid', 'Level to modify')) { $inerror++; }
 		if (!lunaTools::check_emptyness('modify_level_lid', 'Literal identifier')) { $inerror++; }
 		if (!lunaTools::check_emptyness('modify_level_groups', 'Groups admitted to this level')) { $inerror++; }
 		if ($inerror) { return false; }
@@ -147,13 +151,18 @@ class mod_admin_levels {
 		if (!luna::model()->merge_index(luna::model()->load_nodes('level', 'group'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
 		if (!luna::model()->merge_index(luna::model()->load_nodes('group'))) { throw new lunaException(_('Error: cannot load levels.'), PEAR_LOG_CRIT); }
 		$_POST['modify_level_is_inactive'] = isset($_POST['modify_level_is_inactive']) ? ($_POST['modify_level_is_inactive'] == 1 ? 1 : 0) : 0;
+		// the form addresses the level by lid; resolve it to the nid the guards below work in
+		$modify_item_nid = intval(luna::model()->check_requested_node_by_lid('modify_item_lid', 'level'));
+		// the groups multi-select posts lids too
+		$_POST['modify_level_groups'] = luna::model()->nids_from_lids($_POST['modify_level_groups'] ?? [], 'group');
+		if (!lunaTools::check_emptyness('modify_level_groups', 'Groups admitted to this level')) { return false; }
 		// check if node exists
-		if (!$item_node = luna::model()->check_if_node_exists($_POST['modify_item_nid'], 'level')) { return false; }
-		if (!lunaAuthz::user_can_access_level(luna::$session->user, intval($_POST['modify_item_nid']))) { luna::$messages['warning'][] = _('Access denied: that access level is above your own.'); lunaLog::log('admin_levels: attempt to use an inaccessible access level', PEAR_LOG_WARNING); return false; }
+		if (!$item_node = luna::model()->check_if_node_exists($modify_item_nid, 'level')) { return false; }
+		if (!lunaAuthz::user_can_access_level(luna::$session->user, $modify_item_nid)) { luna::$messages['warning'][] = _('Access denied: that access level is above your own.'); lunaLog::log('admin_levels: attempt to use an inaccessible access level', PEAR_LOG_WARNING); return false; }
 		// preserve sensitive data
 		if (!$item_lid = luna::model()->check_if_lid_is_protected($item_node, ['level_admin', 'level_public'])) { return false; }
 		// check if identifier is already used
-		if (!$is_not_taken = luna::model()->check_if_lid_is_taken($_POST['modify_level_lid'], $_POST['modify_item_nid'])) { return false; }
+		if (!$is_not_taken = luna::model()->check_if_lid_is_taken($_POST['modify_level_lid'], $modify_item_nid)) { return false; }
 		// any level must be accessible to administrators
 		if (!$group_admin_nid = luna::model()->get_nid_from_lid('group_admin')) { throw new lunaException(_('Error: cannot load “group_admin”'), PEAR_LOG_CRIT); }
 		$_POST['modify_level_groups'][$group_admin_nid] = $group_admin_nid;
@@ -166,12 +175,12 @@ class mod_admin_levels {
 			}
 		}
 		if ($inerror) { return false; }
-		if ($node = luna::model()->update($_POST['modify_item_nid'], $_POST['modify_level_lid'], ($_POST['modify_level_is_inactive'] ? 0 : 1))) {
+		if ($node = luna::model()->update($modify_item_nid, $_POST['modify_level_lid'], ($_POST['modify_level_is_inactive'] ? 0 : 1))) {
 			luna::model()->unlink($node, 'group');
 			luna::model()->link($node, $_POST['modify_level_groups']);
 			lunaTools::purge_cache();
 			luna::model()->purge_index();
-			lunaTools::unrequest(['level_nid', 'modify_item_nid']);
+			lunaTools::unrequest(['level_lid', 'modify_item_lid']);
 			$message = sprintf(_("The level “%1\$s” has been modified."), _($_POST['modify_level_lid']));
 			luna::$messages['okay'][] = $message;
 			lunaLog::log($message, PEAR_LOG_INFO);
@@ -191,18 +200,19 @@ class mod_admin_levels {
 		$inerror = 0;
 		if (!luna::model()->merge_index(luna::model()->load_nodes('level', 'group'))) { throw new lunaException(_('Error: cannot load data'), PEAR_LOG_CRIT); }
 		// check emptyness
-		if (!lunaTools::check_emptyness('modify_item_nid', 'Level to modify')) { $inerror++; }
+		if (!lunaTools::check_emptyness('modify_item_lid', 'Level to modify')) { $inerror++; }
 		if ($inerror) { return false; }
 		// check if node exists
-		if (!$item_node = luna::model()->check_if_node_exists($_POST['modify_item_nid'], 'level')) { return false; }
-		if (!lunaAuthz::user_can_access_level(luna::$session->user, intval($_POST['modify_item_nid']))) { luna::$messages['warning'][] = _('Access denied: that access level is above your own.'); lunaLog::log('admin_levels: attempt to use an inaccessible access level', PEAR_LOG_WARNING); return false; }
+		$modify_item_nid = intval(luna::model()->check_requested_node_by_lid('modify_item_lid', 'level'));
+		if (!$item_node = luna::model()->check_if_node_exists($modify_item_nid, 'level')) { return false; }
+		if (!lunaAuthz::user_can_access_level(luna::$session->user, $modify_item_nid)) { luna::$messages['warning'][] = _('Access denied: that access level is above your own.'); lunaLog::log('admin_levels: attempt to use an inaccessible access level', PEAR_LOG_WARNING); return false; }
 		// preserve sensitive data
 		if (!$item_lid = luna::model()->check_if_lid_is_protected($item_node, ['level_admin', 'level_public'])) { return false; }
 		$item_nid = luna::model()->get_nid($item_node);
 		if (luna::model()->delete($item_nid)) {
 			lunaTools::purge_cache();
 			luna::model()->purge_index();
-			lunaTools::unrequest(['level_nid', 'modify_item_nid']);
+			lunaTools::unrequest(['level_lid', 'modify_item_lid']);
 			$message = sprintf(_("The level “%1\$s” has been deleted."), _($item_lid));
 			luna::$messages['okay'][] = $message;
 			lunaLog::log($message, PEAR_LOG_INFO);
@@ -221,7 +231,7 @@ class mod_admin_levels {
 	public function load(): bool {
 		$inerror = 0;
 		luna::model()->merge_index(luna::model()->load_nodes('level', 'group'));
-		$nid = luna::model()->check_requested_node('level_nid', 'level');
+		$nid = luna::model()->check_requested_node_by_lid('level_lid', 'level');
 		return true;
 	}
 	// }}}

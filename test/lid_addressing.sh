@@ -35,8 +35,8 @@
 # escalation guard still FIRES (by its message) rather than the attempt merely failing to
 # resolve — see the comment there.
 #
-# SCREENS COVERED SO FAR: admin_groups, admin_users. The rest still address by nid and are
-# converted one release at a time; this file grows with them, and the nid-free sweeps (L1b, L6b)
+# SCREENS COVERED SO FAR: admin_groups, admin_users, admin_levels. The rest still address by
+# nid and are converted one release at a time; this file grows with them, and the nid-free sweeps (L1b, L6b)
 # are deliberately scoped to the converted screen rather than to the whole admin, so they cannot
 # pass vacuously while an unconverted screen still emits integers.
 #
@@ -188,6 +188,54 @@ curl -s -b "$AJ" --data-urlencode mode=modify --data-urlencode submit=Modify \
   && pass "L9b the surname is back to what it was (suite is self-cleaning)" \
   || fail "L9b the surname was left as the probe value"
 
-rm -f "$AJ" "$AP" "$LP" "$GP" "$GA" "$GP2" "$GP3" "$UP" "$UE" "$UE2"
+echo "== admin_levels =="
+VP=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_levels?lang=en-US" -o "$VP"
+
+grep -q 'admin_levels?level_lid=level_admin' "$VP" \
+  && pass "L10 the levels list links by lid" \
+  || fail "L10 the levels list does not link by lid"
+grep -qE 'admin_levels\?level_nid=' "$VP" \
+  && fail "L10b a ?level_nid= link survives on the levels list" \
+  || pass "L10b no ?level_nid= link survives on the levels list"
+grep -q '<option label="Administrators" value="group_admin"' "$VP" \
+  && pass "L11 the groups picker is keyed by lid" \
+  || fail "L11 the groups picker is not keyed by lid"
+
+VE=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_levels?level_lid=level_edition&lang=en-US" -o "$VE"
+grep -q 'name="modify_item_lid" value="level_edition"' "$VE" \
+  && pass "L12 ?level_lid= reaches the modify form, addressed by that lid" \
+  || fail "L12 ?level_lid= did not reach the modify form"
+
+# L13: a lid-addressed level save round-trips. level_edition is the safe target — level_admin and
+# level_public are protected lids and check_if_lid_is_protected() refuses them by design.
+GROUPS_BEFORE=$(sql "SELECT n2.lid FROM luna_nodes_map m
+  JOIN luna_nodes n1 ON m.nid1 = n1.nid JOIN luna_nodes n2 ON m.nid2 = n2.nid
+  WHERE n1.lid = 'level_edition' AND n2.tid = (SELECT id FROM luna_types WHERE lid = 'group') ORDER BY n2.lid;")
+curl -s -b "$AJ" --data-urlencode submit=Modify --data-urlencode mode=modify \
+  --data-urlencode "modify_item_lid=level_edition" --data-urlencode modify_level_lid=level_edition \
+  --data-urlencode "modify_level_groups[]=group_admin" --data-urlencode "modify_level_groups[]=group_edition" \
+  --data-urlencode "modify_level_groups[]=group_default" --data-urlencode "csrf_token=$(tok $VE)" \
+  "$BASE/admin/admin_levels?lang=en-US" -o /dev/null
+sql "SELECT n2.lid FROM luna_nodes_map m
+  JOIN luna_nodes n1 ON m.nid1 = n1.nid JOIN luna_nodes n2 ON m.nid2 = n2.nid
+  WHERE n1.lid = 'level_edition' AND n2.tid = (SELECT id FROM luna_types WHERE lid = 'group');" | grep -q '^group_default$' \
+  && pass "L13 a lid-addressed level save reached the database" \
+  || fail "L13 the level save did NOT reach the database — resolution dropped the group list"
+# put it back through the same path
+VE2=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_levels?level_lid=level_edition&lang=en-US" -o "$VE2"
+RESTORE=""
+for g in $GROUPS_BEFORE; do RESTORE="$RESTORE --data-urlencode modify_level_groups[]=$g"; done
+# shellcheck disable=SC2086
+curl -s -b "$AJ" --data-urlencode submit=Modify --data-urlencode mode=modify \
+  --data-urlencode "modify_item_lid=level_edition" --data-urlencode modify_level_lid=level_edition \
+  $RESTORE --data-urlencode "csrf_token=$(tok $VE2)" "$BASE/admin/admin_levels?lang=en-US" -o /dev/null
+GROUPS_AFTER=$(sql "SELECT n2.lid FROM luna_nodes_map m
+  JOIN luna_nodes n1 ON m.nid1 = n1.nid JOIN luna_nodes n2 ON m.nid2 = n2.nid
+  WHERE n1.lid = 'level_edition' AND n2.tid = (SELECT id FROM luna_types WHERE lid = 'group') ORDER BY n2.lid;")
+[ "$GROUPS_AFTER" = "$GROUPS_BEFORE" ] \
+  && pass "L13b the group set is back to what it was (suite is self-cleaning)" \
+  || fail "L13b the group set was left changed: '$GROUPS_AFTER' (was '$GROUPS_BEFORE')"
+
+rm -f "$AJ" "$AP" "$LP" "$GP" "$GA" "$GP2" "$GP3" "$UP" "$UE" "$UE2" "$VP" "$VE" "$VE2"
 echo
 if [ "$fails" -eq 0 ]; then echo "LID ADDRESSING HOLDS"; exit 0; else echo "$fails CHECK(S) FAILED"; exit 1; fi

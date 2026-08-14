@@ -68,9 +68,9 @@
                       <label for="add_level_groups" class="">
                         <span class="label">Groups admitted to this level</span>
                         <select size="4" id="add_level_groups" name="add_level_groups[]" multiple="multiple">
-                          <option label="Administrators" value="4" selected="selected">Administrators</option>
-                          <option label="Anonymous" value="3">Anonymous</option>
-                          <option label="Editors" value="5">Editors</option>
+                          <option label="Administrators" value="group_admin" selected="selected">Administrators</option>
+                          <option label="Anonymous" value="group_default">Anonymous</option>
+                          <option label="Editors" value="group_edition">Editors</option>
                         </select>
                       </label>
                       <br />
@@ -97,21 +97,21 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr class="active" data-href="/admin/admin_levels?level_nid=7">
+                  <tr class="active" data-href="/admin/admin_levels?level_lid=level_admin">
                     <td class="nowrap">
-                      <a href="/admin/admin_levels?level_nid=7">Administration level</a>
+                      <a href="/admin/admin_levels?level_lid=level_admin">Administration level</a>
                     </td>
                     <td>Administrators</td>
                   </tr>
-                  <tr class="active" data-href="/admin/admin_levels?level_nid=8">
+                  <tr class="active" data-href="/admin/admin_levels?level_lid=level_edition">
                     <td class="nowrap">
-                      <a href="/admin/admin_levels?level_nid=8">Edition level</a>
+                      <a href="/admin/admin_levels?level_lid=level_edition">Edition level</a>
                     </td>
-                    <td>Administrators, Editors</td>
+                    <td>Editors, Administrators</td>
                   </tr>
-                  <tr class="active" data-href="/admin/admin_levels?level_nid=6">
+                  <tr class="active" data-href="/admin/admin_levels?level_lid=level_public">
                     <td class="nowrap">
-                      <a href="/admin/admin_levels?level_nid=6">Public level</a>
+                      <a href="/admin/admin_levels?level_lid=level_public">Public level</a>
                     </td>
                     <td>Anonymous, Administrators, Editors</td>
                   </tr>

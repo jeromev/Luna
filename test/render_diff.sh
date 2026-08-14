@@ -110,6 +110,7 @@ admin_users_edit|admin|/admin/admin_users?user_lid=admin@luna.local&lang=en-US
 admin_groups|admin|/admin/admin_groups?lang=en-US
 admin_groups_edit|admin|/admin/admin_groups?group_lid=group_edition&lang=en-US
 admin_levels|admin|/admin/admin_levels?lang=en-US
+admin_levels_edit|admin|/admin/admin_levels?level_lid=level_edition&lang=en-US
 admin_pages|admin|/admin/admin_pages?lang=en-US
 admin_mods|admin|/admin/admin_mods?lang=en-US
 journal_analyse|admin|/admin/journal?log_id=999&lang=en-US
@@ -122,6 +123,7 @@ admin_users_edit_fr|admin|/admin/admin_users?user_lid=admin@luna.local&lang=fr-F
 admin_groups_fr|admin|/admin/admin_groups?lang=fr-FR
 admin_groups_edit_fr|admin|/admin/admin_groups?group_lid=group_edition&lang=fr-FR
 admin_levels_fr|admin|/admin/admin_levels?lang=fr-FR
+admin_levels_edit_fr|admin|/admin/admin_levels?level_lid=level_edition&lang=fr-FR
 admin_pages_fr|admin|/admin/admin_pages?lang=fr-FR
 admin_mods_fr|admin|/admin/admin_mods?lang=fr-FR
 journal_analyse_fr|admin|/admin/journal?log_id=999&lang=fr-FR
