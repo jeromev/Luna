@@ -117,6 +117,7 @@ admin_mods|admin|/admin/admin_mods?lang=en-US
 admin_mods_edit|admin|/admin/admin_mods?mod_lid=mod_online_users&lang=en-US
 journal_analyse|admin|/admin/journal?log_id=999&lang=en-US
 edit_texts|admin|/edition/edit_texts?lang=en-US
+edit_texts_edit|admin|/edition/edit_texts?text_lid=welcome&lang=en-US
 home_admin|admin|/?lang=en-US
 home_fr|guest|/?lang=fr-FR
 login_fr|guest|/login?lang=fr-FR
@@ -132,6 +133,7 @@ admin_mods_fr|admin|/admin/admin_mods?lang=fr-FR
 admin_mods_edit_fr|admin|/admin/admin_mods?mod_lid=mod_online_users&lang=fr-FR
 journal_analyse_fr|admin|/admin/journal?log_id=999&lang=fr-FR
 edit_texts_fr|admin|/edition/edit_texts?lang=fr-FR
+edit_texts_edit_fr|admin|/edition/edit_texts?text_lid=welcome&lang=fr-FR
 home_admin_fr|admin|/?lang=fr-FR
 admin_fr|admin|/admin?lang=fr-FR
 "

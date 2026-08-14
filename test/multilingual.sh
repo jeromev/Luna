@@ -69,16 +69,16 @@ HOME_NID=$(sql "SELECT nid FROM luna_nodes WHERE lid='root';")
 post edition/edit_texts --data-urlencode submit=Add --data-urlencode mode=add \
   --data-urlencode add_text_lid=ml_probe --data-urlencode add_text_title=Hello \
   --data-urlencode add_text_lang=en-US --data-urlencode add_text_content='English body' \
-  --data-urlencode "add_text_pages[]=$HOME_NID"
+  --data-urlencode "add_text_pages[]=root"
 NID=$(sql "SELECT nid FROM luna_nodes WHERE lid='ml_probe';")
 [ -n "$NID" ] && pass "fixture: text node created" || { fail "could not create the fixture"; exit 1; }
 
 # --- M1/M2: add a French translation; English must survive ---------------------------------------
 post edition/edit_texts --data-urlencode mode=modify --data-urlencode submit=Modify \
-  --data-urlencode "modify_item_nid=$NID" --data-urlencode modify_text_lid=ml_probe \
+  --data-urlencode "modify_item_lid=ml_probe" --data-urlencode modify_text_lid=ml_probe \
   --data-urlencode modify_text_title=Bonjour --data-urlencode modify_text_lang=fr-FR \
   --data-urlencode modify_text_content='Corps francais' \
-  --data-urlencode "modify_text_pages[]=$HOME_NID"
+  --data-urlencode "modify_text_pages[]=root"
 
 [ "$(sql "SELECT COUNT(*) FROM luna_texts WHERE nid=$NID;")" = "2" ] \
   && pass "M1 both translations coexist (2 rows)" \
@@ -93,10 +93,10 @@ post edition/edit_texts --data-urlencode mode=modify --data-urlencode submit=Mod
 
 # --- M3: saving the same language again updates in place -----------------------------------------
 post edition/edit_texts --data-urlencode mode=modify --data-urlencode submit=Modify \
-  --data-urlencode "modify_item_nid=$NID" --data-urlencode modify_text_lid=ml_probe \
+  --data-urlencode "modify_item_lid=ml_probe" --data-urlencode modify_text_lid=ml_probe \
   --data-urlencode modify_text_title=Salut --data-urlencode modify_text_lang=fr-FR \
   --data-urlencode modify_text_content='Corps francais 2' \
-  --data-urlencode "modify_text_pages[]=$HOME_NID"
+  --data-urlencode "modify_text_pages[]=root"
 [ "$(sql "SELECT COUNT(*) FROM luna_texts WHERE nid=$NID;")" = "2" ] \
   && [ "$(sql "SELECT title FROM luna_texts WHERE nid=$NID AND lang='fr';")" = "Salut" ] \
   && pass "M3 re-saving a language updates that row, creating no duplicate" \

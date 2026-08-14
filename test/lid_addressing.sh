@@ -35,10 +35,11 @@
 # escalation guard still FIRES (by its message) rather than the attempt merely failing to
 # resolve — see the comment there.
 #
-# SCREENS COVERED SO FAR: admin_groups, admin_users, admin_levels, admin_mods, admin_pages. Only
-# edit_texts still addresses by nid; this file grows with it. The nid-free sweeps (L1b, L6b, L10b,
-# L14b, L18b) are deliberately scoped to the converted screen rather than to the whole admin, so
-# they cannot pass vacuously while an unconverted screen still emits integers.
+# SCREENS COVERED: all six — admin_groups, admin_users, admin_levels, admin_mods, admin_pages,
+# edit_texts. The nid-free sweeps (L1b, L6b, L10b, L14b, L18b, L23b) are per-screen rather than
+# one sweep over the whole admin, which is deliberate: they were written while screens were still
+# being converted one at a time, and a single global sweep could not have passed until the last
+# one landed, so it would have asserted nothing for five releases.
 #
 #   BASE=http://localhost:8080 test/lid_addressing.sh
 #
@@ -350,6 +351,80 @@ echo "$CYC" | grep -qiE 'hierarchy is incorrect' \
   && pass "L22b the tree is intact after the refused re-parent" \
   || fail "L22b the re-parent went through: edition is now under '$(parent_of edition)'"
 
-rm -f "$AJ" "$AP" "$LP" "$GP" "$GA" "$GP2" "$GP3" "$UP" "$UE" "$UE2" "$VP" "$VE" "$VE2" "$MP" "$ME" "$PP" "$PE" "$PE2"
+echo "== edit_texts =="
+TP=$(mktemp); curl -s -b "$AJ" "$BASE/edition/edit_texts?lang=en-US" -o "$TP"
+
+grep -q 'edit_texts?text_lid=welcome' "$TP" \
+  && pass "L23 the texts list links by lid" \
+  || fail "L23 the texts list does not link by lid"
+grep -qE 'edit_texts\?text_nid=' "$TP" \
+  && fail "L23b a ?text_nid= link survives on the texts list" \
+  || pass "L23b no ?text_nid= link survives on the texts list"
+grep -q '<option label="Home" value="root"' "$TP" \
+  && pass "L24 the pages picker is keyed by lid" \
+  || fail "L24 the pages picker is not keyed by lid"
+
+TE=$(mktemp); curl -s -b "$AJ" "$BASE/edition/edit_texts?text_lid=welcome&lang=en-US" -o "$TE"
+grep -q 'name="modify_item_lid" value="welcome"' "$TE" \
+  && pass "L25 ?text_lid= reaches the modify form, addressed by that lid" \
+  || fail "L25 ?text_lid= did not reach the modify form"
+
+# L26: the text write path. The title is the safe field — the lid is frozen by update()'s
+# immutable-slug rule, and the page links are what the multilingual suite depends on. As with
+# L21, the success message is asserted separately from the state, because a refused save leaves
+# the state exactly as correct as a successful one.
+TITLE_BEFORE=$(sql "SELECT title FROM luna_texts t JOIN luna_nodes n ON t.nid = n.nid WHERE n.lid = 'welcome' AND t.lang = 'en';")
+CONTENT_BEFORE=$(sql "SELECT content FROM luna_texts t JOIN luna_nodes n ON t.nid = n.nid WHERE n.lid = 'welcome' AND t.lang = 'en';")
+TRESP=$(curl -s -b "$AJ" --data-urlencode mode=modify --data-urlencode submit=Modify \
+  --data-urlencode "modify_item_lid=welcome" --data-urlencode modify_text_lid=welcome \
+  --data-urlencode "modify_text_title=LidProbe" --data-urlencode modify_text_lang=en-US \
+  --data-urlencode "modify_text_content=probe body" --data-urlencode "modify_text_pages[]=root" \
+  --data-urlencode "csrf_token=$(tok $TE)" "$BASE/edition/edit_texts?lang=en-US")
+echo "$TRESP" | grep -qiE 'has been modified' \
+  && pass "L26 a lid-addressed text save reports success" \
+  || fail "L26 the text save was refused"
+[ "$(sql "SELECT title FROM luna_texts t JOIN luna_nodes n ON t.nid = n.nid WHERE n.lid = 'welcome' AND t.lang = 'en';")" = "LidProbe" ] \
+  && pass "L26b the save reached the database" \
+  || fail "L26b the save did NOT reach the database"
+[ -n "$(sql "SELECT n2.lid FROM luna_nodes_map m JOIN luna_nodes n1 ON m.nid1 = n1.nid
+  JOIN luna_nodes n2 ON m.nid2 = n2.nid WHERE n1.lid = 'welcome' AND n2.lid = 'root';")" ] \
+  && pass "L26c the pages picker's lid resolved and re-linked" \
+  || fail "L26c the text lost its page link"
+
+# Restore the seeded text exactly. This one matters more than the other restores: the welcome
+# text is rendered by home/home_admin in both languages, so a probe title left behind would move
+# four baselines. Both the title and the content are read from the row BEFORE the probe runs,
+# never re-typed and never re-read afterwards, since by then the probe has overwritten them.
+TE2=$(mktemp); curl -s -b "$AJ" "$BASE/edition/edit_texts?text_lid=welcome&lang=en-US" -o "$TE2"
+curl -s -b "$AJ" --data-urlencode mode=modify --data-urlencode submit=Modify \
+  --data-urlencode "modify_item_lid=welcome" --data-urlencode modify_text_lid=welcome \
+  --data-urlencode "modify_text_title=$TITLE_BEFORE" --data-urlencode modify_text_lang=en-US \
+  --data-urlencode "modify_text_content=$CONTENT_BEFORE" --data-urlencode "modify_text_pages[]=root" \
+  --data-urlencode "csrf_token=$(tok $TE2)" "$BASE/edition/edit_texts?lang=en-US" -o /dev/null
+[ "$(sql "SELECT title FROM luna_texts t JOIN luna_nodes n ON t.nid = n.nid WHERE n.lid = 'welcome' AND t.lang = 'en';")" = "$TITLE_BEFORE" ] \
+  && pass "L26d the welcome text is back to its seeded title (suite is self-cleaning)" \
+  || fail "L26d the welcome text was left as the probe value"
+
+echo "== the whole admin =="
+# The capstone, and it could not have been written until now: one sweep across every admin
+# surface for ANY remaining ?{something}_nid= parameter. While the screens were being converted
+# one at a time this check would have failed on the unconverted ones, which is why the per-screen
+# sweeps above exist and why this one is not a duplicate of them — they hold each screen at the
+# release that converted it, this holds the whole set from here on.
+NIDHITS=0; NIDWHERE=""
+for u in "/admin" "/admin/admin_users" "/admin/admin_groups" "/admin/admin_levels" \
+         "/admin/admin_pages" "/admin/admin_mods" "/edition/edit_texts" "/admin/journal" \
+         "/admin/admin_groups?group_lid=group_admin" "/admin/admin_users?user_lid=$ADMIN_EMAIL" \
+         "/admin/admin_levels?level_lid=level_edition" "/admin/admin_mods?mod_lid=mod_online_users" \
+         "/admin/admin_pages?page_lid=edition" "/edition/edit_texts?text_lid=welcome"; do
+  sep="?"; case "$u" in *\?*) sep="&";; esac
+  n=$(curl -s -b "$AJ" "$BASE$u${sep}lang=en-US" | grep -coE '[a-z_]+_nid=' || true)
+  if [ "$n" -gt 0 ]; then NIDHITS=$((NIDHITS + n)); NIDWHERE="$NIDWHERE $u($n)"; fi
+done
+[ "$NIDHITS" -eq 0 ] \
+  && pass "L27 no admin surface emits a ?*_nid= parameter anywhere" \
+  || fail "L27 $NIDHITS nid parameter(s) still rendered:$NIDWHERE"
+
+rm -f "$AJ" "$AP" "$LP" "$GP" "$GA" "$GP2" "$GP3" "$UP" "$UE" "$UE2" "$VP" "$VE" "$VE2" "$MP" "$ME" "$PP" "$PE" "$PE2" "$TP" "$TE" "$TE2"
 echo
 if [ "$fails" -eq 0 ]; then echo "LID ADDRESSING HOLDS"; exit 0; else echo "$fails CHECK(S) FAILED"; exit 1; fi

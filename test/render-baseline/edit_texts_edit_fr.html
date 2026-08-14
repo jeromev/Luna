@@ -47,46 +47,46 @@
       <main id="Content">
         <div id="Content-main">
           <div class="box">
-            <form method="post" id="Addtext" action="/edition/edit_texts">
+            <form method="post" id="Modifypage" action="/edition/edit_texts">
               <fieldset>
-                <h2 class="box-handle collapsed">Ajouter un texte</h2>
-                <div class="box-content off">
+                <h2 class="box-handle expanded">Modifier le texte <em>welcome</em></h2>
+                <div class="box-content">
+                  <div class="onecol">
+                    <label for="modify_text_is_inactive" class=""><input name="modify_text_is_inactive" id="modify_text_is_inactive" type="checkbox" class="autowidth" value="1" /> Désactiver</label>
+                  </div>
                   <div class="fields">
-                    <div class="onecol">
-                      <label for="add_text_is_inactive" class=""><input name="add_text_is_inactive" id="add_text_is_inactive" type="checkbox" class="autowidth" value="1" /> Désactiver</label>
-                    </div>
                     <div class="col">
-                      <label for="add_text_lid" class="">
+                      <label for="modify_text_lid" class="">
                         <span class="label">identifiant littéral</span>
-                        <input name="add_text_lid" id="add_text_lid" type="text" value="" />
+                        <input name="modify_text_lid" id="modify_text_lid" type="text" value="welcome" />
                       </label>
                     </div>
-                    <div class="col autowidth">
-                      <label for="add_text_lang" class="">
+                    <div class="col">
+                      <label for="modify_text_lang" class="">
                         <span class="label">Langue</span>
-                        <select size="1" id="add_text_lang" name="add_text_lang">
-                          <option label="en-US" value="en-US">English</option>
-                          <option label="fr-FR" value="fr-FR" selected="selected">Français</option>
+                        <select size="1" id="modify_text_lang" name="modify_text_lang">
+                          <option label="en-US" value="en-US" selected="selected">English</option>
+                          <option label="fr-FR" value="fr-FR">Français</option>
                         </select>
                       </label>
                     </div>
                     <div class="onecol">
-                      <label for="add_text_title" class="big">
+                      <label for="modify_text_title" class="big">
                         <span class="label">titre</span>
-                        <input name="add_text_title" id="add_text_title" type="text" value="" />
+                        <input name="modify_text_title" id="modify_text_title" type="text" value="Welcome to Luna" />
                       </label>
                       <br />
-                      <label for="add_text_content" class="big">
+                      <label for="modify_text_content" class="big">
                         <span class="label">contenu</span>
-                        <textarea name="add_text_content" id="add_text_content" rows="80" cols="40" class="markdown"></textarea>
+                        <textarea name="modify_text_content" id="modify_text_content" rows="80" cols="40" class="markdown">**Luna** is a compact, RDF-native CMS. Every page is modelled as RDF triples and rendered TIME</textarea>
                       </label>
                       <p class="hint">Rédigé en Markdown (titres, gras, italique, liens, listes).</p>
                     </div>
                     <div class="col">
-                      <label for="add_text_pages" class="">
+                      <label for="modify_text_pages" class="">
                         <span class="label">Pages utilisant le texte</span>
-                        <select size="13" id="add_text_pages" name="add_text_pages[]" multiple="multiple">
-                          <option label="Accueil" value="root">Accueil</option>
+                        <select size="13" id="modify_text_pages" name="modify_text_pages[]" multiple="multiple">
+                          <option label="Accueil" value="root" selected="selected">Accueil</option>
                           <option label="Administration" value="admin">Administration</option>
                           <option label="Administration des groupes" value="admin_groups">Administration des groupes</option>
                           <option label="Administration des modules" value="admin_mods">Administration des modules</option>
@@ -103,54 +103,16 @@
                     </div>
                   </div>
                   <div class="submit">
-                    <input type="hidden" name="mode" value="add" />
-                    <input type="submit" class="submit" name="submit" value="Ajouter" />
+                    <input type="hidden" name="mode" value="modify" />
+                    <input type="hidden" name="text_lid" value="welcome" />
+                    <input type="hidden" name="modify_item_lid" value="welcome" />
+                    <input type="submit" class="submit" name="submit" value="Modifier" />
+                    <input type="submit" class="submit warning" name="submit" value="Supprimer" data-confirm="Êtes-vous sûr de vouloir supprimer ce texte?" />
                   </div>
                 </div>
               </fieldset>
               <input type="hidden" name="csrf_token" value="CSRF" />
             </form>
-          </div>
-          <div id="TextsList" class="box">
-            <h2 class="box-handle expanded">Textes</h2>
-            <div class="box-content boxtable">
-              <table class="zebra">
-                <caption class="off">Textes</caption>
-                <thead>
-                  <tr>
-                    <td colspan="5">
-                      <div class="pagination"><a class="first" href="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="Première page">⇐</a> <a class="prev" href="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="Page précédente">←</a> Page: <select name="pagination" size="1" class="autowidth" aria-label="Page: " data-navigate="1"><option label="1" value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" selected="selected">1</option></select>/1 <a class="next" href="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="Page suivante">→</a> <a class="last" href="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="Dernière page">⇒</a> Élements par page: <select name="perpage" size="1" class="autowidth" aria-label="Élements par page: " data-navigate="1"><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=10">10</option><option selected="selected" value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20">20</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=30">30</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=40">40</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=50">50</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=60">60</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=70">70</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=80">80</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=90">90</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=100">100</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=150">150</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=200">200</option></select></div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <a href="/edition/edit_texts?order_by=lid&amp;order_dir=ASC&amp;start=0">identifiant littéral</a>
-                    </th>
-                    <th>
-                      <a href="/edition/edit_texts?order_by=title&amp;order_dir=ASC&amp;start=0">titre</a>
-                    </th>
-                    <th>
-                      <a href="/edition/edit_texts?order_by=lang&amp;order_dir=ASC&amp;start=0">langue</a>
-                    </th>
-                    <th>
-                      <a href="/edition/edit_texts?order_by=last_time&amp;order_dir=DESC&amp;start=0">
-                        <strong>modifié</strong>
-                      </a>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr class="active" data-href="/edition/edit_texts?text_lid=welcome">
-                    <td>
-                      <a href="/edition/edit_texts?text_lid=welcome">welcome</a>
-                    </td>
-                    <td>Welcome to Luna</td>
-                    <td>en-US</td>
-                    <td class="nowrap">SEEN</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
           </div>
         </div>
         <div id="Bottom" class="box">
