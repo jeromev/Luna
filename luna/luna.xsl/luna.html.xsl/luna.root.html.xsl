@@ -17,7 +17,18 @@
 	<xsl:include href="./luna.header.html.xsl"/>
 
 	<xsl:template name="page">
-		<xsl:for-each select="/rdf:RDF/schema:Article[schema:isPartOf/@rdf:resource = /rdf:RDF/schema:WebPage[schema:identifier = $masternodenid]/@rdf:about and substring-before(concat(luna:content/@xml:lang,'-'),'-') = substring-before(concat($lang,'-'),'-')]">
+		<!-- No language predicate here, deliberately. The model already chose which translation
+		     this node resolves to — lunaModel::load_texts() (and load_texts_sparql()) score every
+		     row through lunaTools::preferred_content_languages() and keep exactly one text per
+		     node, accepting a translation outside the ladder rather than dropping it, precisely so
+		     a visitor never gets an empty page. This template used to re-decide that downstream by
+		     matching luna:content/@xml:lang against $lang, which discarded the model's deliberate
+		     fallback whenever it wasn't the requested language: with one en text row, /?lang=fr
+		     rendered a <main> holding only breadcrumb and footer while the JSON-LD island carried
+		     the full body. Two mechanisms resolving the same question, the downstream one silently
+		     undoing the upstream one's correct answer. The language actually rendered is still
+		     declared, via the xml:lang attributes below. -->
+		<xsl:for-each select="/rdf:RDF/schema:Article[schema:isPartOf/@rdf:resource = /rdf:RDF/schema:WebPage[schema:identifier = $masternodenid]/@rdf:about]">
 			<div class="box text">
 				<xsl:if test="normalize-space(schema:name) != '' and normalize-space(schema:name) != '0'">
 					<h2>

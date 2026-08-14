@@ -54,8 +54,12 @@
 
 									</xsl:attribute>
 									<xsl:attribute name="class">
+										<!-- ui:priority, not ui:code: the class must be the untranslated
+										     severity token, because css/luna.css matches tr.error and
+										     friends. ui:code is the same severity translated for display
+										     and belongs in the cell below, not in a selector. -->
 										<xsl:text>active </xsl:text>
-										<xsl:value-of select="ui:code"/>
+										<xsl:value-of select="ui:priority"/>
 									</xsl:attribute>
 									<td>
 										<a>

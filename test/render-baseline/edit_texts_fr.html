@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:luna="https://jeromev.github.io/Luna/ontology#" xmlns:schema="https://schema.org/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:dc="http://purl.org/dc/elements/1.1/" lang="fr-FR" xml:lang="fr-FR">
+  <head profile="http://ns.inria.fr/grddl/rdfa/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Édition des textes · My lunar Website</title>
+    <meta http-equiv="Content-Language" content="fr-FR" />
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+    <meta name="DC.Title" content="Édition des textes · My lunar Website" lang="fr-FR" xml:lang="fr-FR" />
+    <meta name="DC.Type" content="text" />
+    <meta name="DC.Format" content="text/html" />
+    <meta name="DC.Identifier" content="http://localhost:8080" />
+    <meta name="DC.Language" scheme="RFC3066" content="fr-FR" />
+    <meta name="DC.Date" scheme="W3CDTF" content="" />
+    <link rel="stylesheet" type="text/css" media="all" href="/css/styles.css" />
+    <link rel="alternate" type="application/rdf+xml" href="/edition/edit_texts?output=xml" />
+    <script type="text/javascript" src="/js/luna.js"></script>
+  <script type="application/ld+json">
+{
+    "@context": "https://schema.org/",
+    "@type": "WebPage",
+    "@id": "http://localhost:8080/id/edit_texts",
+    "name": "Édition des textes",
+    "https://jeromev.github.io/Luna/ontology#lid": "edit_texts",
+    "url": "http://localhost:8080/edition/edit_texts",
+    "inLanguage": "fr-FR",
+    "isPartOf": {
+        "@id": "http://localhost:8080/id/edition"
+    }
+}
+</script>
+</head>
+  <body class="main">
+    <div id="Page" class="edit_texts">
+      <header id="Top">
+        <h1>
+          <a href="/">
+            <span id="SiteTitle">My lunar Website</span>
+          </a>
+        </h1>
+        <h1>
+          <a href="/edition/edit_texts">Édition des textes</a>
+        </h1>
+      </header>
+      <hr />
+      <main id="Content">
+        <div id="Content-main">
+          <div class="box">
+            <form method="post" id="Addtext" action="/edition/edit_texts">
+              <fieldset>
+                <h2 class="box-handle collapsed">Ajouter un texte</h2>
+                <div class="box-content off">
+                  <div class="fields">
+                    <div class="onecol">
+                      <label for="add_text_is_inactive" class=""><input name="add_text_is_inactive" id="add_text_is_inactive" type="checkbox" class="autowidth" value="1" /> Désactiver</label>
+                    </div>
+                    <div class="col">
+                      <label for="add_text_lid" class="">
+                        <span class="label">identifiant littéral</span>
+                        <input name="add_text_lid" id="add_text_lid" type="text" value="" />
+                      </label>
+                    </div>
+                    <div class="col autowidth">
+                      <label for="add_text_lang" class="">
+                        <span class="label">Langue</span>
+                        <select size="1" id="add_text_lang" name="add_text_lang">
+                          <option label="en-US" value="en-US">English</option>
+                          <option label="fr-FR" value="fr-FR" selected="selected">Français</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="onecol">
+                      <label for="add_text_title" class="big">
+                        <span class="label">titre</span>
+                        <input name="add_text_title" id="add_text_title" type="text" value="" />
+                      </label>
+                      <br />
+                      <label for="add_text_content" class="big">
+                        <span class="label">contenu</span>
+                        <textarea name="add_text_content" id="add_text_content" rows="80" cols="40" class="markdown"></textarea>
+                      </label>
+                      <p class="hint">Rédigé en Markdown (titres, gras, italique, liens, listes).</p>
+                    </div>
+                    <div class="col">
+                      <label for="add_text_pages" class="">
+                        <span class="label">Pages utilisant le texte</span>
+                        <select size="14" id="add_text_pages" name="add_text_pages[]" multiple="multiple">
+                          <option label="Accueil" value="9">Accueil</option>
+                          <option label="Administration" value="10">Administration</option>
+                          <option label="Administration des groupes" value="11">Administration des groupes</option>
+                          <option label="Administration des modules" value="13">Administration des modules</option>
+                          <option label="Administration des niveaux" value="12">Administration des niveaux</option>
+                          <option label="Administration des pages" value="14">Administration des pages</option>
+                          <option label="Administration des usagers" value="15">Administration des usagers</option>
+                          <option label="Connexion" value="19">Connexion</option>
+                          <option label="Déconnexion" value="20">Déconnexion</option>
+                          <option label="Journal" value="18">Journal</option>
+                          <option label="Nœud" value="32">Nœud</option>
+                          <option label="Édition" value="16">Édition</option>
+                          <option label="Édition des textes" value="17">Édition des textes</option>
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="submit">
+                    <input type="hidden" name="mode" value="add" />
+                    <input type="submit" class="submit" name="submit" value="Ajouter" />
+                  </div>
+                </div>
+              </fieldset>
+              <input type="hidden" name="csrf_token" value="CSRF" />
+            </form>
+          </div>
+          <div id="TextsList" class="box">
+            <h2 class="box-handle expanded">Textes</h2>
+            <div class="box-content boxtable">
+              <table class="zebra">
+                <caption class="off">Textes</caption>
+                <thead>
+                  <tr>
+                    <td colspan="5">
+                      <div class="pagination"><a class="first" href="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="Première page">⇐</a> <a class="prev" href="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="Page précédente">←</a> Page: <select name="pagination" size="1" class="autowidth" aria-label="Page: " data-navigate="1"><option label="1" value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" selected="selected">1</option></select>/1 <a class="next" href="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="Page suivante">→</a> <a class="last" href="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20" title="Dernière page">⇒</a> Élements par page: <select name="perpage" size="1" class="autowidth" aria-label="Élements par page: " data-navigate="1"><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=10">10</option><option selected="selected" value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20">20</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=30">30</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=40">40</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=50">50</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=60">60</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=70">70</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=80">80</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=90">90</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=100">100</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=150">150</option><option value="/edition/edit_texts?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=200">200</option></select></div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <a href="/edition/edit_texts?order_by=lid&amp;order_dir=ASC&amp;start=0">identifiant littéral</a>
+                    </th>
+                    <th>
+                      <a href="/edition/edit_texts?order_by=title&amp;order_dir=ASC&amp;start=0">titre</a>
+                    </th>
+                    <th>
+                      <a href="/edition/edit_texts?order_by=lang&amp;order_dir=ASC&amp;start=0">langue</a>
+                    </th>
+                    <th>
+                      <a href="/edition/edit_texts?order_by=last_time&amp;order_dir=DESC&amp;start=0">
+                        <strong>modifié</strong>
+                      </a>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="active" data-href="/edition/edit_texts?text_nid=33">
+                    <td>
+                      <a href="/edition/edit_texts?text_nid=33">welcome</a>
+                    </td>
+                    <td>Welcome to Luna</td>
+                    <td>en-US</td>
+                    <td class="nowrap">SEEN</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="Bottom" class="box">
+          <div class="box-content">
+            <p>Vous êtes ici: <a href="/edition/edit_texts">/edition/edit_texts</a><br />Vous êtes connecté(e) en tant que <strong>Admin Luna</strong> [<form method="post" class="logout-form" action="/logout"><input type="hidden" name="csrf_token" value="CSRF" /><button type="submit" class="linkbutton">Déconnexion</button></form>] <br />Site propulsé par <a href="https://github.com/jeromev/Luna">Luna</a> VER</p>
+          </div>
+        </div>
+      </main>
+      <hr />
+      <nav id="Nav">
+        <h1 class="off">Navigation</h1>
+        <div id="SiteMap">
+          <h2 class="box-handle collapsed">Structure du site</h2>
+          <div class="box-content">
+            <ul class="tv">
+              <li>
+                <a href="/">Accueil</a>
+                <ul class="tv">
+                  <li>
+                    <a href="/admin">Administration</a>
+                    <ul class="tv">
+                      <li>
+                        <a href="/admin/admin_groups">Administration des groupes</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_mods">Administration des modules</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_levels">Administration des niveaux</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_pages">Administration des pages</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_users">Administration des usagers</a>
+                      </li>
+                      <li>
+                        <a href="/admin/journal">Journal</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="/logout">Déconnexion</a>
+                  </li>
+                  <li>
+                    <a href="/edition">Édition</a>
+                    <ul class="tv">
+                      <li>
+                        <a href="/edition/edit_texts">Édition des textes</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div id="Options">
+          <h2 class="off">Langues</h2>
+          <ul class="langs">
+            <li>
+              <a href="/edition/edit_texts/?lang=en-US" title="English">English</a>
+            </li>
+            <li>
+              <a class="on" href="/edition/edit_texts/?lang=fr-FR" title="Français">Français</a>
+            </li>
+          </ul>
+          <h2 class="off">Formats de sortie</h2>
+          <ul class="outputs">
+            <li>
+              <a class="on" href="/edition/edit_texts/?output=html" title="html">html</a>
+            </li>
+            <li>
+              <a href="/edition/edit_texts/?output=xml" title="xml">xml</a>
+            </li>
+            <li>
+              <a href="/edition/edit_texts/?output=turtle" title="turtle">turtle</a>
+            </li>
+            <li>
+              <a href="/edition/edit_texts/?output=json" title="json">json</a>
+            </li>
+            <li>
+              <a href="/edition/edit_texts/?output=n3" title="n3">n3</a>
+            </li>
+            <li>
+              <a href="/edition/edit_texts/?output=jsonld" title="jsonld">jsonld</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+  </body>
+</html>

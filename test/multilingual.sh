@@ -103,17 +103,31 @@ post edition/edit_texts --data-urlencode mode=modify --data-urlencode submit=Mod
   || fail "M3 the upsert did not update in place"
 
 # --- M4/M5: the reader honours the requested language --------------------------------------------
-EN=$(curl -s -b "$AJ" "$BASE/?lang=en" | grep -c 'English body' || true)
-FR=$(curl -s -b "$AJ" "$BASE/?lang=fr" | grep -c 'Corps francais 2' || true)
-[ "$EN" -ge 1 ] && pass "M4 ?lang=en serves the English body" || fail "M4 English body not served for ?lang=en"
-[ "$FR" -ge 1 ] && pass "M4b ?lang=fr serves the French body" || fail "M4b French body not served for ?lang=fr"
+# Everything below asserts against the RENDERED PAGE — the contents of <main> — and never against
+# the whole HTTP response. That distinction is the entire point of these three assertions, and it
+# was learned the hard way: luna::render() injects a JSON-LD island into <head> carrying every
+# text's headline and articleBody verbatim, so a whole-response grep finds an article's words
+# whenever the text exists in the model AT ALL, including when the page displays none of it. That
+# is how these assertions passed while /?lang=fr rendered a <main> holding nothing but breadcrumb
+# and footer — true of the response, false of the page. If you widen the scope again, you delete
+# the assertion without deleting the line.
+main_of(){ sed -n '/<main/,/<\/main>/p'; }
+
+EN=$(curl -s -b "$AJ" "$BASE/?lang=en" | main_of | grep -c 'English body' || true)
+FR=$(curl -s -b "$AJ" "$BASE/?lang=fr" | main_of | grep -c 'Corps francais 2' || true)
+[ "$EN" -ge 1 ] && pass "M4 ?lang=en renders the English body in <main>" || fail "M4 English body not rendered for ?lang=en"
+[ "$FR" -ge 1 ] && pass "M4b ?lang=fr renders the French body in <main>" || fail "M4b French body not rendered for ?lang=fr"
 
 # Drop the English row: a visitor asking for English must now fall back, not get an empty page.
 sql "DELETE FROM luna_texts WHERE nid=$NID AND lang='en';"
 docker exec "$APP" php bin/resync-triplestore.php >/dev/null 2>&1
-FB=$(curl -s -b "$AJ" "$BASE/?lang=en" | grep -c 'Corps francais 2' || true)
+FB=$(curl -s -b "$AJ" "$BASE/?lang=en" | main_of | grep -c 'Corps francais 2' || true)
 [ "$FB" -ge 1 ] && pass "M5 a missing translation falls back instead of rendering nothing" \
   || fail "M5 no fallback: the page rendered without any text"
+# M5b: the fallback must also SAY which language it fell back to, or the page lies to a parser.
+FBL=$(curl -s -b "$AJ" "$BASE/?lang=en" | main_of | grep -c 'box-content" xml:lang="fr-FR"' || true)
+[ "$FBL" -ge 1 ] && pass "M5b the fallback declares the language it actually rendered" \
+  || fail "M5b the fallback body is not tagged fr-FR"
 
 # --- M6: the graph carries both translations, language-tagged ------------------------------------
 sql "INSERT INTO luna_texts (nid,title,lang,content) VALUES ($NID,'Hello','en','English body')

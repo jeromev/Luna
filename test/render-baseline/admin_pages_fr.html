@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:luna="https://jeromev.github.io/Luna/ontology#" xmlns:schema="https://schema.org/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:dc="http://purl.org/dc/elements/1.1/" lang="fr-FR" xml:lang="fr-FR">
+  <head profile="http://ns.inria.fr/grddl/rdfa/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Administration des pages · My lunar Website</title>
+    <meta http-equiv="Content-Language" content="fr-FR" />
+    <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+    <meta name="DC.Title" content="Administration des pages · My lunar Website" lang="fr-FR" xml:lang="fr-FR" />
+    <meta name="DC.Type" content="text" />
+    <meta name="DC.Format" content="text/html" />
+    <meta name="DC.Identifier" content="http://localhost:8080" />
+    <meta name="DC.Language" scheme="RFC3066" content="fr-FR" />
+    <meta name="DC.Date" scheme="W3CDTF" content="" />
+    <link rel="stylesheet" type="text/css" media="all" href="/css/styles.css" />
+    <link rel="alternate" type="application/rdf+xml" href="/admin/admin_pages?output=xml" />
+    <script type="text/javascript" src="/js/luna.js"></script>
+  <script type="application/ld+json">
+{
+    "@context": "https://schema.org/",
+    "@type": "WebPage",
+    "@id": "http://localhost:8080/id/admin_pages",
+    "name": "Administration des pages",
+    "https://jeromev.github.io/Luna/ontology#lid": "admin_pages",
+    "url": "http://localhost:8080/admin/admin_pages",
+    "inLanguage": "fr-FR",
+    "isPartOf": {
+        "@id": "http://localhost:8080/id/admin"
+    }
+}
+</script>
+</head>
+  <body class="main">
+    <div id="Page" class="admin_pages">
+      <header id="Top">
+        <h1>
+          <a href="/">
+            <span id="SiteTitle">My lunar Website</span>
+          </a>
+        </h1>
+        <h1>
+          <a href="/admin/admin_pages">Administration des pages</a>
+        </h1>
+      </header>
+      <hr />
+      <main id="Content">
+        <div id="Content-main">
+          <div class="box">
+            <form method="post" id="Addpage" action="/admin/admin_pages">
+              <fieldset>
+                <h2 class="box-handle collapsed">Ajouter une page</h2>
+                <div class="box-content off">
+                  <div class="fields">
+                    <div class="onecol">
+                      <label for="add_page_is_inactive" class=""><input name="add_page_is_inactive" id="add_page_is_inactive" type="checkbox" class="autowidth" value="1" /> Désactiver</label>
+                    </div>
+                    <div class="col">
+                      <label for="add_page_lid" class="">
+                        <span class="label">identifiant littéral</span>
+                        <input name="add_page_lid" id="add_page_lid" type="text" value="" />
+                      </label>
+                      <br />
+                      <label for="add_parent_nid" class="">
+                        <span class="label">Page parente</span>
+                        <select size="1" id="add_parent_nid" name="add_parent_nid">
+                          <option label="Accueil" value="9">Accueil</option>
+                          <option label="Administration" value="10">Administration</option>
+                          <option label="Administration des groupes" value="11">Administration des groupes</option>
+                          <option label="Administration des modules" value="13">Administration des modules</option>
+                          <option label="Administration des niveaux" value="12">Administration des niveaux</option>
+                          <option label="Administration des pages" value="14">Administration des pages</option>
+                          <option label="Administration des usagers" value="15">Administration des usagers</option>
+                          <option label="Connexion" value="19">Connexion</option>
+                          <option label="Déconnexion" value="20">Déconnexion</option>
+                          <option label="Journal" value="18">Journal</option>
+                          <option label="Nœud" value="32">Nœud</option>
+                          <option label="Édition" value="16">Édition</option>
+                          <option label="Édition des textes" value="17">Édition des textes</option>
+                        </select>
+                      </label>
+                      <br />
+                      <label for="add_page_level" class="">
+                        <span class="label">Niveau d’accès de la page</span>
+                        <select size="1" id="add_page_level" name="add_page_level">
+                          <option label="Niveau administration" value="7">Niveau administration</option>
+                          <option label="Niveau public" value="6" selected="selected">Niveau public</option>
+                          <option label="Niveau édition" value="8">Niveau édition</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="col">
+                      <label for="add_page_mods" class="large">
+                        <span class="label">Modules utilisés sur cette page</span>
+                        <select size="12" id="add_page_mods" name="add_page_mods[]" multiple="multiple">
+                          <option label="Module Nœud" value="31">Module Nœud</option>
+                          <option label="Module de connexion" value="29">Module de connexion</option>
+                          <option label="Module de journalisation" value="28">Module de journalisation</option>
+                          <option label="Module d’administration" value="21">Module d’administration</option>
+                          <option label="Module d’administration des groupes" value="22">Module d’administration des groupes</option>
+                          <option label="Module d’administration des modules" value="24">Module d’administration des modules</option>
+                          <option label="Module d’administration des niveaux" value="23">Module d’administration des niveaux</option>
+                          <option label="Module d’administration des pages" value="25">Module d’administration des pages</option>
+                          <option label="Module d’administration des usagers" value="26">Module d’administration des usagers</option>
+                          <option label="Module d’édition des textes" value="27">Module d’édition des textes</option>
+                          <option label="Usagers en ligne" value="30">Usagers en ligne</option>
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="submit">
+                    <input type="hidden" name="mode" value="add" />
+                    <input type="submit" class="submit" name="submit" value="Ajouter" />
+                  </div>
+                </div>
+              </fieldset>
+              <input type="hidden" name="csrf_token" value="CSRF" />
+            </form>
+          </div>
+          <div id="PagesList" class="box">
+            <h2 class="box-handle expanded">Pages</h2>
+            <div class="box-content boxtable">
+              <table class="zebra">
+                <caption class="off">Pages</caption>
+                <thead>
+                  <tr>
+                    <th>nom</th>
+                    <th>Niveau d’accès</th>
+                    <th>Modules</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=9">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=9">Accueil</a>
+                    </td>
+                    <td>Niveau public</td>
+                    <td></td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=10">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=10">Administration</a>
+                    </td>
+                    <td>Niveau administration</td>
+                    <td>Module d’administration, Module d’administration des groupes, Module d’administration des niveaux, Usagers en ligne</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=11">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=11">Administration des groupes</a>
+                    </td>
+                    <td>Niveau administration</td>
+                    <td>Module d’administration des groupes</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=13">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=13">Administration des modules</a>
+                    </td>
+                    <td>Niveau administration</td>
+                    <td>Module d’administration des modules</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=12">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=12">Administration des niveaux</a>
+                    </td>
+                    <td>Niveau administration</td>
+                    <td>Module d’administration des niveaux</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=14">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=14">Administration des pages</a>
+                    </td>
+                    <td>Niveau administration</td>
+                    <td>Module d’administration des pages</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=15">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=15">Administration des usagers</a>
+                    </td>
+                    <td>Niveau administration</td>
+                    <td>Module d’administration des usagers</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=19">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=19">Connexion</a>
+                    </td>
+                    <td>Niveau public</td>
+                    <td>Module de connexion</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=20">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=20">Déconnexion</a>
+                    </td>
+                    <td>Niveau public</td>
+                    <td>Module de connexion</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=18">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=18">Journal</a>
+                    </td>
+                    <td>Niveau administration</td>
+                    <td>Module de journalisation</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=32">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=32">Nœud</a>
+                    </td>
+                    <td>Niveau public</td>
+                    <td>Module Nœud</td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=16">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=16">Édition</a>
+                    </td>
+                    <td>Niveau édition</td>
+                    <td></td>
+                  </tr>
+                  <tr class="active" data-href="/admin/admin_pages?page_nid=17">
+                    <td>
+                      <a href="/admin/admin_pages?page_nid=17">Édition des textes</a>
+                    </td>
+                    <td>Niveau édition</td>
+                    <td>Module d’édition des textes</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="Bottom" class="box">
+          <div class="box-content">
+            <p>Vous êtes ici: <a href="/admin/admin_pages">/admin/admin_pages</a><br />Vous êtes connecté(e) en tant que <strong>Admin Luna</strong> [<form method="post" class="logout-form" action="/logout"><input type="hidden" name="csrf_token" value="CSRF" /><button type="submit" class="linkbutton">Déconnexion</button></form>] <br />Site propulsé par <a href="https://github.com/jeromev/Luna">Luna</a> VER</p>
+          </div>
+        </div>
+      </main>
+      <hr />
+      <nav id="Nav">
+        <h1 class="off">Navigation</h1>
+        <div id="SiteMap">
+          <h2 class="box-handle collapsed">Structure du site</h2>
+          <div class="box-content">
+            <ul class="tv">
+              <li>
+                <a href="/">Accueil</a>
+                <ul class="tv">
+                  <li>
+                    <a href="/admin">Administration</a>
+                    <ul class="tv">
+                      <li>
+                        <a href="/admin/admin_groups">Administration des groupes</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_mods">Administration des modules</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_levels">Administration des niveaux</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_pages">Administration des pages</a>
+                      </li>
+                      <li>
+                        <a href="/admin/admin_users">Administration des usagers</a>
+                      </li>
+                      <li>
+                        <a href="/admin/journal">Journal</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="/logout">Déconnexion</a>
+                  </li>
+                  <li>
+                    <a href="/edition">Édition</a>
+                    <ul class="tv">
+                      <li>
+                        <a href="/edition/edit_texts">Édition des textes</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div id="Options">
+          <h2 class="off">Langues</h2>
+          <ul class="langs">
+            <li>
+              <a href="/admin/admin_pages/?lang=en-US" title="English">English</a>
+            </li>
+            <li>
+              <a class="on" href="/admin/admin_pages/?lang=fr-FR" title="Français">Français</a>
+            </li>
+          </ul>
+          <h2 class="off">Formats de sortie</h2>
+          <ul class="outputs">
+            <li>
+              <a class="on" href="/admin/admin_pages/?output=html" title="html">html</a>
+            </li>
+            <li>
+              <a href="/admin/admin_pages/?output=xml" title="xml">xml</a>
+            </li>
+            <li>
+              <a href="/admin/admin_pages/?output=turtle" title="turtle">turtle</a>
+            </li>
+            <li>
+              <a href="/admin/admin_pages/?output=json" title="json">json</a>
+            </li>
+            <li>
+              <a href="/admin/admin_pages/?output=n3" title="n3">n3</a>
+            </li>
+            <li>
+              <a href="/admin/admin_pages/?output=jsonld" title="jsonld">jsonld</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+  </body>
+</html>

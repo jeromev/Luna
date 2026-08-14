@@ -150,8 +150,50 @@ class lunaTools {
 	public static function prepare_lid($str = false) {
 		if (!defined('INPUT_SANITIZED') || INPUT_SANITIZED != true) { self::sanitize_inputs(); }
 		if (empty($str) || !is_string($str)) { return false; }
-		$str = self::remove_accents($str);
-		$str = strtolower(trim($str));
+		return self::squash_to_key(strtolower(trim(self::remove_accents($str))));
+	}
+	// }}}
+	// {{{ prepare_var_key()
+	/**
+	 * The grouping key for a render-model bnode — '_:vocabulary-Message' and friends.
+	 *
+	 * Same punctuation squashing as prepare_lid(), and deliberately WITHOUT its strtolower().
+	 * The two look like the same operation and are not. prepare_lid() normalises a slug, and a
+	 * slug is resource identity here: it is what luna_nodes.lid stores and what /id/{slug} is
+	 * built from, so it is lowercased on purpose and must stay that way. A render-model key is
+	 * not identity — it only has to keep two distinct entries apart within one request.
+	 *
+	 * lunaModel::load_var() used prepare_lid() for this, which meant the vocabulary lids 'Message'
+	 * and 'message' collapsed onto one bnode while each kept its own case as the ui:lid value.
+	 * merge_nodes() appends rather than overwrites, so the survivor carried two ui:lid children and
+	 * two ui:value children, and since the stylesheets read
+	 * ui:vocabulary[ui:lid = 'X']/ui:value through xsl:value-of — which takes the first node — the
+	 * label rendered was whichever case-variant its mod happened to register first. Ten lid pairs
+	 * collide that way (date, default, email, groups, identifier, locked, message, password, type,
+	 * user), so a label's correctness depended on the order of an array in an unrelated file.
+	 *
+	 * The punctuation squashing is still needed: these keys become rdf:nodeID values when the
+	 * render model is serialised for the transform, and lids like 'Are you sure you want to delete
+	 * this level?' would not otherwise be valid there.
+	 *
+	 * @param string|false $str
+	 * @return string|false
+	 */
+	public static function prepare_var_key($str = false): string|false {
+		if (!defined('INPUT_SANITIZED') || INPUT_SANITIZED != true) { self::sanitize_inputs(); }
+		if (empty($str) || !is_string($str)) { return false; }
+		return self::squash_to_key(trim(self::remove_accents($str)));
+	}
+	// }}}
+	// {{{ squash_to_key()
+	/**
+	 * The punctuation rules shared by prepare_lid() and prepare_var_key(), kept in one place so
+	 * the two cannot drift apart on everything except the casing that separates them.
+	 *
+	 * @param string $str
+	 * @return string
+	 */
+	private static function squash_to_key(string $str): string {
 		$search = [
 			'@\s+@',
 			'@\?|\.|\,|\:+@',

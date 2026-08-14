@@ -919,3 +919,6 @@ msgstr "message"
 
 msgid "type"
 msgstr "type"
+
+msgid "lid"
+msgstr "lid"

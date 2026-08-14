@@ -1641,7 +1641,8 @@ class lunaModel {
 		} else {
 			if (!isset($var['lid']) || !isset($var['value'])) { return false; }
 			$nodes = [];
-			$lid = lunaTools::prepare_lid($var['lid']);
+			// prepare_var_key(), NOT prepare_lid() — which lowercases; see that method's docblock.
+			$lid = lunaTools::prepare_var_key($var['lid']);
 			$nodes['_:'.$var['type'].'-'.$lid][$this->conf['ns']['ui'].'lid'][0]['value'] = $var['lid'];
 			$nodes['_:'.$var['type'].'-'.$lid][$this->conf['ns']['ui'].'lid'][0]['type'] = 'bnode';
 			if (isset($var['lang'])) { $nodes['_:'.$var['type'].'-'.$lid][$this->conf['ns']['ui'].'lid'][0]['lang'] = $var['lang']; }

@@ -17,7 +17,12 @@
 	<xsl:include href="./luna.header.html.xsl"/>
 
 	<xsl:template name="page">
-		<xsl:for-each select="/rdf:RDF/schema:Article[schema:isPartOf/@rdf:resource = /rdf:RDF/schema:WebPage[schema:identifier = $masternodenid]/@rdf:about and substring-before(concat(luna:content/@xml:lang,'-'),'-') = substring-before(concat($lang,'-'),'-')]">
+		<!-- No language predicate here, deliberately — see the same note in luna.root.html.xsl.
+		     The model resolves one text per node through lunaTools::preferred_content_languages()
+		     and deliberately accepts an off-ladder translation rather than rendering nothing; this
+		     template must not re-decide that downstream. The language actually rendered is still
+		     declared, via the xml:lang attributes below. -->
+		<xsl:for-each select="/rdf:RDF/schema:Article[schema:isPartOf/@rdf:resource = /rdf:RDF/schema:WebPage[schema:identifier = $masternodenid]/@rdf:about]">
 			<div class="box text">
 				<xsl:if test="normalize-space(schema:name) != '' and normalize-space(schema:name) != '0'">
 					<h2>

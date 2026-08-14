@@ -45,23 +45,32 @@ class mod_journal {
 	 * @return void
 	 */
 	private function __construct() {
+		// This list must match what the two journal views actually ask for, in both directions —
+		// a lid registered here but named by no stylesheet is dead weight the catalogues get asked
+		// to translate, and a label the view renders but that is missing here falls through to
+		// luna.journal.html.xsl's <xsl:otherwise> and prints the bare field name in every language.
+		// Both drifts were present until 0.9.5-alpha: six lids were registered for fields the log
+		// node does not have ('id', 'type', 'user', 'error', 'user-name', 'Server' — the last of
+		// these belonging to a block that has been commented out in the stylesheet), while 'lid'
+		// and 'content' were rendered untranslated. 'content' was the sharper case: its French
+		// 'contenu' has been in the catalogue all along, unreachable because only mod_edit_texts
+		// registered it and this is the only mod the journal page loads.
 		lunaTools::add_vocabulary([
+			// the log LIST view — literal lookups, column headings
 			'List of the log entries',
-			'id',
-			'message',
 			'Message',
 			'Type',
-			'type',
-			'user',
-			'User',
-			'date',
 			'Date',
+			'User',
+			// the log ANALYSE view — its <dt> labels are looked up by local-name() over the
+			// children of the ui:log node built in load(), so this list must track that array:
+			// lid, message, code, date, content.
 			'Log entry analyse',
+			'lid',
+			'message',
 			'code',
-			'error',
 			'date',
-			'user-name',
-			'Server'
+			'content'
 		]);
 	}
 	// }}}
@@ -163,12 +172,20 @@ class mod_journal {
 			while ($row = $res->fetchRow()) {
 				$msg = self::decode_message($row->message);
 				$message = lunaTools::display_string(isset($msg->message) ? $msg->message : '');
+				// 'code' is the severity as a LABEL and is translated; 'priority' is the same
+				// severity as a MACHINE TOKEN and must not be. luna.journal.html.xsl puts the
+				// token in the row's class attribute, where css/luna.css matches tr.info,
+				// tr.notice, tr.warning, tr.critical and tr.error — so translating the value it
+				// styles on silently drops the colour for any severity that has a translation.
+				// Only 'error' has one today (fr 'erreur', added in 0.9.4-alpha), which made this
+				// a latent French-only defect: an error row still listed, just unstyled.
 				$var = [
 					'type' => 'log',
 					'lid' => $row->id,
 					'value' => [
 						'message' => $message,
 						'code' => _(lunaLog::priorityToString($row->priority)),
+						'priority' => lunaLog::priorityToString($row->priority),
 						'date' => $row->logtime,
 						'user-name' => isset($msg->session->user->firstname) ? $msg->session->user->firstname.' '.$msg->session->user->lastname : _(ANONYMOUS)
 					],

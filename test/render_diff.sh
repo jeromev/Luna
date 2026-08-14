@@ -45,7 +45,7 @@ norm(){ sed -E \
   -e 's/[0-9]+\.[0-9]+ ?(s|ms|sec|seconds)/TIME/g' \
   -e 's/(generated|rendered)[^<]*/\1 TIME/Ig' \
   -e 's/[0-9]+ ?(seconde|minute|heure|jour|semaine|mois|second|minute|hour|day|week|month|year|an)s?/AGO/Ig' \
-  -e 's/(log_id=|message |id="|aria-label="message )[0-9]+/\1ID/g' \
+  -e 's/(log_id=|[Mm]essage |id="|aria-label="[Mm]essage )[0-9]+/\1ID/g' \
   -e 's/(PHPSESSID=|sessionid=|session=)[A-Za-z0-9]+/\1SESS/Ig' \
   -e 's|<td class="nowrap">[^<]*</td>|<td class="nowrap">SEEN</td>|g' \
   -e 's/[0-9]+\.[0-9]+\.[0-9]+-alpha/VER/g' ; }
@@ -66,28 +66,64 @@ norm(){ sed -E \
 # them, so a refactor of that code had no gate. /id/{slug} is deliberately absent: it 303s with
 # no body by design (httpRange-14), and this harness does not follow redirects, so it would trip
 # the zero-byte guard below rather than assert anything.
+#
+# EVERY case states its language in its own URL, and that is not decoration. The interface
+# language is resolved by lunaTools::request('lang'), which falls through $_GET → $_POST →
+# $_SESSION → $_COOKIE, and set_language() writes it back to $_SESSION — so language is sticky
+# per session, not per request. The admin cases share one cookie jar, so a single case carrying
+# ?lang=fr-FR would leave every later admin case rendering French against an English baseline.
+# Spelling the language into each URL makes a case mean the same thing wherever it sits in this
+# list, and it is also what keeps the DEGRADED cross-check below pairing like with like, since
+# that pairs an admin case to a guest case by identical URL.
+#
+# The _fr cases exist because the English ones are structurally unable to see a whole class of
+# defect. Two worked examples, both real and both fixed in 0.9.5-alpha: the article language
+# filter emptied <main> for any visitor whose language was not the text's, which no English case
+# can reach; and the vocabulary bnode collision rendered the wrong case-variant of a label, which
+# is invisible in en_US precisely because en_US maps 'user' and 'User' to the same string, while
+# fr_FR maps them to 'usager' and 'Usager'. A French case is the only instrument that separates
+# them. The RDF/data endpoints (out_*, sitemap, robots, data_root, node*) carry no interface
+# vocabulary, so they are not duplicated.
+#
+# `journal` (the log LIST, as distinct from journal_analyse) sits early on purpose: it renders
+# every log row, so it is only deterministic before a case that writes one. A 200 render logs
+# nothing; the 404 in `notfound` logs a row. Keep both journal cases above `notfound`, or their
+# baselines will shift under any change to the case list.
 PAGES="
-admin|admin|/admin
-home|guest|/
-node|guest|/node/9
-login|guest|/login
-notfound|guest|/no-such-page-xyz|404
-out_xml|guest|/?output=xml
-out_n3|guest|/?output=n3
-out_json|guest|/?output=json
-out_jsonld|guest|/?output=jsonld
-sitemap|guest|/sitemap.xml
-robots|guest|/robots.txt
-data_root|guest|/data/root
-admin_users|admin|/admin/admin_users
-admin_groups|admin|/admin/admin_groups
-admin_levels|admin|/admin/admin_levels
-admin_pages|admin|/admin/admin_pages
-admin_mods|admin|/admin/admin_mods
-journal_analyse|admin|/admin/journal?log_id=999
-edit_texts|admin|/edition/edit_texts
-home_admin|admin|/
-node_admin|admin|/node/10
+admin|admin|/admin?lang=en-US
+journal|admin|/admin/journal?lang=en-US
+journal_fr|admin|/admin/journal?lang=fr-FR
+home|guest|/?lang=en-US
+node|guest|/node/9?lang=en-US
+login|guest|/login?lang=en-US
+notfound|guest|/no-such-page-xyz?lang=en-US|404
+out_xml|guest|/?output=xml&lang=en-US
+out_n3|guest|/?output=n3&lang=en-US
+out_json|guest|/?output=json&lang=en-US
+out_jsonld|guest|/?output=jsonld&lang=en-US
+sitemap|guest|/sitemap.xml?lang=en-US
+robots|guest|/robots.txt?lang=en-US
+data_root|guest|/data/root?lang=en-US
+admin_users|admin|/admin/admin_users?lang=en-US
+admin_groups|admin|/admin/admin_groups?lang=en-US
+admin_levels|admin|/admin/admin_levels?lang=en-US
+admin_pages|admin|/admin/admin_pages?lang=en-US
+admin_mods|admin|/admin/admin_mods?lang=en-US
+journal_analyse|admin|/admin/journal?log_id=999&lang=en-US
+edit_texts|admin|/edition/edit_texts?lang=en-US
+home_admin|admin|/?lang=en-US
+node_admin|admin|/node/10?lang=en-US
+home_fr|guest|/?lang=fr-FR
+login_fr|guest|/login?lang=fr-FR
+admin_users_fr|admin|/admin/admin_users?lang=fr-FR
+admin_groups_fr|admin|/admin/admin_groups?lang=fr-FR
+admin_levels_fr|admin|/admin/admin_levels?lang=fr-FR
+admin_pages_fr|admin|/admin/admin_pages?lang=fr-FR
+admin_mods_fr|admin|/admin/admin_mods?lang=fr-FR
+journal_analyse_fr|admin|/admin/journal?log_id=999&lang=fr-FR
+edit_texts_fr|admin|/edition/edit_texts?lang=fr-FR
+home_admin_fr|admin|/?lang=fr-FR
+admin_fr|admin|/admin?lang=fr-FR
 "
 
 # Reset volatile server state so the render is deterministic across runs (dev harness):
