@@ -164,30 +164,42 @@ grep -q "name=\"user_lid\" value=\"$ADMIN_EMAIL\"" "$UE" \
   && pass "L8 ?user_lid= reaches the modify form, addressed by that lid" \
   || fail "L8 ?user_lid= did not reach the modify form"
 
-# L9: a lid-addressed user save round-trips. The surname is the safe field to move — the email
-# is the lid and update() refuses slug changes, and the group set is what the lockout guards
-# watch, so neither is a field a round-trip probe should touch.
-NAME_BEFORE=$(sql "SELECT lastname FROM luna_users u JOIN luna_nodes n ON u.nid = n.nid WHERE n.lid = '$ADMIN_EMAIL';")
-curl -s -b "$AJ" --data-urlencode mode=modify --data-urlencode submit=Modify \
-  --data-urlencode "user_lid=$ADMIN_EMAIL" --data-urlencode "modify_item_lid=$ADMIN_EMAIL" \
-  --data-urlencode "modify_user_email=$ADMIN_EMAIL" --data-urlencode "modify_user_firstname=Admin" \
-  --data-urlencode "modify_user_lastname=LidProbe" --data-urlencode "modify_user_groups[]=group_admin" \
-  --data-urlencode "modify_user_groups[]=group_default" --data-urlencode "csrf_token=$(tok $UE)" \
+# L9: a lid-addressed user save round-trips. It runs against a THROWAWAY user, not the seeded
+# administrator, and that is a correction rather than a preference: an earlier version modified
+# the admin account and posted a hard-coded group list to put it back, which silently dropped
+# group_edition — a membership the seed grants and six render baselines display. A restore that
+# retypes state instead of reproducing it is not a restore. Create, probe, delete.
+UJ=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_users?lang=en-US" -o "$UJ"
+curl -s -b "$AJ" --data-urlencode submit=Add --data-urlencode mode=add \
+  --data-urlencode add_user_email=lidprobe@test.local --data-urlencode add_user_firstname=Lid \
+  --data-urlencode add_user_lastname=Probe --data-urlencode add_user_password=lidprobe-pw \
+  --data-urlencode "add_user_groups[]=group_default" --data-urlencode "csrf_token=$(tok $UJ)" \
   "$BASE/admin/admin_users?lang=en-US" -o /dev/null
-[ "$(sql "SELECT lastname FROM luna_users u JOIN luna_nodes n ON u.nid = n.nid WHERE n.lid = '$ADMIN_EMAIL';")" = "LidProbe" ] \
-  && pass "L9 a lid-addressed user save reached the database" \
-  || fail "L9 the user save did NOT reach the database — resolution dropped the user"
-# put the name back through the same path
-UE2=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_users?user_lid=$ADMIN_EMAIL&lang=en-US" -o "$UE2"
+[ -n "$(sql "SELECT nid FROM luna_nodes WHERE lid='lidprobe@test.local';")" ] \
+  && pass "L9 a lid-addressed user was created (the add form resolves group lids)" \
+  || fail "L9 could not create the probe user"
+
+UE=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_users?user_lid=lidprobe@test.local&lang=en-US" -o "$UE"
+grep -q 'name="user_lid" value="lidprobe@test.local"' "$UE" \
+  && pass "L9b ?user_lid= reaches that user's modify form" \
+  || fail "L9b ?user_lid= did not reach the probe user's form"
 curl -s -b "$AJ" --data-urlencode mode=modify --data-urlencode submit=Modify \
-  --data-urlencode "user_lid=$ADMIN_EMAIL" --data-urlencode "modify_item_lid=$ADMIN_EMAIL" \
-  --data-urlencode "modify_user_email=$ADMIN_EMAIL" --data-urlencode "modify_user_firstname=Admin" \
-  --data-urlencode "modify_user_lastname=$NAME_BEFORE" --data-urlencode "modify_user_groups[]=group_admin" \
-  --data-urlencode "modify_user_groups[]=group_default" --data-urlencode "csrf_token=$(tok $UE2)" \
+  --data-urlencode "user_lid=lidprobe@test.local" --data-urlencode "modify_item_lid=lidprobe@test.local" \
+  --data-urlencode "modify_user_email=lidprobe@test.local" --data-urlencode "modify_user_firstname=Lid" \
+  --data-urlencode "modify_user_lastname=Renamed" --data-urlencode "modify_user_groups[]=group_default" \
+  --data-urlencode "csrf_token=$(tok $UE)" "$BASE/admin/admin_users?lang=en-US" -o /dev/null
+[ "$(sql "SELECT lastname FROM luna_users u JOIN luna_nodes n ON u.nid = n.nid WHERE n.lid='lidprobe@test.local';")" = "Renamed" ] \
+  && pass "L9c the save reached the database" \
+  || fail "L9c the user save did NOT reach the database"
+
+UE2=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_users?user_lid=lidprobe@test.local&lang=en-US" -o "$UE2"
+curl -s -b "$AJ" --data-urlencode mode=modify --data-urlencode submit=Delete \
+  --data-urlencode "user_lid=lidprobe@test.local" --data-urlencode "modify_item_lid=lidprobe@test.local" \
+  --data-urlencode "modify_user_email=lidprobe@test.local" --data-urlencode "csrf_token=$(tok $UE2)" \
   "$BASE/admin/admin_users?lang=en-US" -o /dev/null
-[ "$(sql "SELECT lastname FROM luna_users u JOIN luna_nodes n ON u.nid = n.nid WHERE n.lid = '$ADMIN_EMAIL';")" = "$NAME_BEFORE" ] \
-  && pass "L9b the surname is back to what it was (suite is self-cleaning)" \
-  || fail "L9b the surname was left as the probe value"
+[ -z "$(sql "SELECT nid FROM luna_nodes WHERE lid='lidprobe@test.local';")" ] \
+  && pass "L9d the probe user is gone (suite leaves no trace)" \
+  || fail "L9d the probe user survived — the suite is not self-cleaning"
 
 echo "== admin_levels =="
 VP=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_levels?lang=en-US" -o "$VP"
@@ -369,41 +381,48 @@ grep -q 'name="modify_item_lid" value="welcome"' "$TE" \
   && pass "L25 ?text_lid= reaches the modify form, addressed by that lid" \
   || fail "L25 ?text_lid= did not reach the modify form"
 
-# L26: the text write path. The title is the safe field — the lid is frozen by update()'s
-# immutable-slug rule, and the page links are what the multilingual suite depends on. As with
-# L21, the success message is asserted separately from the state, because a refused save leaves
-# the state exactly as correct as a successful one.
-TITLE_BEFORE=$(sql "SELECT title FROM luna_texts t JOIN luna_nodes n ON t.nid = n.nid WHERE n.lid = 'welcome' AND t.lang = 'en';")
-CONTENT_BEFORE=$(sql "SELECT content FROM luna_texts t JOIN luna_nodes n ON t.nid = n.nid WHERE n.lid = 'welcome' AND t.lang = 'en';")
+# L26: the text write path, against a THROWAWAY text for the same reason L9 uses a throwaway
+# user. An earlier version probed the seeded `welcome` text and restored its body from a value
+# read back through `mysql -N -e`, which flattens newlines — so the multi-line Markdown came
+# back as a single truncated line and six baselines moved, including the home page. Content is
+# the worst possible thing to round-trip through a shell variable; a fixture avoids the question.
+TJ=$(mktemp); curl -s -b "$AJ" "$BASE/edition/edit_texts?lang=en-US" -o "$TJ"
+curl -s -b "$AJ" --data-urlencode submit=Add --data-urlencode mode=add \
+  --data-urlencode add_text_lid=lidprobe_text --data-urlencode add_text_title=LidProbe \
+  --data-urlencode add_text_lang=en-US --data-urlencode add_text_content='probe body' \
+  --data-urlencode "add_text_pages[]=root" --data-urlencode "csrf_token=$(tok $TJ)" \
+  "$BASE/edition/edit_texts?lang=en-US" -o /dev/null
+[ -n "$(sql "SELECT nid FROM luna_nodes WHERE lid='lidprobe_text';")" ] \
+  && pass "L26 a lid-addressed text was created (the add form resolves page lids)" \
+  || fail "L26 could not create the probe text"
+[ -n "$(sql "SELECT n2.lid FROM luna_nodes_map m JOIN luna_nodes n1 ON m.nid1 = n1.nid
+  JOIN luna_nodes n2 ON m.nid2 = n2.nid WHERE n1.lid = 'lidprobe_text' AND n2.lid = 'root';")" ] \
+  && pass "L26b the pages picker's lid resolved and linked" \
+  || fail "L26b the text was not linked to the page its lid named"
+
+TE=$(mktemp); curl -s -b "$AJ" "$BASE/edition/edit_texts?text_lid=lidprobe_text&lang=en-US" -o "$TE"
+grep -q 'name="modify_item_lid" value="lidprobe_text"' "$TE" \
+  && pass "L26c ?text_lid= reaches that text's modify form" \
+  || fail "L26c ?text_lid= did not reach the probe text's form"
 TRESP=$(curl -s -b "$AJ" --data-urlencode mode=modify --data-urlencode submit=Modify \
-  --data-urlencode "modify_item_lid=welcome" --data-urlencode modify_text_lid=welcome \
-  --data-urlencode "modify_text_title=LidProbe" --data-urlencode modify_text_lang=en-US \
-  --data-urlencode "modify_text_content=probe body" --data-urlencode "modify_text_pages[]=root" \
+  --data-urlencode "modify_item_lid=lidprobe_text" --data-urlencode modify_text_lid=lidprobe_text \
+  --data-urlencode "modify_text_title=LidProbeRenamed" --data-urlencode modify_text_lang=en-US \
+  --data-urlencode "modify_text_content=probe body 2" --data-urlencode "modify_text_pages[]=root" \
   --data-urlencode "csrf_token=$(tok $TE)" "$BASE/edition/edit_texts?lang=en-US")
 echo "$TRESP" | grep -qiE 'has been modified' \
-  && pass "L26 a lid-addressed text save reports success" \
-  || fail "L26 the text save was refused"
-[ "$(sql "SELECT title FROM luna_texts t JOIN luna_nodes n ON t.nid = n.nid WHERE n.lid = 'welcome' AND t.lang = 'en';")" = "LidProbe" ] \
-  && pass "L26b the save reached the database" \
-  || fail "L26b the save did NOT reach the database"
-[ -n "$(sql "SELECT n2.lid FROM luna_nodes_map m JOIN luna_nodes n1 ON m.nid1 = n1.nid
-  JOIN luna_nodes n2 ON m.nid2 = n2.nid WHERE n1.lid = 'welcome' AND n2.lid = 'root';")" ] \
-  && pass "L26c the pages picker's lid resolved and re-linked" \
-  || fail "L26c the text lost its page link"
+  && pass "L26d a lid-addressed text save reports success" \
+  || fail "L26d the text save was refused"
+[ "$(sql "SELECT title FROM luna_texts t JOIN luna_nodes n ON t.nid = n.nid WHERE n.lid='lidprobe_text' AND t.lang='en';")" = "LidProbeRenamed" ] \
+  && pass "L26e the save reached the database" \
+  || fail "L26e the text save did NOT reach the database"
 
-# Restore the seeded text exactly. This one matters more than the other restores: the welcome
-# text is rendered by home/home_admin in both languages, so a probe title left behind would move
-# four baselines. Both the title and the content are read from the row BEFORE the probe runs,
-# never re-typed and never re-read afterwards, since by then the probe has overwritten them.
-TE2=$(mktemp); curl -s -b "$AJ" "$BASE/edition/edit_texts?text_lid=welcome&lang=en-US" -o "$TE2"
-curl -s -b "$AJ" --data-urlencode mode=modify --data-urlencode submit=Modify \
-  --data-urlencode "modify_item_lid=welcome" --data-urlencode modify_text_lid=welcome \
-  --data-urlencode "modify_text_title=$TITLE_BEFORE" --data-urlencode modify_text_lang=en-US \
-  --data-urlencode "modify_text_content=$CONTENT_BEFORE" --data-urlencode "modify_text_pages[]=root" \
+TE2=$(mktemp); curl -s -b "$AJ" "$BASE/edition/edit_texts?text_lid=lidprobe_text&lang=en-US" -o "$TE2"
+curl -s -b "$AJ" --data-urlencode mode=modify --data-urlencode submit=Delete \
+  --data-urlencode "modify_item_lid=lidprobe_text" --data-urlencode modify_text_lid=lidprobe_text \
   --data-urlencode "csrf_token=$(tok $TE2)" "$BASE/edition/edit_texts?lang=en-US" -o /dev/null
-[ "$(sql "SELECT title FROM luna_texts t JOIN luna_nodes n ON t.nid = n.nid WHERE n.lid = 'welcome' AND t.lang = 'en';")" = "$TITLE_BEFORE" ] \
-  && pass "L26d the welcome text is back to its seeded title (suite is self-cleaning)" \
-  || fail "L26d the welcome text was left as the probe value"
+[ -z "$(sql "SELECT nid FROM luna_nodes WHERE lid='lidprobe_text';")" ] \
+  && pass "L26f the probe text is gone (suite leaves no trace)" \
+  || fail "L26f the probe text survived — the suite is not self-cleaning"
 
 echo "== the whole admin =="
 # The capstone, and it could not have been written until now: one sweep across every admin
@@ -425,6 +444,6 @@ done
   && pass "L27 no admin surface emits a ?*_nid= parameter anywhere" \
   || fail "L27 $NIDHITS nid parameter(s) still rendered:$NIDWHERE"
 
-rm -f "$AJ" "$AP" "$LP" "$GP" "$GA" "$GP2" "$GP3" "$UP" "$UE" "$UE2" "$VP" "$VE" "$VE2" "$MP" "$ME" "$PP" "$PE" "$PE2" "$TP" "$TE" "$TE2"
+rm -f "$AJ" "$AP" "$LP" "$GP" "$GA" "$GP2" "$GP3" "$UP" "$UJ" "$UE" "$UE2" "$VP" "$VE" "$VE2" "$MP" "$ME" "$PP" "$PE" "$PE2" "$TP" "$TJ" "$TE" "$TE2"
 echo
 if [ "$fails" -eq 0 ]; then echo "LID ADDRESSING HOLDS"; exit 0; else echo "$fails CHECK(S) FAILED"; exit 1; fi

@@ -78,7 +78,17 @@
                       <br />
                       <label for="modify_text_content" class="big">
                         <span class="label">content</span>
-                        <textarea name="modify_text_content" id="modify_text_content" rows="80" cols="40" class="markdown">**Luna** is a compact, RDF-native CMS. Every page is modelled as RDF triples and rendered TIME</textarea>
+                        <textarea name="modify_text_content" id="modify_text_content" rows="80" cols="40" class="markdown">**Luna** is a compact, RDF-native CMS. Every page is modelled as RDF triples and rendered TIME
+
+### A few things that make it unusual
+
+- **One graph for everything.** Users, groups, pages, access levels—and this very text—are all nodes in a single RDF graph.
+- **Every page is also data.** Append `?output=jsonld`, `?output=xml`, `?output=n3` or `?output=json` to any URL to read the same page as machine-readable RDF.
+- **Written in Markdown.** This block is authored in Markdown and rendered TIME
+
+### Make it your own
+
+Sign in as an administrator, then open **Edition → Edit texts** to change this text or write your own. The full story lives in the [project documentation](https://github.com/jeromev/Luna).</textarea>
                       </label>
                       <p class="hint">Written in Markdown (headings, bold, italics, links, lists).</p>
                     </div>

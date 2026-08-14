@@ -58,9 +58,14 @@ norm(){ sed -E \
 # The `admin_groups_edit` pair renders the MODIFY form rather than the list, and exists because
 # the list alone cannot see most of what the lid conversion touches: the hidden item field, the
 # XPath keys that select the group being edited, the picker's selected state, and the members
-# table are all reachable only with a ?group_lid= in hand. It points at group_edition, which is
-# unpopulated in the seed — delegated_admin.sh puts a user in that group and takes it out again,
-# so a baseline pinned to its membership would be ordering-dependent where this one is not.
+# table are all reachable only with a ?group_lid= in hand.
+#
+# Its members table renders a "last visit" cell, and that cell is why the same column carries
+# class="nowrap" here as on the users list: get_time_since() returns "" when the login and the
+# render land in the same second and "1 second" when they do not, so the cell alternates between
+# empty and a value at random. norm() below neutralises `<td class="nowrap">` for exactly that
+# reason, and the members table was the one place rendering a last-visit without the class — an
+# intermittent one-line diff, reproducible about one run in three.
 #
 # sitemap/robots/data_root cover the publishing surface — the crawler-discovery endpoints and
 # the /data/{slug} RDF document. They were added when the emitters moved out of the model: all

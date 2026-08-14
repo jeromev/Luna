@@ -384,7 +384,7 @@
 												</a>
 											</td>
 											<td><xsl:value-of select="luna:registration-date"/></td>
-											<td><xsl:value-of select="luna:last-visit"/></td>
+											<td class="nowrap"><xsl:value-of select="luna:last-visit"/></td>
 										</tr>
 									</xsl:for-each>
 								</tbody>

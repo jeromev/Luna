@@ -96,7 +96,9 @@
                     <caption class="off">Users who belong to this group</caption>
                     <thead>
                       <tr>
-                        <td colspan="7"></td>
+                        <td colspan="7">
+                          <div class="pagination"><a class="first" href="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20&amp;group_lid=group_edition" title="First page">⇐</a> <a class="prev" href="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20&amp;group_lid=group_edition" title="Previous page">←</a> Page: <select name="pagination" size="1" class="autowidth" aria-label="Page: " data-navigate="1"><option label="1" value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20&amp;group_lid=group_edition" selected="selected">1</option></select>/1 <a class="next" href="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20&amp;group_lid=group_edition" title="Next page">→</a> <a class="last" href="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20&amp;group_lid=group_edition" title="Last page">⇒</a> Elements per page: <select name="perpage" size="1" class="autowidth" aria-label="Elements per page: " data-navigate="1"><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=10">10</option><option selected="selected" value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20">20</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=30">30</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=40">40</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=50">50</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=60">60</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=70">70</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=80">80</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=90">90</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=100">100</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=150">150</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=200">200</option></select></div>
+                        </td>
                       </tr>
                       <tr>
                         <th>
@@ -121,7 +123,20 @@
                         </th>
                       </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody>
+                      <tr class="">
+                        <td>
+                          <input type="checkbox" class="autowidth" name="modify_users_list[admin@luna.local]" value="admin@luna.local" />
+                        </td>
+                        <td>Admin</td>
+                        <td>Luna</td>
+                        <td>
+                          <a href="/admin/admin_users?user_lid=admin@luna.local">admin@luna.local</a>
+                        </td>
+                        <td></td>
+                        <td class="nowrap">SEEN</td>
+                      </tr>
+                    </tbody>
                     <tfoot>
                       <tr>
                         <td colspan="7">For the selection: <select name="modify_users_action" size="1" id="modify_users_action" data-submit-on-change="1"><option label="" value="">Choose an action</option><option label="Delete from the group" value="delete_from_group">Delete from the group</option></select></td>
