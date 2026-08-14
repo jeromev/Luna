@@ -29,8 +29,11 @@
       rr:template "http://localhost:8080/id/{lid}" ;
       rr:class schema:WebPage
   ] ;
+  # The slug is the routing key, so it is luna:lid — not schema:name, which is the display
+  # name. Keeping these apart is roadmap decision #9; this mapping must move with the PHP
+  # write-through in lunaGraph::rdf_sync_node() or the two SQL-to-RDF projections diverge.
   rr:predicateObjectMap [
-      rr:predicate schema:name ;
+      rr:predicate luna:lid ;
       rr:objectMap [ rr:column "lid" ]
   ] ;
   rr:predicateObjectMap [
@@ -114,7 +117,7 @@
   """ ] ;
   rr:subjectMap [ rr:template "http://localhost:8080/id/{lid}" ] ;
   rr:predicateObjectMap [ rr:predicate schema:identifier ; rr:objectMap [ rr:column "nid" ] ] ;
-  rr:predicateObjectMap [ rr:predicate schema:name ;       rr:objectMap [ rr:column "lid" ] ] ;
+  rr:predicateObjectMap [ rr:predicate luna:lid ;          rr:objectMap [ rr:column "lid" ] ] ;
   rr:predicateObjectMap [ rr:predicate luna:isActive ;     rr:objectMap [ rr:column "active" ] ] .
 
 # Page -> required access level (luna_nodes_map edge)

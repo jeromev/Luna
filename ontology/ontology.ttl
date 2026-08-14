@@ -35,6 +35,11 @@
     rdfs:seeAlso <https://github.com/jeromev/Luna> ;
     owl:versionInfo "draft" .
 
+luna:lid a rdf:Property, owl:DatatypeProperty ;
+    rdfs:label "literal identifier" ;
+    rdfs:comment "A node's permanent machine-facing slug — the segment its identity URI is built from, as in …/id/edit_texts. It is a routing key, not a name: language-independent, stable for the life of the node, and the thing the SPARQL router matches a request path against. schema:name carries the human-readable, language-dependent display name and is deliberately kept distinct; using one for the other is the overload this term exists to end." ;
+    rdfs:range rdfs:Literal .
+
 luna:isActive a rdf:Property, owl:DatatypeProperty ;
     rdfs:label "is active" ;
     rdfs:comment "Whether a node (page, text, level, group, user, module) is active/published — a boolean flag, currently encoded as 1 (active) or 0 (inactive)." .

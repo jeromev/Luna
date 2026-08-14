@@ -143,7 +143,15 @@ class lunaGraph {
 		switch ($row->type1) {
 			case 'page':
 				$po[] = 'a schema:WebPage';
-				$po[] = 'schema:name '.self::rdf_str($row->lid);
+				// luna:lid, NOT schema:name. The slug is a routing key — language-independent,
+				// permanent, the segment /id/{slug} is built from — and schema.org's name is a
+				// display label. Writing the slug into schema:name made one predicate mean two
+				// things depending on which surface you read: the store answered "edit_texts", the
+				// published document answered "Edit texts", for the same subject. That is roadmap
+				// decision #9, and it is why the representation could not be CONSTRUCT-backed —
+				// a CONSTRUCT over the store would have regressed every published page name to its
+				// slug. Now the store asserts only what it holds, and asserts it under its own term.
+				$po[] = 'luna:lid '.self::rdf_str($row->lid);
 				$po[] = 'schema:identifier '.self::rdf_int($nid);
 				$po[] = 'luna:isActive '.self::rdf_int($row->is_active);
 				if (!empty($row->parent_lid)) { $po[] = 'schema:isPartOf '.self::rdf_uri($row->parent_lid); }
@@ -173,7 +181,7 @@ class lunaGraph {
 				break;
 			case 'level':
 				$po[] = 'schema:identifier '.self::rdf_int($nid);
-				$po[] = 'schema:name '.self::rdf_str($row->lid);
+				$po[] = 'luna:lid '.self::rdf_str($row->lid);   // routing key, not a display name — see 'page'
 				$po[] = 'luna:isActive '.self::rdf_int($row->is_active);
 				break;
 			case 'user':
@@ -182,7 +190,7 @@ class lunaGraph {
 				break;
 			default:
 				// group, mod, … — a minimal generic projection
-				$po[] = 'schema:name '.self::rdf_str($row->lid);
+				$po[] = 'luna:lid '.self::rdf_str($row->lid);   // routing key, not a display name — see 'page'
 				$po[] = 'schema:identifier '.self::rdf_int($nid);
 				$po[] = 'luna:isActive '.self::rdf_int($row->is_active);
 		}

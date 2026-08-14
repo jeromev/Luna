@@ -113,9 +113,10 @@ expressible as a `ui:message` RDF graph a stylesheet can render.
 | 4 | **Fate of `nid`** — drop the `/node/{nid}` identity entirely, or keep `nid` as a non-identifying `schema:identifier`? | P2 |
 | 5 | **Triplestore for P3** — stay on Oxigraph + external SHACL/inference, or swap to Jena Fuseki / GraphDB for native support? | P3 |
 | 8 | **Draft/version model (P3)** — per-resource named graphs promoted on publish; PROV-O audit in the default graph or a dedicated audit graph? | P3 |
-| 9 | **`schema:name` overload** — a page's `schema:name` is the routing slug in the triplestore but the humanised display name in the PHP projection. Split them (routing key vs. display name) before the RDF representation can be `CONSTRUCT`-backed. | P4 |
 
-*Resolved: slugs are immutable (rename = create-new + delete-old); client-side XSLT (P5) is dropped.*
+*Resolved: slugs are immutable (rename = create-new + delete-old); client-side XSLT (P5) is dropped;
+the `schema:name` overload is split — the routing key is `luna:lid`, `schema:name` is the display
+name, and both surfaces now assert both (0.9.3-alpha).*
 
 ## Sequencing
 

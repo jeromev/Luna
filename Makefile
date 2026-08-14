@@ -26,7 +26,7 @@ TOOLS_DIR := tools
 CSFIX := docker run --rm -v "$(CURDIR)":/app -w /app php:8.3-cli php -d memory_limit=-1 $(TOOLS_DIR)/vendor/bin/php-cs-fixer
 PHPSTAN := docker run --rm -v "$(CURDIR)":/app -w /app php:8.3-cli php -d memory_limit=-1 $(TOOLS_DIR)/vendor/bin/phpstan
 
-.PHONY: css css-watch css-min test test-authz test-lockout test-multilingual migrate-texts migrate-texts-apply render-capture render-check resync-triplestore tools lint-php fmt fmt-check analyse lint-house check token-diff
+.PHONY: css css-watch css-min test test-authz test-lockout test-multilingual test-naming migrate-texts migrate-texts-apply render-capture render-check resync-triplestore tools lint-php fmt fmt-check analyse lint-house check token-diff
 
 css: ## Compile scss/ -> css/luna.css (+ css/luna.css.map for dev tools)
 	$(SASS) $(SCSS_SRC):$(CSS_OUT) $(SASS_FLAGS) --style=expanded
@@ -42,6 +42,7 @@ test: ## Smoke + security-regression suite (run `docker compose up -d` first)
 	BASE=$${BASE:-http://localhost:8080} bash test/delegated_admin.sh
 	BASE=$${BASE:-http://localhost:8080} bash test/admin_lockout.sh
 	BASE=$${BASE:-http://localhost:8080} bash test/multilingual.sh
+	BASE=$${BASE:-http://localhost:8080} bash test/naming_split.sh
 
 test-authz: ## Delegated-admin privilege-escalation test (per-target authz; mutates DB, self-cleans)
 	BASE=$${BASE:-http://localhost:8080} bash test/delegated_admin.sh
@@ -54,6 +55,9 @@ render-check: ## Re-render and assert byte-identical to the committed baseline (
 
 test-lockout: ## Admin-lockout guardrail test (self-demotion / last-admin / protected nodes; mutates DB, self-cleans)
 	BASE=$${BASE:-http://localhost:8080} bash test/admin_lockout.sh
+
+test-naming: ## Routing key vs display name: luna:lid in the store, schema:name for the label (decision #9)
+	BASE=$${BASE:-http://localhost:8080} bash test/naming_split.sh
 
 test-multilingual: ## Multilingual content: translations coexist, no clobber, language honoured, graph tagged (mutates DB, self-cleans)
 	BASE=$${BASE:-http://localhost:8080} bash test/multilingual.sh

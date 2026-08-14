@@ -556,6 +556,13 @@ class lunaModel {
 			$doc['@type'] = 'WebPage';
 			$doc['@id']   = $base.'/id/'.rawurlencode($slug);
 			if ($name !== null) { $doc['name'] = $name; }
+			// The slug, for parity with build_schema_index(). These are two independent builders
+			// over the same resource, so anything one asserts and the other omits is a consumer
+			// seeing a different description depending on the format it asked for — which is the
+			// same class of divergence decision #9 exists to end, and not worth reintroducing in
+			// the act of fixing it. Written under the full IRI: the JSON-LD @context maps the
+			// schema.org terms, not luna:.
+			$doc[self::LUNA_NS.'lid'] = (string) $slug;
 			$doc['url'] = $base.'/'.ltrim(luna::$path, '/');
 			if (defined('LANG')) { $doc['inLanguage'] = LANG; }
 			// parent -> schema:isPartOf (skip the root self-link)
@@ -648,6 +655,12 @@ class lunaModel {
 		if ($slug === null) { return $index; }
 		$puri = $base.'/id/'.rawurlencode($slug);
 		$index[$puri][$rdf.'type'][] = ['value' => $schema.'WebPage', 'type' => 'uri'];
+		// State the slug explicitly rather than leaving it implicit in the URI. Before decision #9
+		// the published document never asserted it at all — a consumer had to parse it back out of
+		// /id/{slug} — while the store asserted it under schema:name, so the two surfaces disagreed
+		// about what schema:name meant AND neither could produce the other's answer. Both now say
+		// luna:lid for the routing key and schema:name for the display name.
+		$index[$puri][$luna.'lid'][] = ['value' => (string) $slug, 'type' => 'literal'];
 		if (($name = $first($page, $rdfs.'label')) !== null) { $index[$puri][$schema.'name'][] = ['value' => (string)$name, 'type' => 'literal']; }
 		if (($nid  = $first($page, $luna.'nid'))    !== null) { $index[$puri][$schema.'identifier'][] = ['value' => (string)$nid, 'type' => 'literal', 'datatype' => $xint]; }
 		if (($act  = $first($page, $luna.'isActive')) !== null) { $index[$puri][$luna.'isActive'][] = ['value' => (string)$act, 'type' => 'literal', 'datatype' => $xint]; }
@@ -774,12 +787,15 @@ class lunaModel {
 		if (empty($levels)) { return []; }
 		$vals = [];
 		foreach ($levels as $l) { $vals[] = '"'.intval($l).'"'; }
+		// The router matches on luna:lid, the routing key, rather than schema:name. It read
+		// schema:name because that is where rdf_sync_node() used to write the slug; both moved
+		// together (roadmap decision #9), so schema:name is free to mean the display name alone.
 		$q = 'PREFIX schema: <https://schema.org/> '
 		   .'PREFIX luna: <'.self::LUNA_NS.'> '
 		   .'SELECT DISTINCT ?pnid ?lid ?active ?lnid ?llid ?lactive ?parentNid WHERE { '
-		   .'?page a schema:WebPage ; schema:identifier ?pnid ; schema:name ?lid ; '
+		   .'?page a schema:WebPage ; schema:identifier ?pnid ; luna:lid ?lid ; '
 		   .'luna:isActive ?active ; luna:level ?level . '
-		   .'?level schema:identifier ?lnid ; schema:name ?llid ; luna:isActive ?lactive . '
+		   .'?level schema:identifier ?lnid ; luna:lid ?llid ; luna:isActive ?lactive . '
 		   .'OPTIONAL { ?page schema:isPartOf ?parent . ?parent schema:identifier ?parentNid } '
 		   .'FILTER ( STR(?lnid) IN ('.implode(', ', $vals).') ) }';
 		$rows = lunaGraph::sparql_select($q);

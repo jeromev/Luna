@@ -140,7 +140,8 @@ app-specific things:
 | page | `schema:WebPage` (`foaf:Document`) | schema.org / FOAF |
 | text | `schema:Article` / `sioc:Item` | schema.org / SIOC |
 | user | `foaf:Person` | FOAF |
-| title / name | `schema:name` / `schema:headline` | schema.org |
+| node lid (the routing slug) | `luna:lid` | luna: |
+| title / display name | `schema:name` / `schema:headline` | schema.org |
 | content | `schema:text` / `schema:articleBody` / `sioc:content` | schema.org / SIOC |
 | parent | `schema:isPartOf` / `dcterms:isPartOf` | schema.org / DC Terms |
 | children | `schema:hasPart` | schema.org |
@@ -149,6 +150,23 @@ app-specific things:
 | language (`luna_texts.lang`) | **the literal's language tag** (`"Bonjour"@fr`), plus `schema:inLanguage` | RDF 1.1 / schema.org |
 | taxonomy (`luna_types`) | `rdf:type` against an **RDFS/OWL + SHACL** schema | RDFS / OWL / SHACL |
 | access level | `luna:level` (or Web Access Control, `acl:`) | luna: / WAC |
+
+**The routing key and the display name are separate predicates.** A node's slug — the segment
+`/id/{slug}` is built from — is `luna:lid`: permanent, language-independent, and what the SPARQL
+router matches a request path against. Its human-readable label is `schema:name`, produced per
+request by translating the slug through the gettext catalogue, so it varies by language and is not
+stored. Until 0.9.3-alpha `schema:name` carried both, and which one you got depended on which
+surface you read: the triplestore answered `"edit_texts"`, the published document answered
+`"Edit texts"`, for the same subject. That is why the representation could not be `CONSTRUCT`-backed
+— a `CONSTRUCT` over the store would have regressed every published page name to its slug. Both
+surfaces now assert both, and the R2RML mapping moves with them so the two SQL-to-RDF projections
+agree.
+
+What this does **not** yet do: the store still holds no display name, because the label is a
+translation rather than a stored value. So a `CONSTRUCT` can now produce a correct description
+without a wrong `schema:name`, but not yet a complete one. Putting labels in the store means writing
+them per configured language as tagged literals — the same shape as the text translations below —
+and is a separate step.
 
 **Translations are language-tagged literals, and this is the one place the graph stopped being a
 lossy mirror.** A text node holds one row per language, and every one of them is projected onto the
