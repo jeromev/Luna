@@ -110,6 +110,12 @@ jobs:
         run: BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" APP_CONTAINER="$(docker compose ps -q app)" bash test/multilingual.sh
       - name: Routing key vs display name
         run: BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" APP_CONTAINER="$(docker compose ps -q app)" bash test/naming_split.sh
+      - name: The frontend addresses nodes by lid, not nid
+        # L4 is the assertion that earns this step: a boundary conversion that resolves to
+        # nothing renders a perfectly correct page while saving nothing, so the suite writes
+        # through the lid path and reads the row back out of MySQL rather than trusting the
+        # success message.
+        run: BASE=http://localhost:8080 DB_CONTAINER="$(docker compose ps -q db)" APP_CONTAINER="$(docker compose ps -q app)" bash test/lid_addressing.sh
       - name: Render-diff against the committed baseline
         # The output-neutrality gate: every page type is re-rendered and compared byte-for-byte
         # with test/render-baseline/, which is in the repo. This is what makes "the render is

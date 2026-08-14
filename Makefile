@@ -43,6 +43,7 @@ test: ## Smoke + security-regression suite (run `docker compose up -d` first)
 	BASE=$${BASE:-http://localhost:8080} bash test/admin_lockout.sh
 	BASE=$${BASE:-http://localhost:8080} bash test/multilingual.sh
 	BASE=$${BASE:-http://localhost:8080} bash test/naming_split.sh
+	BASE=$${BASE:-http://localhost:8080} bash test/lid_addressing.sh
 
 test-authz: ## Delegated-admin privilege-escalation test (per-target authz; mutates DB, self-cleans)
 	BASE=$${BASE:-http://localhost:8080} bash test/delegated_admin.sh
@@ -61,6 +62,9 @@ test-naming: ## Routing key vs display name: luna:lid in the store, schema:name 
 
 test-multilingual: ## Multilingual content: translations coexist, no clobber, language honoured, graph tagged (mutates DB, self-cleans)
 	BASE=$${BASE:-http://localhost:8080} bash test/multilingual.sh
+
+test-lids: ## The frontend addresses nodes by lid, not nid, and the save still reaches the DB (decision #4; mutates DB, self-cleans)
+	BASE=$${BASE:-http://localhost:8080} bash test/lid_addressing.sh
 
 migrate-texts: ## Report what luna_texts needs to reach one-row-per-(node,language) — reads only
 	docker-compose exec -T app php bin/migrate-texts.php

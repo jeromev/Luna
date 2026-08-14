@@ -313,14 +313,16 @@ class lunaModel {
 	 * URIs, whose local name is the slug, not the breadcrumb alias.
 	 *
 	 * @param string $slug
-	 * @param string $type a luna: type to require (e.g. 'page'); '' to accept any
+	 * @param string $type a type to require (e.g. 'page'); '' to accept any
+	 * @param string $ns the namespace $type belongs to ('luna', 'foaf', …)
 	 * @return mixed the node, or false
 	 */
-	public function get_node_from_slug(string $slug = '', $type = 'page') {
+	public function get_node_from_slug(string $slug = '', $type = 'page', $ns = 'luna') {
 		if ($slug === '' || $slug === false) { return false; }
+		if (empty($ns) || !isset($this->conf['ns']["$ns"])) { $ns = 'luna'; }
 		$lid   = $this->conf['ns']['luna'].'lid';
 		$rtype = $this->conf['ns']['rdf'].'type';
-		$want  = $this->conf['ns']['luna'].$type;
+		$want  = $this->conf['ns']["$ns"].$type;
 		foreach ($this->index as $node) {
 			if (!isset($node[$lid][0]['value']) || $node[$lid][0]['value'] !== "$slug") { continue; }
 			if (!empty($type) && (!isset($node[$rtype][0]['value']) || $node[$rtype][0]['value'] !== $want)) { continue; }
@@ -1538,6 +1540,75 @@ class lunaModel {
 			$nodes = $this->merge_nodes($nodes, $var_node);
 		}
 		return $nodes;
+	}
+	// }}}
+	// {{{ nids_from_lids()
+	/**
+	 * Resolve a posted list of lids (a multi-select, a checkbox column) to the nid-keyed
+	 * array the write paths expect — `[nid => nid]`, the shape link() and the existing
+	 * per-item checks already consume.
+	 *
+	 * Unresolvable entries are **dropped rather than carried through**, and the direction
+	 * matters: resolution runs against the ACL-scoped index, so an entry that does not
+	 * resolve is one the requester may not address, and turning it into a nid anyway is the
+	 * failure this exists to prevent. Callers must resolve *before* their emptiness check,
+	 * so a list that resolves to nothing is refused as empty instead of saving as "no levels".
+	 *
+	 * @param mixed $lids the posted list
+	 * @param string|false $type the type to require (e.g. 'level')
+	 * @param string $ns the namespace $type belongs to
+	 * @return array<int,int> nid => nid, empty if nothing resolved
+	 */
+	public function nids_from_lids($lids = false, string|false $type = false, $ns = 'luna'): array {
+		$nids = [];
+		if (empty($lids) || !is_array($lids)) { return $nids; }
+		if (empty($ns)) { $ns = 'luna'; }
+		foreach ($lids as $lid) {
+			if (!is_scalar($lid)) { continue; }
+			$node = $this->get_node_from_slug((string) $lid, "$type", "$ns");
+			if (empty($node)) { continue; }
+			$nid = intval($this->get_nid($node, "$type", "$ns"));
+			if ($nid > 0) { $nids[$nid] = $nid; }
+		}
+		return $nids;
+	}
+	// }}}
+	// {{{ check_requested_node_by_lid()
+	/**
+	 * Resolve a request parameter that carries a **lid** to the nid the write paths work in.
+	 *
+	 * The lid twin of check_requested_node(). The frontend addresses a node by its slug —
+	 * `?group_lid=group_admin`, not `?group_nid=4` — because the integer is a database
+	 * counter with no meaning outside the store, and publishing it invites callers to treat
+	 * it as identity (roadmap decision #4, settled in 0.9.9-alpha). Resolution happens here,
+	 * at the request boundary, and everything downstream keeps working in nids: the SQL, the
+	 * edge table and the ACL checks are unchanged.
+	 *
+	 * Resolution goes through get_node_from_slug(), which scans the **ACL-scoped working
+	 * index** rather than querying the node table — so a lid the requester may not see
+	 * resolves to false, exactly as a nid they may not see already does through get_node().
+	 * Using get_nid_from_lid() here instead would read at full scope and hand back a nid for
+	 * a node the requester is not entitled to, which is the one substitution that would turn
+	 * this from a rename into a privilege escalation.
+	 *
+	 * @param string|false $var the request parameter name (e.g. 'group_lid')
+	 * @param string|false $type the type to require (e.g. 'group')
+	 * @param string $ns the namespace $type belongs to
+	 * @return int|false the resolved nid, or false
+	 */
+	public function check_requested_node_by_lid($var = false, string|false $type = false, $ns = 'luna'): int|false {
+		if (empty($var)) { return false; }
+		if (empty($ns)) { $ns = 'luna'; }
+		$lid = lunaTools::request("$var");
+		if (empty($lid)) { $lid = luna::$data['subdir'] ?? ''; }
+		if (empty($lid)) { return false; }
+		$node = $this->get_node_from_slug((string) $lid, "$type", "$ns");
+		if (empty($node)) { return false; }
+		$nid = intval($this->get_nid($node, "$type", "$ns"));
+		if ($nid < 1) { return false; }
+		$_POST["$var"] = $_REQUEST["$var"] = $lid;
+		luna::$data['modify_item_lid'] = $lid;
+		return $nid;
 	}
 	// }}}
 	// {{{ check_requested_node()

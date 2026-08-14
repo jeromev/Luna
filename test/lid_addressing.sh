@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+#
+# The frontend addresses nodes by lid, not by nid — roadmap decision #4, continued.
+#
+# 0.9.9-alpha retired /node/{nid}, which was the only place the integer was published as an
+# IDENTITY. It left the integer everywhere it was published as an ADDRESS: every admin link
+# (?group_nid=4), every hidden form field (modify_item_nid), every <option value="7"> in a
+# picker. Those are not identity claims, so nothing about them was wrong on the Semantic Web
+# terms decision #4 was argued on — but they are the database's autoincrement counter on the
+# wire, and they mean a URL cannot be written, read or kept by a human, and cannot survive a
+# reseed. The slug can do all three.
+#
+# The conversion is a BOUNDARY conversion, and that is the thing this file is really guarding.
+# The frontend speaks lids; PHP resolves each one to a nid at the request boundary and every
+# write path below it is untouched — the SQL, the edge table, insert_action(), and above all
+# the access checks still operate on nids exactly as before. So the risk is not that a link
+# breaks (that is loud); it is that resolution silently returns nothing and a form appears to
+# work while saving less than it claims, or that resolution is done at full scope and hands
+# back a nid for a node the requester may not address.
+#
+# Resolution therefore goes through get_node_from_slug(), which scans the ACL-scoped working
+# index, and never get_nid_from_lid(), which queries the node table at full scope. The
+# difference is the whole security content of the change.
+#
+# Asserted here, per converted screen:
+#   L1  the list links by lid, and carries no ?{type}_nid= anywhere
+#   L2  the pickers are keyed by lid
+#   L3  ?{type}_lid= reaches the modify form
+#   L4  a lid-addressed save round-trips to the database  (the write path really works)
+#   L5  a lid that does not resolve is refused, and changes nothing
+#
+# L4 is the one that matters most, and it exists because L1–L3 can all pass on a screen whose
+# save silently does nothing: a resolution that drops everything renders a perfectly correct
+# page. The privilege half is covered next door in delegated_admin.sh, which asserts that the
+# escalation guard still FIRES (by its message) rather than the attempt merely failing to
+# resolve — see the comment there.
+#
+# SCREENS COVERED SO FAR: admin_groups. The rest still address by nid and are converted one
+# release at a time; this file grows with them, and the nid-free sweep in L1 is deliberately
+# scoped to the converted screen rather than the whole admin, so it cannot pass vacuously.
+#
+#   BASE=http://localhost:8080 test/lid_addressing.sh
+#
+set -u
+BASE="${BASE:-http://localhost:8080}"
+APP="${APP_CONTAINER:-luna-app-1}"
+DB="${DB_CONTAINER:-luna-db-1}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-admin@luna.local}"
+ADMIN_PASS="${ADMIN_PASS:-luna}"
+
+fails=0
+pass(){ printf '  \033[32mPASS\033[0m %s\n' "$1"; }
+fail(){ printf '  \033[31mFAIL\033[0m %s\n' "$1"; fails=$((fails + 1)); }
+sql(){ docker exec "$DB" mysql -uroot -proot lunadb -N -e "$1" 2>/dev/null; }
+tok(){ grep -oE 'csrf_token"[^>]*value="[^"]*"' "$1" | grep -oE 'value="[^"]*"' | head -1 | sed 's/value="//;s/"//'; }
+# the levels a group currently holds, as lids, one per line, sorted
+levels_of(){ sql "SELECT n2.lid FROM luna_nodes_map m
+  JOIN luna_nodes n1 ON m.nid1 = n1.nid
+  JOIN luna_nodes n2 ON m.nid2 = n2.nid
+  WHERE n1.lid = '$1' AND n2.tid = (SELECT id FROM luna_types WHERE lid = 'level')
+  ORDER BY n2.lid;"; }
+
+sql "DELETE FROM luna_login_throttle;"
+
+# --- fresh admin session ---
+AJ=$(mktemp); AP=$(mktemp)
+curl -s -c "$AJ" "$BASE/login" -o "$AP"
+curl -s -b "$AJ" -c "$AJ" --data-urlencode submit=login --data-urlencode "email=$ADMIN_EMAIL" \
+  --data-urlencode "password=$ADMIN_PASS" --data-urlencode "csrf_token=$(tok $AP)" "$BASE/login" -o /dev/null
+
+echo "== admin_groups =="
+LP=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_groups?lang=en-US" -o "$LP"
+
+grep -q 'admin_groups?group_lid=group_admin' "$LP" \
+  && pass "L1 the groups list links by lid" \
+  || fail "L1 the groups list does not link by lid"
+grep -qE 'admin_groups\?group_nid=' "$LP" \
+  && fail "L1b a ?group_nid= link survives on the groups list" \
+  || pass "L1b no ?group_nid= link survives on the groups list"
+
+grep -q '<option label="Public level" value="level_public"' "$LP" \
+  && pass "L2 the levels picker is keyed by lid" \
+  || fail "L2 the levels picker is not keyed by lid"
+
+# --- L3: the lid reaches the modify form ---
+GP=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_groups?group_lid=group_edition&lang=en-US" -o "$GP"
+grep -q 'name="modify_item_lid"' "$GP" \
+  && pass "L3 ?group_lid= reaches the modify form" \
+  || fail "L3 ?group_lid= did not reach the modify form"
+grep -q 'value="group_edition"' "$GP" \
+  && pass "L3b the form is addressed by the lid it was asked for" \
+  || fail "L3b the form does not carry the requested lid"
+
+# --- L4: a lid-addressed save round-trips ---
+# Grant level_admin, assert the database really changed, then put it back. The revert is not
+# tidiness: the render baselines are captured against the seeded level set, so a suite that
+# leaves this group holding an extra level makes every later baseline run disagree.
+BEFORE=$(levels_of group_edition)
+RESP=$(curl -s -b "$AJ" --data-urlencode submit=Modify --data-urlencode mode=modify \
+  --data-urlencode "modify_item_lid=group_edition" --data-urlencode modify_group_lid=group_edition \
+  --data-urlencode "modify_group_levels[]=level_public" --data-urlencode "modify_group_levels[]=level_edition" \
+  --data-urlencode "modify_group_levels[]=level_admin" --data-urlencode "csrf_token=$(tok $GP)" \
+  "$BASE/admin/admin_groups?lang=en-US")
+echo "$RESP" | grep -qiE 'has been modified' \
+  && pass "L4 a lid-addressed modify reports success" \
+  || fail "L4 a lid-addressed modify did not report success"
+AFTER=$(levels_of group_edition)
+echo "$AFTER" | grep -q '^level_admin$' \
+  && pass "L4b the save reached the database (level_admin granted by lid)" \
+  || fail "L4b the save did NOT reach the database — resolution dropped the list"
+
+# put it back and confirm the revert also went through the lid path
+GP2=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_groups?group_lid=group_edition&lang=en-US" -o "$GP2"
+curl -s -b "$AJ" --data-urlencode submit=Modify --data-urlencode mode=modify \
+  --data-urlencode "modify_item_lid=group_edition" --data-urlencode modify_group_lid=group_edition \
+  --data-urlencode "modify_group_levels[]=level_public" --data-urlencode "modify_group_levels[]=level_edition" \
+  --data-urlencode "csrf_token=$(tok $GP2)" "$BASE/admin/admin_groups?lang=en-US" -o /dev/null
+REVERTED=$(levels_of group_edition)
+[ "$REVERTED" = "$BEFORE" ] \
+  && pass "L4c the level set is back to what it was (suite is self-cleaning)" \
+  || fail "L4c the level set was left changed: '$REVERTED' (was '$BEFORE')"
+
+# --- L5: a lid that does not resolve is refused and changes nothing ---
+GP3=$(mktemp); curl -s -b "$AJ" "$BASE/admin/admin_groups?group_lid=group_edition&lang=en-US" -o "$GP3"
+RESP2=$(curl -s -b "$AJ" --data-urlencode submit=Modify --data-urlencode mode=modify \
+  --data-urlencode "modify_item_lid=no_such_group_xyz" --data-urlencode modify_group_lid=group_edition \
+  --data-urlencode "modify_group_levels[]=level_public" --data-urlencode "csrf_token=$(tok $GP3)" \
+  "$BASE/admin/admin_groups?lang=en-US")
+echo "$RESP2" | grep -qiE 'has been modified' \
+  && fail "L5 an unresolvable lid reported a successful modify" \
+  || pass "L5 an unresolvable lid does not report success"
+[ "$(levels_of group_edition)" = "$BEFORE" ] \
+  && pass "L5b an unresolvable lid changed nothing" \
+  || fail "L5b an unresolvable lid changed the stored level set"
+
+rm -f "$AJ" "$AP" "$LP" "$GP" "$GP2" "$GP3"
+echo
+if [ "$fails" -eq 0 ]; then echo "LID ADDRESSING HOLDS"; exit 0; else echo "$fails CHECK(S) FAILED"; exit 1; fi

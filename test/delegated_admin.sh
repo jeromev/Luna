@@ -84,16 +84,23 @@ sql "DELETE FROM luna_login_throttle;"
 DJ=$(mktemp); DP=$(mktemp); curl -s -c "$DJ" "$BASE/login" -o "$DP"
 curl -s -b "$DJ" -c "$DJ" --data-urlencode submit=login --data-urlencode email=delegated@test.local \
   --data-urlencode "password=$DPASS" --data-urlencode "csrf_token=$(tok $DP)" "$BASE/login" -o /dev/null
-GP=$(mktemp); curl -s -b "$DJ" "$BASE/admin/admin_groups?group_nid=$GED&sparql=0" -o "$GP"
+GP=$(mktemp); curl -s -b "$DJ" "$BASE/admin/admin_groups?group_lid=group_edition&sparql=0" -o "$GP"
 grep -qiE "Groups administration|Accessible levels|modify_group" "$GP" \
   && pass "delegated admin reaches admin_groups (re-bound to level_edition)" \
   || fail "delegated admin could not reach admin_groups (setup issue)"
 
 # --- escalation attempt: grant level_admin to a group ---
+# The form addresses the group and the levels by lid since 0.9.10-alpha. The escalation guard
+# still has to FIRE here rather than the request merely failing to resolve: load_nodes('level')
+# applies no access filter to its own type (only to a joined one), so level_admin resolves for
+# this delegated admin exactly as its nid did, and user_can_access_level() is what refuses it.
+# If a future change scopes that load, this attempt would be dropped at resolution instead and
+# the "Access denied" assertion below would fail — which is the point of asserting the message
+# and not only the absence of the grant.
 RESP=$(curl -s -b "$DJ" --data-urlencode submit=Modify --data-urlencode mode=modify \
-  --data-urlencode "modify_item_nid=$GED" --data-urlencode modify_group_lid=group_edition \
-  --data-urlencode "modify_group_levels[]=$LPUB" --data-urlencode "modify_group_levels[]=$LEDIT" \
-  --data-urlencode "modify_group_levels[]=$LADMIN" --data-urlencode "csrf_token=$(tok $GP)" "$BASE/admin/admin_groups?sparql=0")
+  --data-urlencode "modify_item_lid=group_edition" --data-urlencode modify_group_lid=group_edition \
+  --data-urlencode "modify_group_levels[]=level_public" --data-urlencode "modify_group_levels[]=level_edition" \
+  --data-urlencode "modify_group_levels[]=level_admin" --data-urlencode "csrf_token=$(tok $GP)" "$BASE/admin/admin_groups?sparql=0")
 echo "$RESP" | grep -qiE "Access denied|above your own" \
   && pass "escalation DENIED: a delegated admin cannot grant level_admin" \
   || fail "escalation was NOT denied — the guard failed!"

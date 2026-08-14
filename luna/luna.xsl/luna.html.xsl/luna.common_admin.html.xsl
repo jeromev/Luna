@@ -701,7 +701,7 @@
 									<xsl:call-template name="link">
 										<xsl:with-param name="alias" select="$modpagealias"/>
 										<xsl:with-param name="options">
-											<xsl:text>group_nid=</xsl:text><xsl:value-of select="schema:identifier"/>
+											<xsl:text>group_lid=</xsl:text><xsl:value-of select="luna:lid"/>
 										</xsl:with-param>
 									</xsl:call-template>
 									<xsl:call-template name="onchange3"/>
@@ -713,7 +713,7 @@
 											<xsl:call-template name="link">
 												<xsl:with-param name="alias" select="$modpagealias"/>
 												<xsl:with-param name="options">
-													<xsl:text>group_nid=</xsl:text><xsl:value-of select="schema:identifier"/>
+													<xsl:text>group_lid=</xsl:text><xsl:value-of select="luna:lid"/>
 												</xsl:with-param>
 											</xsl:call-template>
 										</xsl:attribute>

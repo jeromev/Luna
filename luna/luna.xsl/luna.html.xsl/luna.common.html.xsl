@@ -84,8 +84,8 @@
 		<xsl:if test="/rdf:RDF/ui:data[ui:lid = 'limit']/ui:value">
 			<xsl:text>&amp;limit=</xsl:text><xsl:value-of select="/rdf:RDF/ui:data[ui:lid = 'limit']/ui:value"/>
 		</xsl:if>
-		<xsl:if test="/rdf:RDF/ui:request[ui:lid = 'group_nid']/ui:value">
-			<xsl:text>&amp;group_nid=</xsl:text><xsl:value-of select="/rdf:RDF/ui:request[ui:lid = 'group_nid']/ui:value"/>
+		<xsl:if test="/rdf:RDF/ui:request[ui:lid = 'group_lid']/ui:value">
+			<xsl:text>&amp;group_lid=</xsl:text><xsl:value-of select="/rdf:RDF/ui:request[ui:lid = 'group_lid']/ui:value"/>
 		</xsl:if>
 	</xsl:template>
 
@@ -413,6 +413,12 @@
 		<xsl:param name="foreach"/>
 		<xsl:param name="label"/>
 		<xsl:param name="required"/>
+		<!-- Which key a node-mode <option> is addressed by: 'nid' (schema:identifier, the
+		     database counter) or 'lid' (luna:lid, the slug). Screens are moving to 'lid' one
+		     at a time, so this stays opt-in until the last one has; callers passing 'lid' must
+		     also pass $required and $default-value as lids, since both are compared against
+		     the same key. -->
+		<xsl:param name="option-key">nid</xsl:param>
 		<xsl:param name="name"/>
 		<xsl:param name="onchange"/>
 		<xsl:param name="default-value">0</xsl:param>
@@ -509,19 +515,24 @@
 										<xsl:value-of select="$datavalue"/>
 									</xsl:when>
 									<xsl:otherwise>
-										<xsl:variable name="option_nid"><xsl:value-of select="schema:identifier"/></xsl:variable>
+										<xsl:variable name="option_value">
+											<xsl:choose>
+												<xsl:when test="$option-key = 'lid'"><xsl:value-of select="luna:lid"/></xsl:when>
+												<xsl:otherwise><xsl:value-of select="schema:identifier"/></xsl:otherwise>
+											</xsl:choose>
+										</xsl:variable>
 										<xsl:attribute name="label"><xsl:value-of select="schema:name"/></xsl:attribute>
-										<xsl:attribute name="value"><xsl:value-of select="$option_nid"/></xsl:attribute>
+										<xsl:attribute name="value"><xsl:value-of select="$option_value"/></xsl:attribute>
 										<xsl:choose>
 											<xsl:when test="$multiple = 'yes' or $multiple = '1'">
 												<xsl:choose>
-													<xsl:when test="schema:identifier = $required">
+													<xsl:when test="$option_value = $required">
 														<xsl:attribute name="selected">selected</xsl:attribute>
 													</xsl:when>
-													<xsl:when test="(/rdf:RDF/ui:request[starts-with(ui:lid, $name)]/ui:value = schema:identifier) and not(/rdf:RDF/ui:message[ui:code = 'okay'])">
+													<xsl:when test="(/rdf:RDF/ui:request[starts-with(ui:lid, $name)]/ui:value = $option_value) and not(/rdf:RDF/ui:message[ui:code = 'okay'])">
 														<xsl:attribute name="selected">selected</xsl:attribute>
 													</xsl:when>
-													<xsl:when test="(/rdf:RDF/ui:request[starts-with(ui:lid, $name)]/ui:value = schema:identifier) and /rdf:RDF/ui:request[ui:lid = 'mode']/ui:value = 'modify'">
+													<xsl:when test="(/rdf:RDF/ui:request[starts-with(ui:lid, $name)]/ui:value = $option_value) and /rdf:RDF/ui:request[ui:lid = 'mode']/ui:value = 'modify'">
 														<xsl:attribute name="selected">selected</xsl:attribute>
 													</xsl:when>
 													<xsl:otherwise>
@@ -540,13 +551,13 @@
 											</xsl:when>
 											<xsl:otherwise>
 												<xsl:choose>
-													<xsl:when test="/rdf:RDF/ui:request[ui:lid = $name]/ui:value = $option_nid and not(/rdf:RDF/ui:message[ui:code = 'okay'])">
+													<xsl:when test="/rdf:RDF/ui:request[ui:lid = $name]/ui:value = $option_value and not(/rdf:RDF/ui:message[ui:code = 'okay'])">
 														<xsl:attribute name="selected">selected</xsl:attribute>
 													</xsl:when>
-													<xsl:when test="/rdf:RDF/ui:request[ui:lid = $name]/ui:value = $option_nid and /rdf:RDF/ui:request[ui:lid = 'mode']/ui:value = 'modify'">
+													<xsl:when test="/rdf:RDF/ui:request[ui:lid = $name]/ui:value = $option_value and /rdf:RDF/ui:request[ui:lid = 'mode']/ui:value = 'modify'">
 														<xsl:attribute name="selected">selected</xsl:attribute>
 													</xsl:when>
-													<xsl:when test="$default-value = $option_nid and not(/rdf:RDF/ui:message)">
+													<xsl:when test="$default-value = $option_value and not(/rdf:RDF/ui:message)">
 														<xsl:attribute name="selected">selected</xsl:attribute>
 													</xsl:when>
 												</xsl:choose>

@@ -47,29 +47,28 @@
       <main id="Content">
         <div id="Content-main">
           <div class="box">
-            <form method="post" id="Addgroup" action="/admin/admin_groups">
+            <form method="post" id="Modifygroup" action="/admin/admin_groups">
               <fieldset>
-                <h2 class="box-handle collapsed">Add a group</h2>
-                <div class="box-content off">
+                <h2 class="box-handle expanded">Modify the group <em>Editors</em></h2>
+                <div class="box-content">
                   <div class="fields">
                     <div class="onecol">
-                      <label for="add_group_is_inactive" class=""><input name="add_group_is_inactive" id="add_group_is_inactive" type="checkbox" class="autowidth" value="1" /> Deactivate</label>
+                      <label for="modify_group_is_inactive" class=""><input name="modify_group_is_inactive" id="modify_group_is_inactive" type="checkbox" class="autowidth" value="1" /> Deactivate</label>
                       <br />
                     </div>
                     <div class="col">
-                      <label for="add_group_lid" class="">
+                      <label for="modify_group_lid" class="">
                         <span class="label">Literal identifier</span>
-                        <input name="add_group_lid" id="add_group_lid" type="text" value="" />
+                        <input name="modify_group_lid" id="modify_group_lid" type="text" value="group_edition" />
                       </label>
                       <br />
-                      <br />
                     </div>
                     <div class="col">
-                      <label for="add_group_levels" class="">
+                      <label for="modify_group_levels" class="">
                         <span class="label">Accessible levels</span>
-                        <select size="4" id="add_group_levels" name="add_group_levels[]" multiple="multiple">
+                        <select size="4" id="modify_group_levels" name="modify_group_levels[]" multiple="multiple">
                           <option label="Administration level" value="level_admin">Administration level</option>
-                          <option label="Edition level" value="level_edition">Edition level</option>
+                          <option label="Edition level" value="level_edition" selected="selected">Edition level</option>
                           <option label="Public level" value="level_public" selected="selected">Public level</option>
                         </select>
                       </label>
@@ -77,17 +76,87 @@
                     </div>
                   </div>
                   <div class="submit">
-                    <input type="hidden" name="mode" value="add" />
-                    <input type="submit" class="submit" name="submit" value="Add" />
+                    <input type="hidden" name="mode" value="modify" />
+                    <input type="hidden" name="group_lid" value="group_edition" />
+                    <input type="hidden" name="modify_item_lid" value="group_edition" />
+                    <input type="submit" class="submit" name="submit" value="Modify" />
+                    <input type="submit" class="submit warning" name="submit" value="Delete" data-confirm="Are you sure you want to delete this group?" />
                   </div>
                 </div>
               </fieldset>
               <input type="hidden" name="csrf_token" value="CSRF" />
             </form>
           </div>
+          <div id="UsersList" class="box">
+            <form method="post" id="Modifyusers">
+              <fieldset action="/admin/admin_groups">
+                <h2 class="box-handle expanded">Users who belong to this group</h2>
+                <div class="box-content boxtable">
+                  <table class="zebra">
+                    <caption class="off">Users who belong to this group</caption>
+                    <thead>
+                      <tr>
+                        <td colspan="7">
+                          <div class="pagination"><a class="first" href="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20&amp;group_lid=group_edition" title="First page">⇐</a> <a class="prev" href="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20&amp;group_lid=group_edition" title="Previous page">←</a> Page: <select name="pagination" size="1" class="autowidth" aria-label="Page: " data-navigate="1"><option label="1" value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20&amp;group_lid=group_edition" selected="selected">1</option></select>/1 <a class="next" href="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20&amp;group_lid=group_edition" title="Next page">→</a> <a class="last" href="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20&amp;group_lid=group_edition" title="Last page">⇒</a> Elements per page: <select name="perpage" size="1" class="autowidth" aria-label="Elements per page: " data-navigate="1"><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=10">10</option><option selected="selected" value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=20">20</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=30">30</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=40">40</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=50">50</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=60">60</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=70">70</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=80">80</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=90">90</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=100">100</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=150">150</option><option value="/admin/admin_groups?start=0&amp;order_by=last_time&amp;order_dir=DESC&amp;limit=200">200</option></select></div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th>
+                          <span class="off">Select one</span>
+                        </th>
+                        <th>
+                          <a href="/admin/admin_groups?start=0&amp;order_by=firstname&amp;group_lid=group_edition">Firstname</a>
+                        </th>
+                        <th>
+                          <a href="/admin/admin_groups?start=0&amp;order_by=lastname&amp;group_lid=group_edition">Lastname</a>
+                        </th>
+                        <th>
+                          <a href="/admin/admin_groups?start=0&amp;order_by=email&amp;group_lid=group_edition">email</a>
+                        </th>
+                        <th>
+                          <a href="/admin/admin_groups?start=0&amp;order_by=regis_time&amp;group_lid=group_edition">Registration</a>
+                        </th>
+                        <th>
+                          <a href="/admin/admin_groups?start=0&amp;order_by=last_time&amp;group_lid=group_edition">
+                            <strong>Last visit</strong>
+                          </a>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="">
+                        <td>
+                          <input type="checkbox" class="autowidth" name="modify_users_list[]" value="" />
+                        </td>
+                        <td>Admin</td>
+                        <td>Luna</td>
+                        <td>
+                          <a href="/admin/admin_users?user_nid=1">admin@luna.local</a>
+                        </td>
+                        <td></td>
+                        <td>AGO </td>
+                      </tr>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colspan="7">For the selection: <select name="modify_users_action" size="1" id="modify_users_action" data-submit-on-change="1"><option label="" value="">Choose an action</option><option label="Delete from the group" value="delete_from_group">Delete from the group</option></select></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                  <input type="hidden" name="mode" value="modify" />
+                  <input type="hidden" name="modify_group_lid" value="group_edition" />
+                  <input type="hidden" name="modify_item_lid" value="group_edition" />
+                  <input type="hidden" name="group_lid" value="group_edition" />
+                  <input type="hidden" name="batch_submit" value="1" />
+                  <input type="hidden" name="group_lid" value="group_edition" />
+                </div>
+              </fieldset>
+              <input type="hidden" name="csrf_token" value="CSRF" />
+            </form>
+          </div>
           <div id="GroupsList" class="box">
-            <h2 class="box-handle expanded">Groups</h2>
-            <div class="box-content boxtable">
+            <h2 class="box-handle collapsed">Groups</h2>
+            <div class="box-content boxtable off">
               <table class="zebra">
                 <caption class="off">Groups</caption>
                 <thead>
