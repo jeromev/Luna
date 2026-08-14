@@ -301,6 +301,20 @@ class mod_admin_pages {
 		}
 		if ($inerror) { return false; }
 		$page_nid = luna::model()->get_nid($item_node);
+		// A page that still has sub-pages cannot be deleted: they would be left filed under a
+		// parent that no longer exists — listed here, unreachable on the site. Re-parent or delete
+		// them first. Backstopped by lunaModel::delete(). The message names no child on purpose:
+		// the check runs at full scope, so a child may be one this administrator is not entitled
+		// to see, and a refusal must not become the channel that discloses it.
+		if (luna::model()->first_child_nid($page_nid)) {
+			$message = sprintf(
+				_('You cannot delete “%1$s” while other pages are filed under it. Move or delete them first.'),
+				_($page_lid)
+			);
+			luna::$messages['warning'][] = $message;
+			lunaLog::log($message, PEAR_LOG_NOTICE);
+			return false;
+		}
 		if (luna::model()->delete($page_nid)) {
 			lunaTools::purge_cache();
 			luna::model()->purge_index();

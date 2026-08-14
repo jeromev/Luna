@@ -1793,6 +1793,38 @@ class lunaModel {
 		return false;
 	}
 	// }}}
+	// {{{ first_child_nid()
+	/**
+	 * Does any node still name $nid as its parent, and if so which one? Returns the first child's
+	 * nid, or 0 when the node has none — the question delete() must ask before it removes a node,
+	 * since a surviving child would be left pointing at a parent row that no longer exists.
+	 *
+	 * Reads SQL at full scope, deliberately, and for the same reason would_create_cycle() does:
+	 * whether a delete orphans content is a property of the store, not of the requester's view — a
+	 * child page the requester cannot see is orphaned just as thoroughly as one they can.
+	 * get_children_nodes() walks $this->index, which is ACL-scoped and holds only what this request
+	 * loaded, so it is the wrong instrument for this question.
+	 *
+	 * @param int $nid the node whose children are being counted
+	 * @return int the nid of the first child found, or 0 when there is none
+	 */
+	public function first_child_nid($nid = 0): int {
+		$nid = intval($nid);
+		if (!$nid) { return 0; }
+		$res = lunaDB::query('
+			SELECT
+				nid
+			FROM
+				'.luna::get_ini('DBtables', 'NODES').'
+			WHERE
+				parent_nid = '.lunaDB::quote($nid).'
+			LIMIT 1
+		');
+		$row = ($res) ? $res->fetchRow() : false;
+		if ($res) { $res->free(); }
+		return ($row && !empty($row->nid)) ? intval($row->nid) : 0;
+	}
+	// }}}
 	// {{{ insert()
 	/**
 	 * @param string|false $type1
@@ -1893,6 +1925,20 @@ class lunaModel {
 		$row = $res->fetchRow();
 		if (isset($row->lid) && luna::lid_is_protected($row->lid)) {
 			lunaLog::log('Refused to delete protected node “'.$row->lid.'” (#'.$nid.').', PEAR_LOG_WARNING);
+			return false;
+		}
+		// Orphan guard: never delete a node another node still files itself under. Nothing here
+		// cascades or re-parents, so the children would survive carrying a parent_nid that points
+		// at a row that no longer exists — and that state is silent rather than loud: the admin
+		// listing still shows those pages (it reads the node rows), while every one of their URLs
+		// 404s, because calculate_aliases() builds paths by walking down from the root and never
+		// reaches a subtree whose link to the root is broken. A resync does not help; it faithfully
+		// reprojects the damage. Re-parent or delete the children first. Checked at full scope (see
+		// first_child_nid()) so a child outside the requester's view still counts; the admin pages
+		// form pre-checks the same condition for a friendlier message.
+		$child_nid = $this->first_child_nid($nid);
+		if ($child_nid) {
+			lunaLog::log('Refused to delete node #'.$nid.': it would orphan child #'.$child_nid.'.', PEAR_LOG_WARNING);
 			return false;
 		}
 		lunaGraph::rdf_delete_node($nid);

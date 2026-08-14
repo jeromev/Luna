@@ -13,10 +13,12 @@
 #   T2  delete a protected admin page        (mod_admin_pages::submit_delete)
 #   T3  delete a protected admin module      (mod_admin_mods::submit_delete)
 #   T4  delete the last/own admin user       (mod_admin_users::submit_delete)
+#   T5  delete a page that still has sub-pages (mod_admin_pages + lunaModel::delete orphan guard)
 # Controls (must SUCCEED — proves the guards don't over-block and the delete path works):
 #   P1  create an ordinary user
 #   P2  delete that ordinary user       (mode=modify + submit=Delete)
 #   P4  create and delete another       (mode=delete — the switch's other delete arm)
+#   P5  delete a childless page, then its now-childless parent
 #   P3  the admin can still reach /admin after every attempt
 #
 #   BASE=http://localhost:8080 test/admin_lockout.sh
@@ -45,6 +47,8 @@ GADMIN=$(sql "SELECT nid FROM luna_nodes WHERE lid='group_admin';")
 GDEF=$(sql "SELECT nid FROM luna_nodes WHERE lid='group_default';")
 AUPAGE=$(sql "SELECT nid FROM luna_nodes WHERE lid='admin_users' AND tid=$PT;")
 MAU=$(sql "SELECT nid FROM luna_nodes WHERE lid='mod_admin_users';")
+ROOTP=$(sql "SELECT nid FROM luna_nodes WHERE lid='root' AND tid=$PT;")
+LPUB=$(sql "SELECT nid FROM luna_nodes WHERE lid='level_public';")
 [ -n "$UADMIN" ] && [ -n "$GADMIN" ] || { echo "cannot resolve admin/group nids; is the stack up?"; exit 2; }
 
 edge(){ sql "SELECT COUNT(*) FROM luna_nodes_map WHERE (nid1=$1 AND nid2=$2) OR (nid1=$2 AND nid2=$1);"; }
@@ -59,6 +63,13 @@ teardown(){
   done
   rdf_purge "${BASE%/}/id/throwaway%40test.local"
   rdf_purge "${BASE%/}/id/throwaway2%40test.local"
+  # the orphan-guard fixture: child before parent, so the guard cannot object on the way out
+  for pg in orphan_child orphan_parent; do
+    sql "SET @p:=(SELECT nid FROM luna_nodes WHERE lid='$pg');
+         DELETE FROM luna_nodes_map WHERE nid1=@p OR nid2=@p;
+         DELETE FROM luna_nodes WHERE nid=@p;" 2>/dev/null
+    rdf_purge "${BASE%/}/id/$pg"
+  done
   # safety net: if a guard regressed and a test actually locked the admin out, put it back.
   if [ "$(edge "$UADMIN" "$GADMIN")" -lt 2 ]; then
     sql "INSERT INTO luna_nodes_map (nid1,nid2) VALUES ($UADMIN,$GADMIN),($GADMIN,$UADMIN);"
@@ -156,6 +167,53 @@ if [ -n "$TUID2" ]; then
   [ -z "$(sql "SELECT nid FROM luna_nodes WHERE lid='throwaway2@test.local';")" ] \
     && pass "P4b mode=delete reaches submit_delete and deletes" \
     || fail "P4b mode=delete did NOT delete the user"
+fi
+
+echo "--- orphan guard (a page with sub-pages must not be deleted) ---"
+
+# Fixture: a parent page under root, and a child filed under the parent. Deleting the parent
+# used to succeed and leave the child pointing at a row that no longer existed — still listed
+# in this very admin screen, 404 on every URL, and faithfully reproduced by a resync.
+post admin/admin_pages --data-urlencode submit=Add --data-urlencode mode=add \
+  --data-urlencode add_page_lid=orphan_parent --data-urlencode "add_parent_nid=$ROOTP" \
+  --data-urlencode "add_page_level=$LPUB"
+OPAR=$(sql "SELECT nid FROM luna_nodes WHERE lid='orphan_parent';")
+if [ -n "$OPAR" ]; then
+  post admin/admin_pages --data-urlencode submit=Add --data-urlencode mode=add \
+    --data-urlencode add_page_lid=orphan_child --data-urlencode "add_parent_nid=$OPAR" \
+    --data-urlencode "add_page_level=$LPUB"
+fi
+OCHI=$(sql "SELECT nid FROM luna_nodes WHERE lid='orphan_child';")
+[ -n "$OPAR" ] && [ -n "$OCHI" ] \
+  && pass "T5a parent and child pages created" \
+  || fail "T5a could not create the parent/child fixture"
+
+# T5: the delete that used to orphan
+if [ -n "$OPAR" ] && [ -n "$OCHI" ]; then
+  post admin/admin_pages --data-urlencode mode=modify --data-urlencode submit=Delete \
+    --data-urlencode "modify_item_nid=$OPAR"
+  [ "$(exists "$OPAR")" -ge 1 ] \
+    && pass "T5b deletion of a page with sub-pages blocked" \
+    || fail "T5b ORPHAN: the parent page was deleted out from under its child"
+  [ "$(sql "SELECT COUNT(*) FROM luna_nodes WHERE nid=$OCHI AND parent_nid=$OPAR;")" -ge 1 ] \
+    && pass "T5c the child survives, still filed under its parent" \
+    || fail "T5c the child was orphaned or removed"
+fi
+
+# P5: the controls — the guard must block only the orphaning case, not deletion as such
+if [ -n "$OCHI" ]; then
+  post admin/admin_pages --data-urlencode mode=modify --data-urlencode submit=Delete \
+    --data-urlencode "modify_item_nid=$OCHI"
+  [ "$(exists "$OCHI")" -eq 0 ] \
+    && pass "P5a a childless page still deletes (the guard does not over-block)" \
+    || fail "P5a the childless page was NOT deleted"
+fi
+if [ -n "$OPAR" ] && [ "$(exists "$OCHI")" -eq 0 ]; then
+  post admin/admin_pages --data-urlencode mode=modify --data-urlencode submit=Delete \
+    --data-urlencode "modify_item_nid=$OPAR"
+  [ "$(exists "$OPAR")" -eq 0 ] \
+    && pass "P5b the parent deletes once its child is gone" \
+    || fail "P5b the now-childless parent was NOT deleted"
 fi
 
 # P3: admin can still administer the site
