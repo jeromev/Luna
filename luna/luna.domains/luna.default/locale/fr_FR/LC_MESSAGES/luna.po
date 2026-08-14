@@ -871,3 +871,51 @@ msgstr "Liste des éléments"
 
 msgid "Texts to load with this page"
 msgstr "Textes chargés avec cette page"
+
+msgid "Configuration"
+msgstr "Configuration"
+
+msgid "Date"
+msgstr "Date"
+
+msgid "IP"
+msgstr "IP"
+
+msgid "Message"
+msgstr "Message"
+
+msgid "Modules"
+msgstr "Modules"
+
+msgid "Pages"
+msgstr "Pages"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Written in Markdown (headings, bold, italics, links, lists)."
+msgstr "Rédigé en Markdown (titres, gras, italique, liens, listes)."
+
+msgid "Delete from the level"
+msgstr "Supprimer du niveau"
+
+msgid "cache_timeout"
+msgstr "Délai d’expiration du cache"
+
+msgid "error"
+msgstr "erreur"
+
+msgid "example"
+msgstr "Exemple"
+
+msgid "id"
+msgstr "id"
+
+msgid "identifier"
+msgstr "identifiant"
+
+msgid "message"
+msgstr "message"
+
+msgid "type"
+msgstr "type"

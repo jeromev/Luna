@@ -871,3 +871,51 @@ msgstr "Items list"
 
 msgid "Texts to load with this page"
 msgstr "Texts to load with this page"
+
+msgid "Configuration"
+msgstr "Configuration"
+
+msgid "Date"
+msgstr "Date"
+
+msgid "IP"
+msgstr "IP"
+
+msgid "Message"
+msgstr "Message"
+
+msgid "Modules"
+msgstr "Modules"
+
+msgid "Pages"
+msgstr "Pages"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Written in Markdown (headings, bold, italics, links, lists)."
+msgstr "Written in Markdown (headings, bold, italics, links, lists)."
+
+msgid "Delete from the level"
+msgstr "Delete from the level"
+
+msgid "cache_timeout"
+msgstr "Cache timeout"
+
+msgid "error"
+msgstr "error"
+
+msgid "example"
+msgstr "Example"
+
+msgid "id"
+msgstr "id"
+
+msgid "identifier"
+msgstr "identifier"
+
+msgid "message"
+msgstr "message"
+
+msgid "type"
+msgstr "type"
