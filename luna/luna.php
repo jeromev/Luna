@@ -106,7 +106,7 @@ class luna {
 	 * lunaVersion
 	 * @var		string
 	 */
-	public static $lunaVersion = '0.8.65-alpha';
+	public static $lunaVersion = '0.8.66-alpha';
 	/**
 	 * instance
 	 * @var self|null

@@ -134,6 +134,13 @@ These are the project's own; no off-the-shelf standard covers them. The ones mar
     `semantic/ontop/mapping.ttl`. [ontology/README.md](../ontology/README.md) records that
     this is maintained by hand and is not auto-derived, which makes it the most fragile
     cross-file invariant in the repository.
+12. **A control painted destructive also confirms, and only those do. (checked)** A delete
+    button is two halves — `class="submit warning"` is the paint, `data-confirm` is the
+    behaviour [js/luna.js](../js/luna.js) binds to `window.confirm()` — written by hand in six
+    stylesheets and agreed nowhere else. The equivalence is checked in both directions, because
+    a button that carries the class and forgets the attribute is invisible: same markup, same
+    styling, same submit, and it deletes without asking. No suite here can see it, either —
+    every test posts with `curl`, which never runs page JavaScript.
 
 ## Array syntax
 

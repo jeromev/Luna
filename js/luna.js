@@ -5,6 +5,8 @@
  *   select[data-navigate]         navigate to the chosen option's value
  *   select[data-submit-on-change] submit the enclosing form on change
  *   [data-confirm]                confirm before the click/submit proceeds
+ * The stylesheets must put [data-confirm] on every control they paint destructive, and on no
+ * other; that pairing is house rule 12, checked by test/style.php.
  * Show/hide is instant; add a CSS transition on .box-content or a row if you
  * want movement. */
 

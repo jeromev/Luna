@@ -128,6 +128,69 @@ if ($ns !== '') {
 	ok($hasTtl, 'semantic/ontop/mapping.ttl binds luna: to LUNA_NS');
 }
 
+echo "--- house rule 12: a destructive control confirms before it acts ---\n";
+// A delete button is two halves, written by hand in six stylesheets and agreed nowhere:
+// class="submit warning" is the paint, and data-confirm is the behaviour js/luna.js binds to
+// window.confirm(). A seventh delete button that copies the class and forgets the attribute is
+// invisible — same markup, same styling, same submit — and it simply deletes without asking.
+// Nothing in test/ can see it either: every suite posts with curl, which never runs page
+// JavaScript. So the pairing is asserted here, statically, over the XSLT that emits it.
+//
+// Both directions, deliberately. A confirm on a control the stylesheet does not paint as
+// destructive is the same marriage breaking from the other side: the dialogue says the action
+// is grave and nothing on the page agrees. Either half moving is a decision, and it should
+// cost an edit to this rule rather than pass unnoticed.
+$XHTML = 'http://www.w3.org/1999/xhtml';
+$XSLT = 'http://www.w3.org/1999/XSL/Transform';
+
+/**
+ * The value an XSLT-authored element will emit for one attribute, written either literally or
+ * built by an <xsl:attribute name="…"> child. Both forms occur here — the class is literal, and
+ * data-confirm is an xsl:attribute because its text is an i18n vocabulary lookup — so reading
+ * only the literal form would find every destructive button and none of the confirmations.
+ * Returns null when the element emits the attribute by neither route.
+ */
+$emitted = static function (DOMElement $el, string $name) use ($XSLT): ?string {
+	if ($el->hasAttribute($name)) { return $el->getAttribute($name); }
+	foreach ($el->childNodes as $child) {
+		if ($child instanceof DOMElement && $child->namespaceURI === $XSLT
+			&& $child->localName === 'attribute' && $child->getAttribute('name') === $name) {
+			return $child->textContent;
+		}
+	}
+	return null;
+};
+
+$confirmProblems = [];
+$destructive = 0;
+foreach (glob('luna/luna.xsl/luna.html.xsl/*.xsl') as $f) {
+	$doc = new DOMDocument();
+	if (!@$doc->load($f)) { $confirmProblems[] = "{$f}: does not parse as XML"; continue; }
+	foreach ($doc->getElementsByTagName('*') as $el) {
+		if (!$el instanceof DOMElement || $el->namespaceURI !== $XHTML) { continue; }
+		// `warning` paints a control (scss/_page.scss) and also a message box and a table row;
+		// only a control can be clicked, so only a control is asked to confirm.
+		$class = (string) $emitted($el, 'class');
+		$isControl = in_array($el->localName, ['input', 'button', 'a'], true);
+		$isDestructive = $isControl && in_array('warning', preg_split('/\s+/', trim($class)) ?: [], true);
+		$confirms = $emitted($el, 'data-confirm') !== null;
+		if ($isDestructive) { $destructive++; }
+		// The rule is the equivalence, so one comparison states it and covers both directions.
+		if ($isDestructive !== $confirms) {
+			$why = $isDestructive ? 'is destructive and does not confirm' : 'confirms but is not painted destructive';
+			$confirmProblems[] = sprintf('%s: <%s class="%s"> %s', $f, $el->localName, $class, $why);
+		}
+	}
+}
+// A rule that finds nothing passes for the wrong reason. Renaming the class in the stylesheets
+// and the SCSS together would leave every check above satisfied over an empty set, which is
+// exactly the state this rule exists to make impossible.
+if ($destructive === 0) {
+	$confirmProblems[] = 'no destructive control found in any stylesheet — has the `warning` class been renamed?';
+}
+foreach ($confirmProblems as $p) { note($p); }
+ok($confirmProblems === [], sprintf('all %d destructive controls confirm, and only those do', $destructive));
+
 echo "--- house rule 8: prose cites symbols, never line numbers ---\n";
 // Line numbers in prose rot silently: 19 of the 20 that used to be in docs/ pointed at the
 // wrong construct, one at the wrong file entirely.
