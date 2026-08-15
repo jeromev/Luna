@@ -83,13 +83,23 @@ and the [CHANGELOG](../CHANGELOG.md).
 
 - **Back the RDF representation with a SPARQL `CONSTRUCT` / `DESCRIBE`** instead of the PHP
   `build_schema_index()` projection, so PHP shrinks to *negotiate + construct + serialise*.
-  **Blocked** on a `schema:name` overload (decision 9): `rdf_sync_node()` writes a page's
-  `schema:name` as the **raw slug** (the SPARQL router reads `schema:name` *as* the slug),
-  while `build_schema_index()` emits it as the **humanised `rdfs:label`** — so swapping the
-  serialiser to a `CONSTRUCT` would regress published page names from "Admin Journal" to
-  "admin_journal". Split the routing key from the display name first (then reseed).
-- **Dereference text/`Article` resources too** — today `/id` and `/data` cover pages; a text
-  slug (`/id/welcome`) `404`s and is described only inside its page's `/data` document.
+  The old blocker is gone and a smaller one is left in its place. Until 0.9.3-alpha this was
+  **blocked** on the `schema:name` overload (decision 9): the store held the raw slug under
+  that predicate and the published document held the humanised label, so a `CONSTRUCT` would
+  have regressed every page name from "Admin Journal" to "admin_journal". That split is done —
+  the routing key is `luna:lid`, `schema:name` is the display name, and both surfaces assert
+  both. What remains is **incompleteness rather than wrongness**: the store holds no display
+  name at all, because the label is produced per request by translating the slug through the
+  gettext catalogue and is stored nowhere. A `CONSTRUCT` today would return a description that
+  is correct and unlabelled. Closing it means writing labels into the store per configured
+  language as tagged literals — the shape the text translations took in 0.8.67-alpha — and is
+  its own change.
+- **Dereference the non-page resources too** — `/id` and `/data` cover pages and nothing else.
+  A text slug (`/id/welcome`) `404`s and is described only inside its page's `/data` document,
+  and a level, group or user has no RDF representation at any URI. That last part is newly
+  true: `/node/{nid}` served exactly that purpose until 0.9.9-alpha retired it, deliberately
+  and with this gap recorded — the replacement belongs here, in the slug vocabulary, rather
+  than at a route keyed by a database counter.
 - Serve `luna/luna.xsl/` as **static, long-cached, same-origin** assets under a stable
   `/xsl/`; the server tells the client which stylesheet won the cascade.
 
@@ -125,5 +135,7 @@ The spine is the **rest of P2** — retiring the MySQL content write so the trip
 single source of truth and dual-write drift disappears (a deliberate migration:
 must-succeed writes + outbox, then the atomic cutover). **P3** is optional polish. **P4**
 landed its high-leverage half (0.8.54 — content negotiation + dereferenceable `/id` and
-`/data` URIs + Turtle); what's left is the `CONSTRUCT`-backing, blocked on decision 9.
+`/data` URIs + Turtle). What's left of it is no longer blocked on a decision: the
+`CONSTRUCT`-backing now waits only on putting display labels in the store, and dereferencing
+text/`Article` resources waits on nothing at all.
 **Recommended next:** the P2 write-retirement when you're ready to commit to it.
